@@ -1,7 +1,8 @@
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, orderBy, query, where } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { Text, View } from "react-native";
 import { auth, db } from "../../services/auth";
+import PrimaryButton from "./PrimaryButton";
 
 type Entry = {
   id: string;
@@ -9,27 +10,41 @@ type Entry = {
   type: string;
   category: string;
   note: string;
+  date?: string;
 };
 
 export default function RecentEntriesList() {
   const [entries, setEntries] = useState<Entry[]>([]);
+  const [visibleCount, setVisibleCount] = useState(10);
 
   useEffect(() => {
-    const loadEntries = async () => {
-      const user = auth.currentUser;
-      if (!user) return;
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (!user) {
+        setEntries([]);
+        return;
+      }
 
-      const snapshot = await getDocs(collection(db, "entries"));
+      const loadEntries = async () => {
+        const entriesQuery = query(
+          collection(db, "entries"),
+          where("userId", "==", user.uid),
+          orderBy("createdAt", "desc")
+        );
 
-      const items: Entry[] = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...(doc.data() as Omit<Entry, "id">),
-      }));
+        const snapshot = await getDocs(entriesQuery);
 
-      setEntries(items);
-    };
+        const items: Entry[] = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...(doc.data() as Omit<Entry, "id">),
+        }));
 
-    loadEntries();
+        setEntries(items);
+      };
+
+      loadEntries();
+    });
+
+    return unsubscribe;
   }, []);
 
   return (
@@ -57,23 +72,41 @@ export default function RecentEntriesList() {
       {entries.length === 0 ? (
         <Text style={{ color: "#666" }}>No entries yet.</Text>
       ) : (
-        entries.map((entry) => (
-          <View
-            key={entry.id}
-            style={{
-              paddingVertical: 10,
-              borderBottomWidth: 1,
-              borderBottomColor: "#eee",
-            }}
-          >
-            <Text style={{ fontSize: 16, fontWeight: "600" }}>
-              ${Number(entry.amount || 0).toFixed(2)} - {entry.category}
-            </Text>
-            <Text style={{ fontSize: 14, color: "#666" }}>
-              {entry.type} {entry.note ? `• ${entry.note}` : ""}
-            </Text>
-          </View>
-        ))
+        <>
+          {entries.slice(0, visibleCount).map((entry) => (
+            <View
+              key={entry.id}
+              style={{
+                paddingVertical: 10,
+                borderBottomWidth: 1,
+                borderBottomColor: "#eee",
+              }}
+            >
+              <Text style={{ fontSize: 16, fontWeight: "600" }}>
+                ${Number(entry.amount || 0).toFixed(2)} - {entry.category}
+              </Text>
+              <Text style={{ fontSize: 14, color: "#666" }}>
+                {entry.date
+                  ? `${new Date(entry.date).toLocaleDateString()} ${new Date(entry.date).toLocaleTimeString([], {
+                    hour: "numeric",
+                    minute: "2-digit",
+                  })} • `
+                  : ""}
+                {entry.type}
+                {entry.note ? ` • ${entry.note}` : ""}
+              </Text>
+            </View>
+          ))}
+
+          {visibleCount < entries.length && (
+            <View style={{ marginTop: 16 }}>
+              <PrimaryButton
+                title="Load More"
+                onPress={() => setVisibleCount((prev) => prev + 10)}
+              />
+            </View>
+          )}
+        </>
       )}
     </View>
   );

@@ -5,10 +5,19 @@ import { Text, TextInput, TouchableOpacity, View } from "react-native";
 import { auth } from "../services/auth";
 
 export default function LoginScreen() {
-      const router = useRouter();
-      const [message, setMessage] = useState("");
-        const [email, setEmail] = useState("");
+  const router = useRouter();
+  const [message, setMessage] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const handleLogin = async () => {
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      setMessage(`Signed in: ${userCredential.user.email}`);
+      setTimeout(() => router.push("/dashboard"), 1000);
+    } catch (error: any) {
+      setMessage(error.message);
+    }
+  };
   return (
     <View
       style={{
@@ -46,7 +55,7 @@ export default function LoginScreen() {
         autoCapitalize="none"
         keyboardType="email-address"
         value={email}
-onChangeText={setEmail}
+        onChangeText={setEmail}
         style={{
           borderWidth: 1,
           borderColor: "#ccc",
@@ -61,8 +70,10 @@ onChangeText={setEmail}
       <TextInput
         placeholder="Enter your password"
         value={password}
-onChangeText={setPassword}
+        onChangeText={setPassword}
         secureTextEntry
+        returnKeyType="done"
+        onSubmitEditing={handleLogin}
         style={{
           borderWidth: 1,
           borderColor: "#ccc",
@@ -74,15 +85,7 @@ onChangeText={setPassword}
       />
 
       <TouchableOpacity
-onPress={async () => {
-  try {
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    setMessage(`Signed in: ${userCredential.user.email}`);
-    setTimeout(() => router.push("/dashboard"), 1000);
-  } catch (error: any) {
-    setMessage(error.message);
-  }
-}}
+        onPress={handleLogin}
         style={{
           backgroundColor: "#111",
           padding: 16,
@@ -96,7 +99,7 @@ onPress={async () => {
         </Text>
       </TouchableOpacity>
 
-            {message ? (
+      {message ? (
         <Text
           style={{
             textAlign: "center",
@@ -109,15 +112,15 @@ onPress={async () => {
         </Text>
       ) : null}
 
-        <TouchableOpacity
+      <TouchableOpacity
         onPress={() => router.push("/signup")}
         style={{
-            backgroundColor: "#f3f3f3",
-            padding: 16,
-            borderRadius: 10,
-            alignItems: "center",
+          backgroundColor: "#f3f3f3",
+          padding: 16,
+          borderRadius: 10,
+          alignItems: "center",
         }}
-        >
+      >
         <Text style={{ color: "#111", fontSize: 16, fontWeight: "600" }}>
           Create Account
         </Text>
