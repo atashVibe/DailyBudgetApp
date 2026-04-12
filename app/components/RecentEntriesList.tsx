@@ -1,7 +1,9 @@
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { collection, getDocs, orderBy, query, where } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { Text, View } from "react-native";
 import { auth, db } from "../../services/auth";
+import { deleteEntry } from "../../services/entries";
 import PrimaryButton from "./PrimaryButton";
 
 type Entry = {
@@ -13,7 +15,11 @@ type Entry = {
   date?: string;
 };
 
-export default function RecentEntriesList() {
+type Props = {
+  onEditEntry?: (entry: Entry) => void;
+};
+
+export default function RecentEntriesList({ onEditEntry }: Props) {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [visibleCount, setVisibleCount] = useState(10);
 
@@ -80,24 +86,54 @@ export default function RecentEntriesList() {
                 paddingVertical: 10,
                 borderBottomWidth: 1,
                 borderBottomColor: "#eee",
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
               }}
             >
-              <Text style={{ fontSize: 16, fontWeight: "600" }}>
-                ${Number(entry.amount || 0).toFixed(2)} - {entry.category}
-              </Text>
-              <Text style={{ fontSize: 14, color: "#666" }}>
-                {entry.date
-                  ? `${new Date(entry.date).toLocaleDateString()} ${new Date(entry.date).toLocaleTimeString([], {
-                    hour: "numeric",
-                    minute: "2-digit",
-                  })} • `
-                  : ""}
-                {entry.type}
-                {entry.note ? ` • ${entry.note}` : ""}
-              </Text>
+              {/* LEFT SIDE */}
+              <View style={{ flex: 1, paddingRight: 10 }}>
+                <Text style={{ fontSize: 16, fontWeight: "600" }}>
+                  ${Number(entry.amount || 0).toFixed(2)} - {entry.category}
+                </Text>
+
+                <Text style={{ fontSize: 14, color: "#666" }}>
+                  {entry.date
+                    ? `${new Date(entry.date).toLocaleDateString()} ${new Date(entry.date).toLocaleTimeString([], {
+                      hour: "numeric",
+                      minute: "2-digit",
+                    })} • `
+                    : ""}
+                  {entry.type}
+                  {entry.note ? ` • ${entry.note}` : ""}
+                </Text>
+              </View>
+
+              {/* RIGHT SIDE */}
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                <Ionicons
+                  name="create-outline"
+                  size={22}
+                  color="#111"
+                  onPress={() => onEditEntry?.(entry)}
+                />
+
+                <Ionicons
+                  name="trash-outline"
+                  size={22}
+                  color="red"
+                  onPress={async () => {
+                    try {
+                      await deleteEntry(entry.id);
+                      setEntries((prev) => prev.filter((e) => e.id !== entry.id));
+                    } catch (error) {
+                      console.error("Delete failed", error);
+                    }
+                  }}
+                />
+              </View>
             </View>
           ))}
-
           {visibleCount < entries.length && (
             <View style={{ marginTop: 16 }}>
               <PrimaryButton

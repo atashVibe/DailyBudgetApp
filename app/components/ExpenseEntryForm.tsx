@@ -1,16 +1,28 @@
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Picker } from "@react-native-picker/picker";
-import React, { useState } from "react";
-import { Platform, Text, TextInput, View } from "react-native";
+import React, { useEffect, useState } from "react";
+import { Platform, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { auth } from "../../services/auth";
-import { addEntry } from "../../services/entries";
+import { addEntry, updateEntry } from "../../services/entries";
 import PrimaryButton from "./PrimaryButton";
 
+type Entry = {
+  id: string;
+  amount: number;
+  type: string;
+  category: string;
+  note: string;
+  date?: string;
+};
 
 export default function ExpenseEntryForm({
   onEntrySaved,
+  entryToEdit,
+  onCancelEdit,
 }: {
   onEntrySaved?: () => void;
+  entryToEdit?: Entry | null;
+  onCancelEdit?: () => void;
 }) {
   const [amount, setAmount] = useState("");
   const [type, setType] = useState("Expense");
@@ -20,6 +32,25 @@ export default function ExpenseEntryForm({
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [showDatePicker, setShowDatePicker] = useState(false);
 
+  useEffect(() => {
+    if (entryToEdit) {
+      setAmount(String(entryToEdit.amount ?? ""));
+      setType(entryToEdit.type ?? "Expense");
+      setCategory(entryToEdit.category ?? "Groceries");
+      setNote(entryToEdit.note ?? "");
+      setDate(
+        entryToEdit.date
+          ? entryToEdit.date.split("T")[0]
+          : new Date().toISOString().split("T")[0]
+      );
+    } else {
+      setAmount("");
+      setType("Expense");
+      setCategory("Groceries");
+      setNote("");
+      setDate(new Date().toISOString().split("T")[0]);
+    }
+  }, [entryToEdit]);
   const handleSave = async () => {
     if (!amount || isNaN(Number(amount))) {
       setMessage("Please enter a valid amount");
@@ -35,14 +66,24 @@ export default function ExpenseEntryForm({
         return;
       }
 
-      await addEntry({
-        userId: user.uid,
-        amount: parseFloat(amount),
-        type,
-        category,
-        note,
-        date,
-      });
+      if (entryToEdit?.id) {
+        await updateEntry(entryToEdit.id, {
+          amount: parseFloat(amount),
+          type,
+          category,
+          note,
+          date,
+        });
+      } else {
+        await addEntry({
+          userId: user.uid,
+          amount: parseFloat(amount),
+          type,
+          category,
+          note,
+          date,
+        });
+      }
 
       setMessage("Entry saved");
 
@@ -78,7 +119,7 @@ export default function ExpenseEntryForm({
           marginBottom: 16,
         }}
       >
-        Add Entry
+        {entryToEdit ? "Edit Entry" : "Add Entry"}
       </Text>
 
       <Text style={{ fontSize: 16, marginBottom: 8 }}>Amount</Text>
@@ -213,7 +254,27 @@ export default function ExpenseEntryForm({
         }}
       />
 
-      <PrimaryButton title="Save Entry" onPress={handleSave} />
+      <View style={{ gap: 12 }}>
+        <PrimaryButton
+          title={entryToEdit ? "Update Entry" : "Save Entry"}
+          onPress={handleSave}
+        />
+
+        {entryToEdit && (
+          <TouchableOpacity onPress={onCancelEdit}>
+            <Text
+              style={{
+                textAlign: "center",
+                color: "#666",
+                fontSize: 16,
+                paddingVertical: 8,
+              }}
+            >
+              Cancel Edit
+            </Text>
+          </TouchableOpacity>
+        )}
+      </View>
 
       {message ? (
         <Text

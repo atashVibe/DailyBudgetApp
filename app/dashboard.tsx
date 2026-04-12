@@ -1,6 +1,6 @@
 import { useRouter } from "expo-router";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { auth } from "../services/auth";
 import BudgetSummaryCard from "./components/BudgetSummaryCard";
@@ -8,14 +8,28 @@ import ExpenseEntryForm from "./components/ExpenseEntryForm";
 import PrimaryButton from "./components/PrimaryButton";
 import RecentEntriesList from "./components/RecentEntriesList";
 
+type Entry = {
+  id: string;
+  amount: number;
+  type: string;
+  category: string;
+  note: string;
+  date?: string;
+};
+
 export default function DashboardScreen() {
   const router = useRouter();
   const [userEmail, setUserEmail] = useState("Loading...");
   const [refreshKey, setRefreshKey] = useState(0);
+  const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
+  const scrollRef = useRef<ScrollView>(null);
+  const handleCancelEdit = () => { setEditingEntry(null); };
+  const formPosition = useRef(0);
+
   const handleEntrySaved = () => {
-  setRefreshKey((prev) => prev + 1);
-};
-  
+    setRefreshKey((prev) => prev + 1);
+    setEditingEntry(null);
+  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -31,7 +45,7 @@ export default function DashboardScreen() {
   };
 
   return (
-    <ScrollView
+    <ScrollView ref={scrollRef}
       style={{
         flex: 1,
         backgroundColor: "#ffffff",
@@ -55,9 +69,31 @@ export default function DashboardScreen() {
       </Text>
 
       <BudgetSummaryCard />
-      <ExpenseEntryForm onEntrySaved={handleEntrySaved} />
-      <RecentEntriesList key={refreshKey} />
 
+      <View
+        onLayout={(event) => {
+          formPosition.current = event.nativeEvent.layout.y;
+        }}
+      >
+        <ExpenseEntryForm
+          onEntrySaved={handleEntrySaved}
+          entryToEdit={editingEntry}
+          onCancelEdit={handleCancelEdit}
+        />
+      </View>
+
+      <RecentEntriesList
+        key={refreshKey}
+        onEditEntry={(entry) => {
+          setEditingEntry(entry);
+          setTimeout(() => {
+            scrollRef.current?.scrollTo({
+              y: formPosition.current,
+              animated: true,
+            });
+          }, 100);
+        }}
+      />
       <Text
         style={{
           fontSize: 18,
