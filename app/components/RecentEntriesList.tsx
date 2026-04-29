@@ -20,8 +20,15 @@ type Props = {
   onEditEntry?: (entry: Entry) => void;
   editingEntryId?: string | null;
   refreshSignal?: number;
+  onEntryDeleted?: () => void;
 };
-export default function RecentEntriesList({ accountId, onEditEntry, editingEntryId, refreshSignal }: Props) {
+export default function RecentEntriesList({
+  accountId,
+  onEditEntry,
+  editingEntryId,
+  refreshSignal,
+  onEntryDeleted,
+}: Props) {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [visibleCount, setVisibleCount] = useState(10);
 
@@ -60,6 +67,7 @@ export default function RecentEntriesList({ accountId, onEditEntry, editingEntry
       try {
         await deleteEntry(entryId);
         setEntries((prev) => prev.filter((e) => e.id !== entryId));
+        onEntryDeleted?.();
       } catch (error) {
         console.error("Delete failed", error);
       }
