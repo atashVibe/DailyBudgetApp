@@ -4,6 +4,10 @@ import { db } from "./auth";
 // Save a new entry to Firestore
 export async function addEntry(data: any) {
   try {
+    if (!data.accountId) {
+      throw new Error("Missing accountId when adding entry");
+    }
+
     const docRef = await addDoc(collection(db, "entries"), {
       ...data,
       createdAt: serverTimestamp(),

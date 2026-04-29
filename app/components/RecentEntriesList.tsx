@@ -1,7 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { collection, getDocs, orderBy, query, where } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import { Text, View } from "react-native";
+import { Alert, Platform, Text, View } from "react-native";
 import { auth, db } from "../../services/auth";
 import { deleteEntry } from "../../services/entries";
 import PrimaryButton from "./PrimaryButton";
@@ -16,10 +16,12 @@ type Entry = {
 };
 
 type Props = {
+  accountId: string;
   onEditEntry?: (entry: Entry) => void;
+  editingEntryId?: string | null;
+  refreshSignal?: number;
 };
-
-export default function RecentEntriesList({ onEditEntry }: Props) {
+export default function RecentEntriesList({ accountId, onEditEntry, editingEntryId, refreshSignal }: Props) {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [visibleCount, setVisibleCount] = useState(10);
 
@@ -33,7 +35,7 @@ export default function RecentEntriesList({ onEditEntry }: Props) {
       const loadEntries = async () => {
         const entriesQuery = query(
           collection(db, "entries"),
-          where("userId", "==", user.uid),
+          where("accountId", "==", accountId),
           orderBy("createdAt", "desc")
         );
 
@@ -51,7 +53,35 @@ export default function RecentEntriesList({ onEditEntry }: Props) {
     });
 
     return unsubscribe;
-  }, []);
+  }, [refreshSignal]);
+
+  const handleDeleteEntry = async (entryId: string) => {
+    const runDelete = async () => {
+      try {
+        await deleteEntry(entryId);
+        setEntries((prev) => prev.filter((e) => e.id !== entryId));
+      } catch (error) {
+        console.error("Delete failed", error);
+      }
+    };
+
+    if (Platform.OS === "web") {
+      const confirmed = window.confirm("Are you sure you want to delete this entry?");
+      if (confirmed) {
+        await runDelete();
+      }
+      return;
+    }
+
+    Alert.alert(
+      "Delete Entry",
+      "Are you sure you want to delete this entry?",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Delete", style: "destructive", onPress: () => void runDelete() },
+      ]
+    );
+  };
 
   return (
     <View
@@ -89,6 +119,9 @@ export default function RecentEntriesList({ onEditEntry }: Props) {
                 flexDirection: "row",
                 justifyContent: "space-between",
                 alignItems: "center",
+                backgroundColor: entry.id === editingEntryId ? "#9af2c6" : "#ffffff",
+                borderRadius: 8,
+                paddingHorizontal: 6,
               }}
             >
               {/* LEFT SIDE */}
@@ -122,14 +155,7 @@ export default function RecentEntriesList({ onEditEntry }: Props) {
                   name="trash-outline"
                   size={22}
                   color="red"
-                  onPress={async () => {
-                    try {
-                      await deleteEntry(entry.id);
-                      setEntries((prev) => prev.filter((e) => e.id !== entry.id));
-                    } catch (error) {
-                      console.error("Delete failed", error);
-                    }
-                  }}
+                  onPress={() => handleDeleteEntry(entry.id)}
                 />
               </View>
             </View>

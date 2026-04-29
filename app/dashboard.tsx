@@ -8,6 +8,8 @@ import ExpenseEntryForm from "./components/ExpenseEntryForm";
 import PrimaryButton from "./components/PrimaryButton";
 import RecentEntriesList from "./components/RecentEntriesList";
 
+const ACCOUNT_ID = "9AfxRrBY2raoW8Rhts7x";
+
 type Entry = {
   id: string;
   amount: number;
@@ -20,14 +22,14 @@ type Entry = {
 export default function DashboardScreen() {
   const router = useRouter();
   const [userEmail, setUserEmail] = useState("Loading...");
-  const [refreshKey, setRefreshKey] = useState(0);
+  const [refreshSignal, setRefreshSignal] = useState(0);
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
   const scrollRef = useRef<ScrollView>(null);
   const handleCancelEdit = () => { setEditingEntry(null); };
   const formPosition = useRef(0);
 
   const handleEntrySaved = () => {
-    setRefreshKey((prev) => prev + 1);
+    setRefreshSignal((prev) => prev + 1);
     setEditingEntry(null);
   };
 
@@ -76,6 +78,7 @@ export default function DashboardScreen() {
         }}
       >
         <ExpenseEntryForm
+          accountId={ACCOUNT_ID}
           onEntrySaved={handleEntrySaved}
           entryToEdit={editingEntry}
           onCancelEdit={handleCancelEdit}
@@ -83,7 +86,9 @@ export default function DashboardScreen() {
       </View>
 
       <RecentEntriesList
-        key={refreshKey}
+        accountId={ACCOUNT_ID}
+        editingEntryId={editingEntry?.id ?? null}
+        refreshSignal={refreshSignal}
         onEditEntry={(entry) => {
           setEditingEntry(entry);
           setTimeout(() => {

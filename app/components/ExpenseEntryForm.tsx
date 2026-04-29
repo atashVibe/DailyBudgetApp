@@ -15,15 +15,19 @@ type Entry = {
   date?: string;
 };
 
-export default function ExpenseEntryForm({
-  onEntrySaved,
-  entryToEdit,
-  onCancelEdit,
-}: {
+type Props = {
+  accountId: string;
   onEntrySaved?: () => void;
   entryToEdit?: Entry | null;
   onCancelEdit?: () => void;
-}) {
+};
+
+export default function ExpenseEntryForm({
+  accountId,
+  onEntrySaved,
+  entryToEdit,
+  onCancelEdit,
+}: Props) {
   const [amount, setAmount] = useState("");
   const [type, setType] = useState("Expense");
   const [category, setCategory] = useState("Groceries");
@@ -77,6 +81,7 @@ export default function ExpenseEntryForm({
       } else {
         await addEntry({
           userId: user.uid,
+          accountId,
           amount: parseFloat(amount),
           type,
           category,
