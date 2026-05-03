@@ -1,6 +1,14 @@
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  updateDoc,
+  where,
+} from "firebase/firestore";
 import { useEffect, useRef, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { auth, db } from "../services/auth";
@@ -21,24 +29,29 @@ type Entry = {
 };
 
 export default function DashboardScreen() {
+  const [userId, setUserId] = useState<string | null>(null);
   const router = useRouter();
   const [userEmail, setUserEmail] = useState("Loading...");
   const [refreshSignal, setRefreshSignal] = useState(0);
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
   const scrollRef = useRef<ScrollView>(null);
-  const handleCancelEdit = () => { setEditingEntry(null); };
+  const handleCancelEdit = () => {
+    setEditingEntry(null);
+  };
   const formPosition = useRef(0);
-  const [dailyBudget] = useState(30);
+  const [dailyBudget, setDailyBudget] = useState(30);
   const [spentThisMonth, setSpentThisMonth] = useState(0);
   const [spentThisYear, setSpentThisYear] = useState(0);
   const handleEntrySaved = () => {
     setRefreshSignal((prev) => prev + 1);
     setEditingEntry(null);
   };
+  const [budgetInput, setBudgetInput] = useState("");
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUserEmail(user?.email ?? "Unknown user");
+      setUserId(user?.uid ?? null);
     });
 
     return unsubscribe;
@@ -52,7 +65,7 @@ export default function DashboardScreen() {
 
       const q = query(
         collection(db, "entries"),
-        where("accountId", "==", ACCOUNT_ID)
+        where("accountId", "==", ACCOUNT_ID),
       );
 
       const snapshot = await getDocs(q);
@@ -98,8 +111,49 @@ export default function DashboardScreen() {
     router.replace("/login");
   };
 
+  const handleUpdateBudget = async () => {
+    const newBudget = Number(budgetInput);
+
+    if (!newBudget || newBudget <= 0) return;
+
+    const docRef = doc(db, "accounts", ACCOUNT_ID);
+
+    await updateDoc(docRef, {
+      dailyBudget: newBudget,
+    });
+
+    setDailyBudget(newBudget);
+    setBudgetInput("");
+  };
+
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useFocusEffect(() => {
+    const fetchAccountData = async () => {
+      const docRef = doc(db, "accounts", ACCOUNT_ID);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+
+        setDailyBudget(data.dailyBudget);
+
+        if (userId && data.adminUserId === userId) {
+          setIsAdmin(true);
+        } else {
+          setIsAdmin(false);
+        }
+      }
+    };
+
+    if (userId) {
+      fetchAccountData();
+    }
+  });
+
   return (
-    <ScrollView ref={scrollRef}
+    <ScrollView
+      ref={scrollRef}
       style={{
         flex: 1,
         backgroundColor: "#ffffff",
@@ -164,7 +218,16 @@ export default function DashboardScreen() {
           marginBottom: 8,
         }}
       >
-        You are signed in.
+        <Text
+          style={{
+            fontSize: 14,
+            color: isAdmin ? "#009f65" : "#666",
+            textAlign: "center",
+            marginBottom: 8,
+          }}
+        >
+          {isAdmin ? "Admin account" : "Member account"}
+        </Text>
       </Text>
 
       <Text
