@@ -16,8 +16,6 @@ import BudgetSummaryCard from "./components/BudgetSummaryCard";
 import ExpenseEntryForm from "./components/ExpenseEntryForm";
 import RecentEntriesList from "./components/RecentEntriesList";
 
-const ACCOUNT_ID = "9AfxRrBY2raoW8Rhts7x";
-
 type Entry = {
   id: string;
   amount: number;
@@ -208,21 +206,23 @@ export default function DashboardScreen() {
         )}
       </View>
 
-      <RecentEntriesList
-        accountId={ACCOUNT_ID}
-        editingEntryId={editingEntry?.id ?? null}
-        refreshSignal={refreshSignal}
-        onEntryDeleted={() => setRefreshSignal((prev) => prev + 1)}
-        onEditEntry={(entry) => {
-          setEditingEntry(entry);
-          setTimeout(() => {
-            scrollRef.current?.scrollTo({
-              y: formPosition.current,
-              animated: true,
-            });
-          }, 100);
-        }}
-      />
+      {accountId && (
+        <RecentEntriesList
+          accountId={accountId}
+          editingEntryId={editingEntry?.id ?? null}
+          refreshSignal={refreshSignal}
+          onEntryDeleted={() => setRefreshSignal((prev) => prev + 1)}
+          onEditEntry={(entry) => {
+            setEditingEntry(entry);
+            setTimeout(() => {
+              scrollRef.current?.scrollTo({
+                y: formPosition.current,
+                animated: true,
+              });
+            }, 100);
+          }}
+        />
+      )}
       <Text
         style={{
           fontSize: 18,
