@@ -1,5 +1,5 @@
 import { useFocusEffect, useRouter } from "expo-router";
-import { onAuthStateChanged, signOut } from "firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
 import {
   collection,
   doc,
@@ -14,7 +14,6 @@ import { ScrollView, Text, View } from "react-native";
 import { auth, db } from "../services/auth";
 import BudgetSummaryCard from "./components/BudgetSummaryCard";
 import ExpenseEntryForm from "./components/ExpenseEntryForm";
-import PrimaryButton from "./components/PrimaryButton";
 import RecentEntriesList from "./components/RecentEntriesList";
 
 const ACCOUNT_ID = "9AfxRrBY2raoW8Rhts7x";
@@ -47,17 +46,33 @@ export default function DashboardScreen() {
     setEditingEntry(null);
   };
   const [budgetInput, setBudgetInput] = useState("");
+  const [accountId, setAccountId] = useState<string | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUserEmail(user?.email ?? "Unknown user");
       setUserId(user?.uid ?? null);
+
+      if (!user) {
+        setAccountId(null);
+        setIsAdmin(false);
+        return;
+      }
+
+      const userRef = doc(db, "users", user.uid);
+      const userSnap = await getDoc(userRef);
+
+      if (userSnap.exists()) {
+        const data = userSnap.data();
+        setAccountId(data.accountId);
+      }
     });
 
     return unsubscribe;
   }, []);
 
   useEffect(() => {
+    if (!accountId) return;
     const loadMonthSpending = async () => {
       const now = new Date();
       const currentYear = now.getFullYear();
@@ -65,7 +80,7 @@ export default function DashboardScreen() {
 
       const q = query(
         collection(db, "entries"),
-        where("accountId", "==", ACCOUNT_ID),
+        where("accountId", "==", accountId),
       );
 
       const snapshot = await getDocs(q);
@@ -104,19 +119,15 @@ export default function DashboardScreen() {
     };
 
     loadMonthSpending();
-  }, [refreshSignal]);
-
-  const handleSignOut = async () => {
-    await signOut(auth);
-    router.replace("/login");
-  };
+  }, [refreshSignal, accountId]);
 
   const handleUpdateBudget = async () => {
     const newBudget = Number(budgetInput);
 
     if (!newBudget || newBudget <= 0) return;
 
-    const docRef = doc(db, "accounts", ACCOUNT_ID);
+    if (!accountId) return;
+    const docRef = doc(db, "accounts", accountId);
 
     await updateDoc(docRef, {
       dailyBudget: newBudget,
@@ -130,7 +141,9 @@ export default function DashboardScreen() {
 
   useFocusEffect(() => {
     const fetchAccountData = async () => {
-      const docRef = doc(db, "accounts", ACCOUNT_ID);
+      if (!accountId) return;
+
+      const docRef = doc(db, "accounts", accountId);
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
@@ -146,9 +159,7 @@ export default function DashboardScreen() {
       }
     };
 
-    if (userId) {
-      fetchAccountData();
-    }
+    fetchAccountData();
   });
 
   return (
@@ -187,12 +198,14 @@ export default function DashboardScreen() {
           formPosition.current = event.nativeEvent.layout.y;
         }}
       >
-        <ExpenseEntryForm
-          accountId={ACCOUNT_ID}
-          onEntrySaved={handleEntrySaved}
-          entryToEdit={editingEntry}
-          onCancelEdit={handleCancelEdit}
-        />
+        {accountId && (
+          <ExpenseEntryForm
+            accountId={accountId}
+            onEntrySaved={handleEntrySaved}
+            entryToEdit={editingEntry}
+            onCancelEdit={handleCancelEdit}
+          />
+        )}
       </View>
 
       <RecentEntriesList
@@ -240,10 +253,6 @@ export default function DashboardScreen() {
       >
         {userEmail}
       </Text>
-
-      <View style={{ marginTop: 40 }}>
-        <PrimaryButton title="Sign Out" onPress={handleSignOut} />
-      </View>
     </ScrollView>
   );
 }
