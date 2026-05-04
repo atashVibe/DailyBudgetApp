@@ -12,4 +12,3 @@ const firebaseConfig = {
 
 export const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
-console.log("API KEY:", process.env.EXPO_PUBLIC_FIREBASE_API_KEY);
