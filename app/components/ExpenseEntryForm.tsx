@@ -1,7 +1,13 @@
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Picker } from "@react-native-picker/picker";
 import React, { useEffect, useState } from "react";
-import { Platform, Text, TextInput, TouchableOpacity, View } from "react-native";
+import {
+  Platform,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { auth } from "../../services/auth";
 import { addEntry, updateEntry } from "../../services/entries";
 import PrimaryButton from "./PrimaryButton";
@@ -16,14 +22,14 @@ type Entry = {
 };
 
 type Props = {
-  accountId: string;
+  familyId: string;
   onEntrySaved?: () => void;
   entryToEdit?: Entry | null;
   onCancelEdit?: () => void;
 };
 
 export default function ExpenseEntryForm({
-  accountId,
+  familyId,
   onEntrySaved,
   entryToEdit,
   onCancelEdit,
@@ -45,7 +51,7 @@ export default function ExpenseEntryForm({
       setDate(
         entryToEdit.date
           ? entryToEdit.date.split("T")[0]
-          : new Date().toISOString().split("T")[0]
+          : new Date().toISOString().split("T")[0],
       );
     } else {
       setAmount("");
@@ -81,7 +87,7 @@ export default function ExpenseEntryForm({
       } else {
         await addEntry({
           userId: user.uid,
-          accountId,
+          familyId,
           amount: parseFloat(amount),
           type,
           category,
@@ -165,7 +171,6 @@ export default function ExpenseEntryForm({
         </Picker>
       </View>
 
-
       <Text style={{ fontSize: 16, marginBottom: 8 }}>Category</Text>
       <View
         style={{
@@ -173,7 +178,7 @@ export default function ExpenseEntryForm({
           borderColor: "#ccc",
           borderRadius: 10,
           marginBottom: 16,
-          overflow: "hidden"
+          overflow: "hidden",
         }}
       >
         <Picker

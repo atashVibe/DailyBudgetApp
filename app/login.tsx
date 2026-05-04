@@ -11,7 +11,11 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const handleLogin = async () => {
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password,
+      );
       setMessage(`Signed in: ${userCredential.user.email}`);
       setTimeout(() => router.push("/dashboard"), 1000);
     } catch (error: any) {
@@ -113,7 +117,7 @@ export default function LoginScreen() {
       ) : null}
 
       <TouchableOpacity
-        onPress={() => router.push("/signup")}
+        onPress={() => router.push("../Screens/signup")}
         style={{
           backgroundColor: "#f3f3f3",
           padding: 16,

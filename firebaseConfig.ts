@@ -1,17 +1,15 @@
-// Firebase config file
-
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyADYfdaVD9-yOj7tln_fZX7XMsfC7oCaGI",
-  authDomain: "dailybudget-35c26.firebaseapp.com",
-  projectId: "dailybudget-35c26",
-  storageBucket: "dailybudget-35c26.firebasestorage.app",
-  messagingSenderId: "420817333542",
-  appId: "1:420817333542:web:226281ebfb861df48625e7",
+  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Initialize Firebase
 export const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
+console.log("API KEY:", process.env.EXPO_PUBLIC_FIREBASE_API_KEY);

@@ -16,14 +16,14 @@ type Entry = {
 };
 
 type Props = {
-  accountId: string;
+  familyId: string;
   onEditEntry?: (entry: Entry) => void;
   editingEntryId?: string | null;
   refreshSignal?: number;
   onEntryDeleted?: () => void;
 };
 export default function RecentEntriesList({
-  accountId,
+  familyId,
   onEditEntry,
   editingEntryId,
   refreshSignal,
@@ -33,6 +33,7 @@ export default function RecentEntriesList({
   const [visibleCount, setVisibleCount] = useState(10);
 
   useEffect(() => {
+    if (!familyId) return;
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (!user) {
         setEntries([]);
@@ -42,8 +43,8 @@ export default function RecentEntriesList({
       const loadEntries = async () => {
         const entriesQuery = query(
           collection(db, "entries"),
-          where("accountId", "==", accountId),
-          orderBy("createdAt", "desc")
+          where("familyId", "==", familyId),
+          orderBy("createdAt", "desc"),
         );
 
         const snapshot = await getDocs(entriesQuery);
@@ -60,7 +61,7 @@ export default function RecentEntriesList({
     });
 
     return unsubscribe;
-  }, [refreshSignal]);
+  }, [refreshSignal, familyId]);
 
   const handleDeleteEntry = async (entryId: string) => {
     const runDelete = async () => {
@@ -74,21 +75,19 @@ export default function RecentEntriesList({
     };
 
     if (Platform.OS === "web") {
-      const confirmed = window.confirm("Are you sure you want to delete this entry?");
+      const confirmed = window.confirm(
+        "Are you sure you want to delete this entry?",
+      );
       if (confirmed) {
         await runDelete();
       }
       return;
     }
 
-    Alert.alert(
-      "Delete Entry",
-      "Are you sure you want to delete this entry?",
-      [
-        { text: "Cancel", style: "cancel" },
-        { text: "Delete", style: "destructive", onPress: () => void runDelete() },
-      ]
-    );
+    Alert.alert("Delete Entry", "Are you sure you want to delete this entry?", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Delete", style: "destructive", onPress: () => void runDelete() },
+    ]);
   };
 
   return (
@@ -127,7 +126,8 @@ export default function RecentEntriesList({
                 flexDirection: "row",
                 justifyContent: "space-between",
                 alignItems: "center",
-                backgroundColor: entry.id === editingEntryId ? "#9af2c6" : "#ffffff",
+                backgroundColor:
+                  entry.id === editingEntryId ? "#9af2c6" : "#ffffff",
                 borderRadius: 8,
                 paddingHorizontal: 6,
               }}
@@ -140,10 +140,12 @@ export default function RecentEntriesList({
 
                 <Text style={{ fontSize: 14, color: "#666" }}>
                   {entry.date
-                    ? `${new Date(entry.date).toLocaleDateString()} ${new Date(entry.date).toLocaleTimeString([], {
-                      hour: "numeric",
-                      minute: "2-digit",
-                    })} • `
+                    ? `${new Date(entry.date).toLocaleDateString()} ${new Date(
+                        entry.date,
+                      ).toLocaleTimeString([], {
+                        hour: "numeric",
+                        minute: "2-digit",
+                      })} • `
                     : ""}
                   {entry.type}
                   {entry.note ? ` • ${entry.note}` : ""}
@@ -151,7 +153,9 @@ export default function RecentEntriesList({
               </View>
 
               {/* RIGHT SIDE */}
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+              <View
+                style={{ flexDirection: "row", alignItems: "center", gap: 12 }}
+              >
                 <Ionicons
                   name="create-outline"
                   size={22}

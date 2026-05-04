@@ -44,15 +44,14 @@ export default function DashboardScreen() {
     setEditingEntry(null);
   };
   const [budgetInput, setBudgetInput] = useState("");
-  const [accountId, setAccountId] = useState<string | null>(null);
-
+  const [familyId, setFamilyId] = useState<string | null>(null);
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUserEmail(user?.email ?? "Unknown user");
       setUserId(user?.uid ?? null);
 
       if (!user) {
-        setAccountId(null);
+        setFamilyId(null);
         setIsAdmin(false);
         return;
       }
@@ -62,7 +61,7 @@ export default function DashboardScreen() {
 
       if (userSnap.exists()) {
         const data = userSnap.data();
-        setAccountId(data.accountId);
+        setFamilyId(data.activeFamilyId);
       }
     });
 
@@ -70,7 +69,7 @@ export default function DashboardScreen() {
   }, []);
 
   useEffect(() => {
-    if (!accountId) return;
+    if (!familyId) return;
     const loadMonthSpending = async () => {
       const now = new Date();
       const currentYear = now.getFullYear();
@@ -78,7 +77,7 @@ export default function DashboardScreen() {
 
       const q = query(
         collection(db, "entries"),
-        where("accountId", "==", accountId),
+        where("familyId", "==", familyId),
       );
 
       const snapshot = await getDocs(q);
@@ -117,15 +116,15 @@ export default function DashboardScreen() {
     };
 
     loadMonthSpending();
-  }, [refreshSignal, accountId]);
+  }, [refreshSignal, familyId]);
 
   const handleUpdateBudget = async () => {
     const newBudget = Number(budgetInput);
 
     if (!newBudget || newBudget <= 0) return;
 
-    if (!accountId) return;
-    const docRef = doc(db, "accounts", accountId);
+    if (!familyId) return;
+    const docRef = doc(db, "families", familyId);
 
     await updateDoc(docRef, {
       dailyBudget: newBudget,
@@ -139,9 +138,9 @@ export default function DashboardScreen() {
 
   useFocusEffect(() => {
     const fetchAccountData = async () => {
-      if (!accountId) return;
+      if (!familyId) return;
 
-      const docRef = doc(db, "accounts", accountId);
+      const docRef = doc(db, "families", familyId);
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
@@ -196,9 +195,9 @@ export default function DashboardScreen() {
           formPosition.current = event.nativeEvent.layout.y;
         }}
       >
-        {accountId && (
+        {familyId && (
           <ExpenseEntryForm
-            accountId={accountId}
+            familyId={familyId}
             onEntrySaved={handleEntrySaved}
             entryToEdit={editingEntry}
             onCancelEdit={handleCancelEdit}
@@ -206,9 +205,9 @@ export default function DashboardScreen() {
         )}
       </View>
 
-      {accountId && (
+      {familyId && (
         <RecentEntriesList
-          accountId={accountId}
+          familyId={familyId}
           editingEntryId={editingEntry?.id ?? null}
           refreshSignal={refreshSignal}
           onEntryDeleted={() => setRefreshSignal((prev) => prev + 1)}

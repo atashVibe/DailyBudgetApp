@@ -1,5 +1,12 @@
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import {
+  addDoc,
+  collection,
+  doc,
+  getDoc,
+  serverTimestamp,
+  updateDoc,
+} from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { Text, TextInput, View } from "react-native";
 import { auth, db } from "../services/auth";
@@ -9,7 +16,8 @@ export default function SettingsScreen() {
   const [dailyBudget, setDailyBudget] = useState(0);
   const [budgetInput, setBudgetInput] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
-  const [accountId, setAccountId] = useState<string | null>(null);
+  const [familyId, setFamilyId] = useState<string | null>(null);
+  const [inviteEmail, setInviteEmail] = useState("");
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -22,13 +30,14 @@ export default function SettingsScreen() {
       if (!userSnap.exists()) return;
 
       const userData = userSnap.data();
-      const accId = userData.accountId;
+      const famId = userData.activeFamilyId;
+      if (!famId) return;
 
-      setAccountId(accId);
+      setFamilyId(famId);
       setIsAdmin(userData.role === "admin");
 
       // 🔹 2. Get account data
-      const accountRef = doc(db, "accounts", accId);
+      const accountRef = doc(db, "families", famId);
       const accountSnap = await getDoc(accountRef);
 
       if (accountSnap.exists()) {
@@ -41,13 +50,13 @@ export default function SettingsScreen() {
   }, []);
 
   const handleUpdateBudget = async () => {
-    if (!isAdmin || !accountId) return;
+    if (!isAdmin || !familyId) return;
 
     const newBudget = Number(budgetInput);
 
     if (!newBudget || newBudget <= 0) return;
 
-    const docRef = doc(db, "accounts", accountId);
+    const docRef = doc(db, "families", familyId);
 
     await updateDoc(docRef, {
       dailyBudget: newBudget,
@@ -55,6 +64,25 @@ export default function SettingsScreen() {
 
     setDailyBudget(newBudget);
     setBudgetInput("");
+  };
+
+  const handleInviteMember = async () => {
+    if (!isAdmin || !familyId || !auth.currentUser) return;
+
+    const email = inviteEmail.trim().toLowerCase();
+
+    if (!email) return;
+
+    await addDoc(collection(db, "invites"), {
+      email,
+      familyId,
+      role: "member",
+      createdBy: auth.currentUser.uid,
+      status: "pending",
+      createdAt: serverTimestamp(),
+    });
+
+    setInviteEmail("");
   };
 
   return (
