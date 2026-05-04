@@ -9,8 +9,8 @@ import {
 } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { Text, TextInput, View } from "react-native";
-import { auth, db } from "../services/auth";
-import PrimaryButton from "./components/PrimaryButton";
+import { auth, db } from "../../services/auth";
+import PrimaryButton from "../components/PrimaryButton";
 
 export default function SettingsScreen() {
   const [dailyBudget, setDailyBudget] = useState(0);

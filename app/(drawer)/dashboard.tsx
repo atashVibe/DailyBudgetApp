@@ -11,10 +11,10 @@ import {
 } from "firebase/firestore";
 import { useEffect, useRef, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
-import { auth, db } from "../services/auth";
-import BudgetSummaryCard from "./components/BudgetSummaryCard";
-import ExpenseEntryForm from "./components/ExpenseEntryForm";
-import RecentEntriesList from "./components/RecentEntriesList";
+import { auth, db } from "../../services/auth";
+import BudgetSummaryCard from "../components/BudgetSummaryCard";
+import ExpenseEntryForm from "../components/ExpenseEntryForm";
+import RecentEntriesList from "../components/RecentEntriesList";
 
 type Entry = {
   id: string;

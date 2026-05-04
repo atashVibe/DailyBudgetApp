@@ -1,6 +1,7 @@
+import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Text, TextInput, TouchableOpacity, View } from "react-native";
 import { auth } from "../services/auth";
 
@@ -9,6 +10,15 @@ export default function LoginScreen() {
   const [message, setMessage] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        setEmail("");
+        setPassword("");
+        setMessage("");
+      };
+    }, []),
+  );
   const handleLogin = async () => {
     try {
       const userCredential = await signInWithEmailAndPassword(
@@ -17,7 +27,7 @@ export default function LoginScreen() {
         password,
       );
       setMessage(`Signed in: ${userCredential.user.email}`);
-      setTimeout(() => router.push("/dashboard"), 1000);
+      setTimeout(() => router.push("/(drawer)/dashboard"), 1000);
     } catch (error: any) {
       setMessage(error.message);
     }
@@ -108,7 +118,7 @@ export default function LoginScreen() {
           style={{
             textAlign: "center",
             marginBottom: 12,
-            color: "green",
+            color: message.includes("Signed in") ? "green" : "red",
             fontSize: 16,
           }}
         >
