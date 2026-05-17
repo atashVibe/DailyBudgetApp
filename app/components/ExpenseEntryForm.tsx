@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { auth } from "../../services/auth";
 import { addEntry, updateEntry } from "../../services/entries";
+import AppTextInput from "./AppTextInput";
 import PrimaryButton from "./PrimaryButton";
 
 type Entry = {
@@ -134,7 +135,7 @@ export default function ExpenseEntryForm({
       </Text>
 
       <Text style={{ fontSize: 16, marginBottom: 8 }}>Amount</Text>
-      <TextInput
+      <AppTextInput
         placeholder="Enter amount"
         keyboardType="numeric"
         value={amount}
@@ -146,6 +147,8 @@ export default function ExpenseEntryForm({
           padding: 14,
           fontSize: 16,
           marginBottom: 16,
+          color: "#111",
+          backgroundColor: "#fff",
         }}
       />
 

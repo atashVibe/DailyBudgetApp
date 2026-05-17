@@ -12,6 +12,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { auth, db } from "../../services/auth";
+import AppScreen from "../components/AppScreen";
 import BudgetSummaryCard from "../components/BudgetSummaryCard";
 import ExpenseEntryForm from "../components/ExpenseEntryForm";
 import RecentEntriesList from "../components/RecentEntriesList";
@@ -53,6 +54,11 @@ export default function DashboardScreen() {
       if (!user) {
         setFamilyId(null);
         setIsAdmin(false);
+        setDailyBudget(30);
+        setSpentThisMonth(0);
+        setSpentThisYear(0);
+        setEditingEntry(null);
+        setUserEmail("Loading...");
         return;
       }
 
@@ -160,13 +166,8 @@ export default function DashboardScreen() {
   });
 
   return (
-    <ScrollView
-      ref={scrollRef}
+    <AppScreen
       style={{
-        flex: 1,
-        backgroundColor: "#ffffff",
-      }}
-      contentContainerStyle={{
         padding: 24,
         paddingTop: 80,
         justifyContent: "flex-start",
@@ -252,6 +253,6 @@ export default function DashboardScreen() {
       >
         {userEmail}
       </Text>
-    </ScrollView>
+    </AppScreen>
   );
 }

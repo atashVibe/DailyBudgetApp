@@ -12,9 +12,11 @@ import {
   where,
 } from "firebase/firestore";
 import { useCallback, useState } from "react";
-import { Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Text, TouchableOpacity } from "react-native";
 import { db } from "../firebaseConfig";
 import { auth } from "../services/auth";
+import AppScreen from "./components/AppScreen";
+import AppTextInput from "./components/AppTextInput";
 import ModeToggle from "./components/ModeToggle";
 import PrimaryButton from "./components/PrimaryButton";
 
@@ -120,7 +122,7 @@ export default function SignupScreen() {
 
         const newFamilyRef = await addDoc(collection(db, "families"), {
           name: familyName.trim(),
-          dailyBudget: 0,
+          dailyBudget: 30,
           status: "active",
           createdBy: user.uid,
           createdAt: new Date(),
@@ -168,7 +170,7 @@ export default function SignupScreen() {
   };
 
   return (
-    <View
+    <AppScreen
       style={{
         flex: 1,
         backgroundColor: "#ffffff",
@@ -207,18 +209,10 @@ export default function SignupScreen() {
           {mode === "start" && (
             <>
               <Text style={{ marginBottom: 8, fontSize: 16 }}>Family Name</Text>
-              <TextInput
+              <AppTextInput
                 placeholder="Example: Smith Family"
                 value={familyName}
                 onChangeText={setFamilyName}
-                style={{
-                  borderWidth: 1,
-                  borderColor: "#ccc",
-                  borderRadius: 10,
-                  padding: 14,
-                  fontSize: 16,
-                  marginBottom: 16,
-                }}
               />
             </>
           )}
@@ -226,7 +220,7 @@ export default function SignupScreen() {
           {mode === "join" && (
             <>
               <Text style={{ marginBottom: 8, fontSize: 16 }}>Invite Code</Text>
-              <TextInput
+              <AppTextInput
                 placeholder="Enter 6-digit invite code"
                 value={inviteCode}
                 onChangeText={(text) =>
@@ -234,67 +228,35 @@ export default function SignupScreen() {
                 }
                 keyboardType="number-pad"
                 maxLength={6}
-                style={{
-                  borderWidth: 1,
-                  borderColor: "#ccc",
-                  borderRadius: 10,
-                  padding: 14,
-                  fontSize: 16,
-                  marginBottom: 16,
-                }}
               />
             </>
           )}
 
           <Text style={{ marginBottom: 8, fontSize: 16 }}>Email</Text>
-          <TextInput
+          <AppTextInput
             placeholder="Enter your email"
             autoCapitalize="none"
             keyboardType="email-address"
             value={email}
             onChangeText={setEmail}
-            style={{
-              borderWidth: 1,
-              borderColor: "#ccc",
-              borderRadius: 10,
-              padding: 14,
-              fontSize: 16,
-              marginBottom: 16,
-            }}
           />
 
           <Text style={{ marginBottom: 8, fontSize: 16 }}>Password</Text>
-          <TextInput
+          <AppTextInput
             placeholder="Create a password"
             secureTextEntry
             value={password}
             onChangeText={setPassword}
-            style={{
-              borderWidth: 1,
-              borderColor: "#ccc",
-              borderRadius: 10,
-              padding: 14,
-              fontSize: 16,
-              marginBottom: 16,
-            }}
           />
 
           <Text style={{ marginBottom: 8, fontSize: 16 }}>
             Confirm Password
           </Text>
-          <TextInput
+          <AppTextInput
             placeholder="Confirm your password"
             secureTextEntry
             value={confirmPassword}
             onChangeText={setConfirmPassword}
-            style={{
-              borderWidth: 1,
-              borderColor: "#ccc",
-              borderRadius: 10,
-              padding: 14,
-              fontSize: 16,
-              marginBottom: 24,
-            }}
           />
 
           <PrimaryButton title="Create Account" onPress={handleSignup} />
@@ -325,6 +287,6 @@ export default function SignupScreen() {
           </TouchableOpacity>
         </>
       )}
-    </View>
+    </AppScreen>
   );
 }

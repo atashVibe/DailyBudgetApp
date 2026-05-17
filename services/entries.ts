@@ -1,11 +1,18 @@
-import { addDoc, collection, deleteDoc, doc, serverTimestamp, updateDoc } from "firebase/firestore";
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  serverTimestamp,
+  updateDoc,
+} from "firebase/firestore";
 import { db } from "./auth";
 
 // Save a new entry to Firestore
 export async function addEntry(data: any) {
   try {
-    if (!data.accountId) {
-      throw new Error("Missing accountId when adding entry");
+    if (!data.familyId) {
+      throw new Error("Missing familyId when adding entry");
     }
 
     const docRef = await addDoc(collection(db, "entries"), {
