@@ -1,15 +1,11 @@
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { Picker } from "@react-native-picker/picker";
 import React, { useEffect, useState } from "react";
-import {
-  Platform,
-  Text,
-  TouchableOpacity,
-  View
-} from "react-native";
+import { Platform, Text, TouchableOpacity, View } from "react-native";
 import { auth } from "../../services/auth";
 import { addEntry, updateEntry } from "../../services/entries";
+import AppPicker from "./AppPicker";
 import AppTextInput from "./AppTextInput";
+import FormLabel from "./FormLabel";
 import PrimaryButton from "./PrimaryButton";
 
 type Entry = {
@@ -28,6 +24,14 @@ type Props = {
   onCancelEdit?: () => void;
 };
 
+function formatLocalDate(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
 export default function ExpenseEntryForm({
   familyId,
   onEntrySaved,
@@ -39,7 +43,7 @@ export default function ExpenseEntryForm({
   const [category, setCategory] = useState("Groceries");
   const [note, setNote] = useState("");
   const [message, setMessage] = useState("");
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const [date, setDate] = useState(formatLocalDate(new Date()));
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   useEffect(() => {
@@ -133,7 +137,7 @@ export default function ExpenseEntryForm({
         {entryToEdit ? "Edit Entry" : "Add Entry"}
       </Text>
 
-      <Text style={{ fontSize: 16, marginBottom: 8 }}>Amount</Text>
+      <FormLabel>Amount</FormLabel>
       <AppTextInput
         placeholder="Enter amount"
         keyboardType="numeric"
@@ -141,51 +145,32 @@ export default function ExpenseEntryForm({
         onChangeText={setAmount}
       />
 
-      <Text style={{ fontSize: 16, marginBottom: 8 }}>Type</Text>
-      <View
-        style={{
-          borderWidth: 1,
-          borderColor: "#ccc",
-          borderRadius: 10,
-          marginBottom: 16,
-          overflow: "hidden",
-        }}
-      >
-        <Picker
-          selectedValue={type}
-          onValueChange={(itemValue) => setType(itemValue)}
-        >
-          <Picker.Item label="Expense" value="Expense" />
-          <Picker.Item label="Income" value="Income" />
-          <Picker.Item label="Cashback" value="Cashback" />
-          <Picker.Item label="Refund" value="Refund" />
-          <Picker.Item label="Gift" value="Gift" />
-        </Picker>
-      </View>
+      <FormLabel>Type</FormLabel>
+      <AppPicker
+        selectedValue={type}
+        onValueChange={setType}
+        options={[
+          { label: "Expense", value: "Expense" },
+          { label: "Income", value: "Income" },
+          { label: "Cashback", value: "Cashback" },
+          { label: "Refund", value: "Refund" },
+          { label: "Gift", value: "Gift" },
+        ]}
+      />
 
-      <Text style={{ fontSize: 16, marginBottom: 8 }}>Category</Text>
-      <View
-        style={{
-          borderWidth: 1,
-          borderColor: "#ccc",
-          borderRadius: 10,
-          marginBottom: 16,
-          overflow: "hidden",
-        }}
-      >
-        <Picker
-          selectedValue={category}
-          onValueChange={(itemValue) => setCategory(itemValue)}
-        >
-          <Picker.Item label="Groceries" value="Groceries" />
-          <Picker.Item label="Transportation" value="Transportation" />
-          <Picker.Item label="Bills" value="Bills" />
-          <Picker.Item label="Medicine" value="Medicine" />
-        </Picker>
-      </View>
+      <FormLabel>Category</FormLabel>
+      <AppPicker
+        selectedValue={category}
+        onValueChange={setCategory}
+        options={[
+          { label: "Groceries", value: "Groceries" },
+          { label: "Transportation", value: "Transportation" },
+          { label: "Bills", value: "Bills" },
+          { label: "Medicine", value: "Medicine" },
+        ]}
+      />
 
-      <Text style={{ fontSize: 16, marginBottom: 8 }}>Date</Text>
-
+      <FormLabel>Date</FormLabel>
       {Platform.OS === "web" ? (
         React.createElement("input", {
           type: "date",
@@ -241,7 +226,7 @@ export default function ExpenseEntryForm({
         />
       )}
 
-      <Text style={{ fontSize: 16, marginBottom: 8 }}>Note</Text>
+      <FormLabel>Note</FormLabel>
       <AppTextInput
         placeholder="Optional note"
         value={note}
