@@ -13,6 +13,7 @@
       "bundleIdentifier": "com.atashvibe.dailybudget"
     },
     "android": {
+      "googleServicesFile": "./google-services.json",
       "package": "com.atashvibe.dailybudget",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
@@ -41,7 +42,8 @@
           }
         }
       ],
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "@react-native-google-signin/google-signin"
     ],
     "experiments": {
       "typedRoutes": true,

@@ -13,8 +13,7 @@ import {
 } from "firebase/firestore";
 import { useCallback, useState } from "react";
 import { Text, TouchableOpacity } from "react-native";
-import { db } from "../firebaseConfig";
-import { auth } from "../services/auth";
+import { auth, db } from "../services/auth";
 import AppScreen from "./components/AppScreen";
 import AppTextInput from "./components/AppTextInput";
 import ModeToggle from "./components/ModeToggle";
@@ -30,6 +29,7 @@ export default function SignupScreen() {
   const [mode, setMode] = useState<"start" | "join" | null>(null);
   const [familyName, setFamilyName] = useState("");
   const [inviteCode, setInviteCode] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const clearForm = () => {
     setEmail("");
@@ -49,7 +49,16 @@ export default function SignupScreen() {
   );
 
   const handleSignup = async () => {
+    setLoading(true);
     try {
+      if (!email.trim()) {
+        setMessage("Please enter your email.");
+        return;
+      }
+      if (!password) {
+        setMessage("Please enter a password.");
+        return;
+      }
       if (password !== confirmPassword) {
         setMessage("Passwords do not match");
         return;
@@ -163,9 +172,15 @@ export default function SignupScreen() {
         setMessage(
           "This email already has an account. Please sign in instead.",
         );
+      } else if (error.code === "auth/invalid-email") {
+        setMessage("Please enter a valid email.");
+      } else if (error.code === "auth/weak-password") {
+        setMessage("Password should be at least 6 characters.");
       } else {
-        setMessage(error.message);
+        setMessage("Account creation failed. Please try again.");
       }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -259,8 +274,11 @@ export default function SignupScreen() {
             onChangeText={setConfirmPassword}
           />
 
-          <PrimaryButton title="Create Account" onPress={handleSignup} />
-
+          <PrimaryButton
+            title="Create Account"
+            onPress={handleSignup}
+            loading={loading}
+          />
           {message ? (
             <Text
               style={{

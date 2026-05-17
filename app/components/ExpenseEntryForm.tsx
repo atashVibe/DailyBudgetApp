@@ -4,9 +4,8 @@ import React, { useEffect, useState } from "react";
 import {
   Platform,
   Text,
-  TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { auth } from "../../services/auth";
 import { addEntry, updateEntry } from "../../services/entries";
@@ -140,16 +139,6 @@ export default function ExpenseEntryForm({
         keyboardType="numeric"
         value={amount}
         onChangeText={setAmount}
-        style={{
-          borderWidth: 1,
-          borderColor: "#ccc",
-          borderRadius: 10,
-          padding: 14,
-          fontSize: 16,
-          marginBottom: 16,
-          color: "#111",
-          backgroundColor: "#fff",
-        }}
       />
 
       <Text style={{ fontSize: 16, marginBottom: 8 }}>Type</Text>
@@ -253,18 +242,10 @@ export default function ExpenseEntryForm({
       )}
 
       <Text style={{ fontSize: 16, marginBottom: 8 }}>Note</Text>
-      <TextInput
+      <AppTextInput
         placeholder="Optional note"
         value={note}
         onChangeText={setNote}
-        style={{
-          borderWidth: 1,
-          borderColor: "#ccc",
-          borderRadius: 10,
-          padding: 14,
-          fontSize: 16,
-          marginBottom: 16,
-        }}
       />
 
       <View style={{ gap: 12 }}>

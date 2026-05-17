@@ -1,17 +1,21 @@
 import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import { signInWithEmailAndPassword } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
 import { useCallback, useState } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
-import { auth } from "../services/auth";
+import { auth, db } from "../services/auth";
+import { signInWithGoogle } from "../services/googleAuth";
 import AppScreen from "./components/AppScreen";
 import AppTextInput from "./components/AppTextInput";
+import PrimaryButton from "./components/PrimaryButton";
 
 export default function LoginScreen() {
   const router = useRouter();
   const [message, setMessage] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   useFocusEffect(
     useCallback(() => {
       return () => {
@@ -22,6 +26,18 @@ export default function LoginScreen() {
     }, []),
   );
   const handleLogin = async () => {
+    if (!email.trim()) {
+      setMessage("Please enter your email.");
+      return;
+    }
+
+    if (!password) {
+      setMessage("Please enter your password.");
+      return;
+    }
+
+    setLoading(true);
+
     try {
       const userCredential = await signInWithEmailAndPassword(
         auth,
@@ -31,7 +47,46 @@ export default function LoginScreen() {
       setMessage(`Signed in: ${userCredential.user.email}`);
       setTimeout(() => router.push("/(drawer)/dashboard"), 1000);
     } catch (error: any) {
-      setMessage(error.message);
+      if (error.code === "auth/invalid-credential") {
+        setMessage("Incorrect email or password.");
+      } else if (error.code === "auth/invalid-email") {
+        setMessage("Please enter a valid email.");
+      } else {
+        setMessage("Login failed. Please try again.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+  const handleGoogleLogin = async () => {
+    try {
+      setLoading(true);
+      setMessage("");
+
+      const user = await signInWithGoogle();
+
+      const userDocRef = doc(db, "users", user.uid);
+      const userDoc = await getDoc(userDocRef);
+
+      if (userDoc.exists() && userDoc.data().activeFamilyId) {
+        setMessage(`Signed in: ${user.email}`);
+
+        setTimeout(() => {
+          router.push("/(drawer)/dashboard");
+        }, 1000);
+      } else {
+        setMessage("Please finish your family setup.");
+
+        setTimeout(() => {
+          router.push("/family-setup");
+        }, 1000);
+      }
+    } catch (error: any) {
+      console.log(error);
+
+      setMessage("Google sign-in failed.");
+    } finally {
+      setLoading(false);
     }
   };
   return (
@@ -85,20 +140,31 @@ export default function LoginScreen() {
           onSubmitEditing={handleLogin}
         />
 
-        <TouchableOpacity
-          onPress={handleLogin}
-          style={{
-            backgroundColor: "#111",
-            padding: 16,
-            borderRadius: 10,
-            alignItems: "center",
-            marginBottom: 12,
-          }}
-        >
-          <Text style={{ color: "#fff", fontSize: 16, fontWeight: "600" }}>
-            Sign In
-          </Text>
-        </TouchableOpacity>
+        <View style={{ marginBottom: 12 }}>
+          <PrimaryButton
+            title="Sign In"
+            onPress={handleLogin}
+            loading={loading}
+          />
+        </View>
+        {
+          <TouchableOpacity
+            onPress={handleGoogleLogin}
+            style={{
+              backgroundColor: "#ffffff",
+              padding: 16,
+              borderRadius: 10,
+              alignItems: "center",
+              marginBottom: 12,
+              borderWidth: 1,
+              borderColor: "#ccc",
+            }}
+          >
+            <Text style={{ color: "#111", fontSize: 16, fontWeight: "600" }}>
+              Continue with Google
+            </Text>
+          </TouchableOpacity>
+        }
 
         {message ? (
           <Text
@@ -113,19 +179,10 @@ export default function LoginScreen() {
           </Text>
         ) : null}
 
-        <TouchableOpacity
+        <PrimaryButton
+          title="Create Account"
           onPress={() => router.push("/signup")}
-          style={{
-            backgroundColor: "#f3f3f3",
-            padding: 16,
-            borderRadius: 10,
-            alignItems: "center",
-          }}
-        >
-          <Text style={{ color: "#111", fontSize: 16, fontWeight: "600" }}>
-            Create Account
-          </Text>
-        </TouchableOpacity>
+        />
       </View>
     </AppScreen>
   );

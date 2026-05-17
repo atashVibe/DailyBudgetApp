@@ -154,8 +154,12 @@ export default function DashboardScreen() {
 
         setDailyBudget(data.dailyBudget);
 
-        if (userId && data.adminUserId === userId) {
-          setIsAdmin(true);
+        const memberDocRef = doc(db, "familyMembers", `${familyId}_${userId}`);
+        const memberDocSnap = await getDoc(memberDocRef);
+
+        if (memberDocSnap.exists()) {
+          const memberData = memberDocSnap.data();
+          setIsAdmin(memberData.role === "admin");
         } else {
           setIsAdmin(false);
         }

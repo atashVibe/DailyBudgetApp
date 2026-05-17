@@ -4,19 +4,21 @@ type Props = {
   title: string;
   onPress: () => void;
   disabled?: boolean;
+  loading?: boolean;
 };
-
 export default function PrimaryButton({
   title,
   onPress,
   disabled = false,
+  loading = false,
 }: Props) {
   return (
     <TouchableOpacity
       onPress={onPress}
+      disabled={disabled || loading}
       activeOpacity={0.8}
       style={{
-        backgroundColor: disabled ? "#ccc" : "#0cb48a",
+        backgroundColor: disabled || loading ? "#ccc" : "#0cb48a",
         padding: 14,
         borderRadius: 10,
         alignItems: "center",
@@ -29,7 +31,7 @@ export default function PrimaryButton({
           fontWeight: "600",
         }}
       >
-        {title}
+        {loading ? "Loading..." : title}
       </Text>
     </TouchableOpacity>
   );

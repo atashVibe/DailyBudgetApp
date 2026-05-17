@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "420817333542",
+    "project_id": "dailybudget-35c26",
+    "storage_bucket": "dailybudget-35c26.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:420817333542:android:376a7baca1ebbbb58625e7",
+        "android_client_info": {
+          "package_name": "com.atashvibe.dailybudget"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "420817333542-n030vokg3pavpn571m584neqqrqo4qef.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAeqnubsEuMQj-Xb_vup-EspmcPHQloTzU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "420817333542-n030vokg3pavpn571m584neqqrqo4qef.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
