@@ -1,165 +1,165 @@
 # DailyBudget Database Structure
 
-## Current Backend
+## Backend
 
 DailyBudget uses Firebase Firestore.
 
-Firestore is not a SQL database.
-It does not use fixed tables.
+Firestore is a NoSQL document database.
 
-Firestore uses:
+Main structure:
 
 - collections
 - documents
 - fields
 
-Collections appear automatically when the first document is created.
-
 ---
 
-## Main Collections
+# Main Collections
 
-### users
+## users
 
-Stores each app user's profile.
+Stores user profile information.
 
 Fields:
-
-- email
-- activeFamilyId
-- role
-
----
-
-### families
-
-Stores each family or household account.
-
-Fields:
-
-- name
-- dailyBudget
-- status
-- createdBy
-- createdAt
-
----
-
-### familyMembers
-
-Connects users to families.
-
-Document ID format:
 
 ```txt
-familyId_userId
+email
+activeFamilyId
+role
+createdAt
 ```
-
-Fields:
-
-- familyId
-- userId
-- role
-- status
-- joinedAt
 
 ---
 
-### budgetAreas
+## families
 
-Stores high-level finance sections.
+Stores each family/workspace.
+
+Fields:
+
+```txt
+name
+dailyBudget
+status
+createdBy
+createdAt
+```
+
+---
+
+## familyMembers
+
+Stores relationship between users and families.
+
+Fields:
+
+```txt
+familyId
+userId
+role
+status
+joinedAt
+```
+
+---
+
+## budgetAreas
+
+Top-level financial areas.
 
 Examples:
 
 - Daily Life
-- My Business
+- Business
 
 Fields:
 
-- name
-- familyId
-- isDefault
-- isArchived
-- createdBy
-- createdAt
-
-Important:
-
-- Do not hard delete budget areas.
-- Use `isArchived: true`.
+```txt
+familyId
+name
+isArchived
+createdAt
+```
 
 ---
 
-### categories
+## categories
 
-Stores finance categories inside budget areas.
+Financial categories used for entries.
+
+Examples:
+
+Daily Life:
+
+- Groceries
+- Gas
+- Bills
+- Cashback
+- Return
+
+Business:
+
+- Sales
+- Supplies
+- Advertising
 
 Fields:
 
-- name
-- familyId
-- budgetAreaId
-- isDefault
-- isArchived
-- createdBy
-- createdAt
+```txt
+familyId
+budgetAreaId
+name
+isArchived
+createdAt
+```
 
-Important:
+Future planned field:
 
-- Each category belongs to one budget area.
-- Do not hard delete categories.
-- Use `isArchived: true`.
+```txt
+mathType
+```
 
----
+Possible values:
 
-### entries
-
-Stores income, expense, refund, cashback, and transfer records.
-
-Current fields:
-
-- userId
-- familyId
-- amount
-- type
-- budgetAreaId
-- category
-- note
-- date
-- createdAt
-
-Migration target fields:
-
-- userId
-- familyId
-- budgetAreaId
-- categoryId
-- entryKind
-- amount
-- note
-- date
-- createdAt
-
-Important:
-
-- Old `type` and text `category` are temporary.
-- New system should use:
-  - `entryKind`
-  - `budgetAreaId`
-  - `categoryId`
+```txt
+expense
+income
+reduce_expense
+```
 
 ---
 
-### invites
+## entries
 
-Stores family invitation codes.
+Financial transactions.
 
-Fields:
+Current Architecture:
 
-- email
-- familyId
-- role
-- code
-- status
-- createdAt
-- expiresAt
+```txt
+amount
+budgetAreaId
+categoryId
+note
+date
+userId
+familyId
+createdAt
+```
+
+IMPORTANT:
+
+Old architecture removed:
+
+```txt
+type
+entryKindId
+category
+```
+
+Entries now use IDs instead of text labels.
+
+This prevents:
+
+- duplicate names
+- rename problems
+- inconsistent calculations

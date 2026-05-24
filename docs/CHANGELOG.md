@@ -2,84 +2,64 @@
 
 ## 2026-05-24
 
-### Architecture
+### Major Finance Architecture Migration
 
-- Replaced old type/category system
-- Introduced budgetAreas architecture
-- Added categories collection
-- Added entryKind system
+Removed old transaction type architecture.
 
-### Finance
+OLD:
 
-Added default budget areas:
+```txt
+type
+entryKindId
+category
+```
 
-- Daily Life
-- My Business
+NEW:
 
-Added default categories.
+```txt
+budgetAreaId
+categoryId
+```
 
-- Added budget area and category service files for dynamic finance loading.
-- Standardized reusable picker/input/button direction.
-- Removed duplicate select component and kept AppPicker as the reusable selector.
+### ExpenseEntryForm Cleanup
 
-### Firestore
+- removed Type picker from UI
+- simplified entry flow
+- categories now load directly from budget area
+- fixed category selection issues
+- fixed edit-mode instability
+- fixed picker reset problems
 
-Created:
+### Database Improvements
 
-- budgetAreas collection
-- categories collection
+Entries now save stable document IDs instead of text labels.
 
-Added:
+Benefits:
 
-- seedFinanceData service
+- safer renaming
+- cleaner architecture
+- easier future calculations
+- better long-term scalability
 
-### UI
+### Future Planned Work
 
-- Hid Join Family drawer item for admins
-- Began StyleSheet standardization
+Planned future category field:
 
-### Authentication
+```txt
+mathType
+```
 
-- Google login working
-- Apple login architecture added (paused)
+Possible values:
 
-### Documentation
+```txt
+expense
+income
+reduce_expense
+```
 
-Created:
+This will support:
 
-- DATABASE_STRUCTURE.md
-- APP_ARCHITECTURE.md
-- FIRESTORE_RULES.md
-- CHANGELOG.md
-
-## 2026-05-24
-
-### Fixed
-
-- Restored Add Entry saving in ExpenseEntryForm.tsx.
-- Removed invalid useEffect() placement from inside handleSave().
-- Moved budget area loading into a proper component-level useEffect().
-- Restored stable entry form behavior before continuing dynamic category migration.
-
-## 2026-05-24
-
-### Added
-
-- Added dynamic category loading from Firestore
-- Added Budget Area picker to ExpenseEntryForm
-- Categories now reload automatically when Budget Area changes
-
-### Compatibility
-
-- Hardcoded category fallback still exists temporarily
-- Existing entry structure still supports:
-  - type
-  - category
-
-### Notes
-
-- Migration toward:
-  - entryKind
-  - budgetAreaId
-  - categoryId
-    is still in progress
+- cashback logic
+- returns/refunds
+- business income
+- cleaner budgeting calculations
