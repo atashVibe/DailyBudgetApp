@@ -1,4 +1,9 @@
-import { Text, TouchableOpacity } from "react-native";
+import {
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+} from "react-native";
 
 type Props = {
   title: string;
@@ -6,33 +11,53 @@ type Props = {
   disabled?: boolean;
   loading?: boolean;
 };
+
 export default function PrimaryButton({
   title,
   onPress,
   disabled = false,
   loading = false,
 }: Props) {
+  const isDisabled = disabled || loading;
+
   return (
     <TouchableOpacity
       onPress={onPress}
-      disabled={disabled || loading}
+      disabled={isDisabled}
       activeOpacity={0.8}
-      style={{
-        backgroundColor: disabled || loading ? "#ccc" : "#0cb48a",
-        padding: 14,
-        borderRadius: 10,
-        alignItems: "center",
-      }}
+      style={[styles.button, isDisabled && styles.disabledButton]}
     >
-      <Text
-        style={{
-          color: "white",
-          fontSize: 16,
-          fontWeight: "600",
-        }}
-      >
-        {loading ? "Loading..." : title}
-      </Text>
+      {loading ? (
+        <ActivityIndicator color="#FFFFFF" />
+      ) : (
+        <Text style={styles.text}>{title}</Text>
+      )}
     </TouchableOpacity>
   );
 }
+
+const styles = StyleSheet.create({
+  button: {
+    height: 52,
+
+    backgroundColor: "#2bcea6",
+
+    borderRadius: 12,
+
+    alignItems: "center",
+
+    justifyContent: "center",
+  },
+
+  disabledButton: {
+    opacity: 0.6,
+  },
+
+  text: {
+    color: "#FFFFFF",
+
+    fontSize: 16,
+
+    fontWeight: "600",
+  },
+});
