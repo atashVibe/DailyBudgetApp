@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { Platform, Text, TouchableOpacity, View } from "react-native";
 import { auth } from "../../services/auth";
 import { addEntry, updateEntry } from "../../services/entries";
+import { ENTRY_KIND_OPTIONS } from "../../services/entryKinds";
 import AppPicker from "./AppPicker";
 import AppTextInput from "./AppTextInput";
 import FormLabel from "./FormLabel";
@@ -149,13 +150,7 @@ export default function ExpenseEntryForm({
       <AppPicker
         selectedValue={type}
         onValueChange={setType}
-        options={[
-          { label: "Expense", value: "Expense" },
-          { label: "Income", value: "Income" },
-          { label: "Cashback", value: "Cashback" },
-          { label: "Refund", value: "Refund" },
-          { label: "Gift", value: "Gift" },
-        ]}
+        options={ENTRY_KIND_OPTIONS}
       />
 
       <FormLabel>Category</FormLabel>
