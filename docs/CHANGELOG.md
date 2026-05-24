@@ -51,3 +51,12 @@ Created:
 - APP_ARCHITECTURE.md
 - FIRESTORE_RULES.md
 - CHANGELOG.md
+
+## 2026-05-24
+
+### Fixed
+
+- Restored Add Entry saving in ExpenseEntryForm.tsx.
+- Removed invalid useEffect() placement from inside handleSave().
+- Moved budget area loading into a proper component-level useEffect().
+- Restored stable entry form behavior before continuing dynamic category migration.

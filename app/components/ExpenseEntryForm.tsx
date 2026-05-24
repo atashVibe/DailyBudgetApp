@@ -2,6 +2,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import React, { useEffect, useState } from "react";
 import { Platform, Text, TouchableOpacity, View } from "react-native";
 import { auth } from "../../services/auth";
+import { getBudgetAreas } from "../../services/budgetAreas";
 import { addEntry, updateEntry } from "../../services/entries";
 import { ENTRY_KIND_OPTIONS } from "../../services/entryKinds";
 import AppPicker from "./AppPicker";
@@ -42,6 +43,10 @@ export default function ExpenseEntryForm({
   const [amount, setAmount] = useState("");
   const [type, setType] = useState("Expense");
   const [category, setCategory] = useState("Groceries");
+  const [budgetAreas, setBudgetAreas] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [selectedBudgetAreaId, setSelectedBudgetAreaId] = useState("");
+  const [selectedCategoryId, setSelectedCategoryId] = useState("");
   const [note, setNote] = useState("");
   const [message, setMessage] = useState("");
   const [date, setDate] = useState(formatLocalDate(new Date()));
@@ -66,6 +71,25 @@ export default function ExpenseEntryForm({
       setDate(formatLocalDate(new Date()));
     }
   }, [entryToEdit]);
+  useEffect(() => {
+    const loadBudgetAreas = async () => {
+      try {
+        if (!familyId) return;
+
+        const areas = await getBudgetAreas(familyId);
+
+        setBudgetAreas(areas);
+
+        if (areas.length > 0 && !selectedBudgetAreaId) {
+          setSelectedBudgetAreaId(areas[0].id);
+        }
+      } catch (error) {
+        console.log("Error loading budget areas:", error);
+      }
+    };
+
+    loadBudgetAreas();
+  }, [familyId]);
   const handleSave = async () => {
     if (!amount || isNaN(Number(amount))) {
       setMessage("Please enter a valid amount");
