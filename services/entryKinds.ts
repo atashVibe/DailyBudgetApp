@@ -1,7 +1,31 @@
-export const ENTRY_KIND_OPTIONS = [
-  { label: "Expense", value: "Expense" },
-  { label: "Income", value: "Income" },
-  { label: "Refund", value: "Refund" },
-  { label: "Cashback", value: "Cashback" },
-  { label: "Transfer", value: "Transfer" },
-];
+import { collection, getDocs, query, where } from "firebase/firestore";
+
+import { db } from "./auth";
+
+export type EntryKind = {
+  id: string;
+  familyId: string;
+  budgetAreaId: string;
+  name: string;
+  mathType: "expense" | "income" | "reduce_expense";
+  isArchived: boolean;
+};
+
+export const getEntryKinds = async (
+  familyId: string,
+  budgetAreaId: string,
+): Promise<EntryKind[]> => {
+  const q = query(
+    collection(db, "entryKinds"),
+    where("familyId", "==", familyId),
+    where("budgetAreaId", "==", budgetAreaId),
+    where("isArchived", "==", false),
+  );
+
+  const snapshot = await getDocs(q);
+
+  return snapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...(doc.data() as Omit<EntryKind, "id">),
+  }));
+};

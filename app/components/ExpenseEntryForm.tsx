@@ -5,7 +5,6 @@ import { auth } from "../../services/auth";
 import { getBudgetAreas } from "../../services/budgetAreas";
 import { getCategories } from "../../services/categories";
 import { addEntry, updateEntry } from "../../services/entries";
-import { ENTRY_KIND_OPTIONS } from "../../services/entryKinds";
 import AppPicker from "./AppPicker";
 import AppTextInput from "./AppTextInput";
 import FormLabel from "./FormLabel";
@@ -14,9 +13,8 @@ import PrimaryButton from "./PrimaryButton";
 type Entry = {
   id: string;
   amount: number;
-  type: string;
   budgetAreaId?: string;
-  category: string;
+  categoryId?: string;
   note: string;
   date?: string;
 };
@@ -32,7 +30,6 @@ function formatLocalDate(date: Date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
-
   return `${year}-${month}-${day}`;
 }
 
@@ -43,8 +40,6 @@ export default function ExpenseEntryForm({
   onCancelEdit,
 }: Props) {
   const [amount, setAmount] = useState("");
-  const [type, setType] = useState("Expense");
-  const [category, setCategory] = useState("Groceries");
   const [budgetAreas, setBudgetAreas] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [selectedBudgetAreaId, setSelectedBudgetAreaId] = useState("");
@@ -57,9 +52,8 @@ export default function ExpenseEntryForm({
   useEffect(() => {
     if (entryToEdit) {
       setAmount(String(entryToEdit.amount ?? ""));
-      setType(entryToEdit.type ?? "Expense");
-      setCategory(entryToEdit.category ?? "Groceries");
       setSelectedBudgetAreaId(entryToEdit.budgetAreaId ?? "");
+      setSelectedCategoryId(entryToEdit.categoryId ?? "");
       setNote(entryToEdit.note ?? "");
       setDate(
         entryToEdit.date
@@ -68,19 +62,18 @@ export default function ExpenseEntryForm({
       );
     } else {
       setAmount("");
-      setType("Expense");
-      setCategory("Groceries");
+      setSelectedCategoryId("");
       setNote("");
       setDate(formatLocalDate(new Date()));
     }
   }, [entryToEdit]);
+
   useEffect(() => {
     const loadBudgetAreas = async () => {
       try {
         if (!familyId) return;
 
         const areas = await getBudgetAreas(familyId);
-
         setBudgetAreas(areas);
 
         if (areas.length > 0 && !selectedBudgetAreaId) {
@@ -108,7 +101,8 @@ export default function ExpenseEntryForm({
 
         if (loadedCategories.length > 0) {
           setSelectedCategoryId(loadedCategories[0].id);
-          setCategory(loadedCategories[0].name);
+        } else {
+          setSelectedCategoryId("");
         }
       } catch (error) {
         console.log("Error loading categories:", error);
@@ -124,6 +118,7 @@ export default function ExpenseEntryForm({
       setTimeout(() => setMessage(""), 2000);
       return;
     }
+
     try {
       const user = auth.currentUser;
 
@@ -133,25 +128,21 @@ export default function ExpenseEntryForm({
         return;
       }
 
+      const entryData = {
+        amount: parseFloat(amount),
+        budgetAreaId: selectedBudgetAreaId,
+        categoryId: selectedCategoryId,
+        note,
+        date,
+      };
+
       if (entryToEdit?.id) {
-        await updateEntry(entryToEdit.id, {
-          amount: parseFloat(amount),
-          type,
-          budgetAreaId: selectedBudgetAreaId,
-          category,
-          note,
-          date,
-        });
+        await updateEntry(entryToEdit.id, entryData);
       } else {
         await addEntry({
           userId: user.uid,
           familyId,
-          amount: parseFloat(amount),
-          type,
-          budgetAreaId: selectedBudgetAreaId,
-          category,
-          note,
-          date,
+          ...entryData,
         });
       }
 
@@ -182,13 +173,7 @@ export default function ExpenseEntryForm({
         borderColor: "#E5E7EB",
       }}
     >
-      <Text
-        style={{
-          fontSize: 20,
-          fontWeight: "700",
-          marginBottom: 16,
-        }}
-      >
+      <Text style={{ fontSize: 20, fontWeight: "700", marginBottom: 16 }}>
         {entryToEdit ? "Edit Entry" : "Add Entry"}
       </Text>
 
@@ -198,13 +183,6 @@ export default function ExpenseEntryForm({
         keyboardType="numeric"
         value={amount}
         onChangeText={setAmount}
-      />
-
-      <FormLabel>Type</FormLabel>
-      <AppPicker
-        selectedValue={type}
-        onValueChange={setType}
-        options={ENTRY_KIND_OPTIONS}
       />
 
       <FormLabel>Budget Area</FormLabel>
@@ -219,21 +197,12 @@ export default function ExpenseEntryForm({
 
       <FormLabel>Category</FormLabel>
       <AppPicker
-        selectedValue={category}
-        onValueChange={setCategory}
-        options={
-          categories.length > 0
-            ? categories.map((item) => ({
-                label: item.name,
-                value: item.name,
-              }))
-            : [
-                { label: "Groceries", value: "Groceries" },
-                { label: "Transportation", value: "Transportation" },
-                { label: "Bills", value: "Bills" },
-                { label: "Medicine", value: "Medicine" },
-              ]
-        }
+        selectedValue={selectedCategoryId}
+        onValueChange={setSelectedCategoryId}
+        options={categories.map((item) => ({
+          label: item.name,
+          value: item.id,
+        }))}
       />
 
       <FormLabel>Date</FormLabel>
@@ -267,16 +236,13 @@ export default function ExpenseEntryForm({
         >
           <Text
             onPress={() => setShowDatePicker(true)}
-            style={{
-              padding: 14,
-              fontSize: 16,
-              color: "#111",
-            }}
+            style={{ padding: 14, fontSize: 16, color: "#111" }}
           >
             {date}
           </Text>
         </View>
       )}
+
       {showDatePicker && (
         <DateTimePicker
           value={new Date(date)}
@@ -284,7 +250,6 @@ export default function ExpenseEntryForm({
           display="default"
           onChange={(_event: any, selectedDate?: Date) => {
             setShowDatePicker(false);
-
             if (selectedDate) {
               setDate(formatLocalDate(selectedDate));
             }

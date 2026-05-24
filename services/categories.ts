@@ -2,11 +2,12 @@ import { collection, getDocs, query, where } from "firebase/firestore";
 
 import { db } from "./auth";
 
-export type Category = {
+type Category = {
   id: string;
   name: string;
   familyId: string;
   budgetAreaId: string;
+  entryKindId: string;
   isArchived: boolean;
 };
 

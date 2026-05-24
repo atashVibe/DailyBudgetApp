@@ -75,12 +75,14 @@ export default function FamilySetupScreen() {
       setTimeout(() => {
         router.replace("/(drawer)/dashboard");
       }, 1000);
-    } catch (error) {
-      console.log(error);
+    } catch (error: any) {
+      console.log("CREATE FAMILY ERROR:", error);
+      console.log("ERROR CODE:", error?.code);
+      console.log("ERROR MESSAGE:", error?.message);
 
-      setMessage("Failed to create family.");
-    } finally {
-      setLoading(false);
+      setMessage(
+        `Failed to create family: ${error?.message || "Unknown error"}`,
+      );
     }
   };
 

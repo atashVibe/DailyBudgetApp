@@ -28,6 +28,11 @@ match /budgetAreas/{budgetAreaId} {
 allow read, create, update: if request.auth != null;
 }
 
+// ENTRY KINDS
+match /entryKinds/{entryKindId} {
+allow read, create, update: if request.auth != null;
+}
+
 // CATEGORIES
 match /categories/{categoryId} {
 allow read, create, update: if request.auth != null;

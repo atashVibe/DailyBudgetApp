@@ -14,6 +14,7 @@ import {
 import { useCallback, useState } from "react";
 import { Text, TouchableOpacity } from "react-native";
 import { auth, db } from "../services/auth";
+import { seedFinanceData } from "../services/seedFinanceData";
 import AppScreen from "./components/AppScreen";
 import AppTextInput from "./components/AppTextInput";
 import ModeToggle from "./components/ModeToggle";
@@ -139,6 +140,7 @@ export default function SignupScreen() {
 
         finalFamilyId = newFamilyRef.id;
         userRole = "admin";
+        await seedFinanceData(newFamilyRef.id, user.uid);
       }
       // 3. Create the user document in the "users" collection
       await setDoc(doc(db, "users", user.uid), {
