@@ -13,6 +13,10 @@ type Entry = {
   category: string;
   note: string;
   date?: string;
+  budgetAreaId?: string;
+  categoryId?: string;
+  familyId?: string;
+  userId?: string;
 };
 
 type Props = {
