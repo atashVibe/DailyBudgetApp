@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { Platform, Text, TouchableOpacity, View } from "react-native";
 import { auth } from "../../services/auth";
 import { getBudgetAreas } from "../../services/budgetAreas";
+import { getCategories } from "../../services/categories";
 import { addEntry, updateEntry } from "../../services/entries";
 import { ENTRY_KIND_OPTIONS } from "../../services/entryKinds";
 import AppPicker from "./AppPicker";
@@ -90,6 +91,31 @@ export default function ExpenseEntryForm({
 
     loadBudgetAreas();
   }, [familyId]);
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        if (!familyId || !selectedBudgetAreaId) return;
+
+        const loadedCategories = await getCategories(
+          familyId,
+          selectedBudgetAreaId,
+        );
+
+        setCategories(loadedCategories);
+
+        if (loadedCategories.length > 0) {
+          setSelectedCategoryId(loadedCategories[0].id);
+          setCategory(loadedCategories[0].name);
+        }
+      } catch (error) {
+        console.log("Error loading categories:", error);
+      }
+    };
+
+    loadCategories();
+  }, [familyId, selectedBudgetAreaId]);
+
   const handleSave = async () => {
     if (!amount || isNaN(Number(amount))) {
       setMessage("Please enter a valid amount");
@@ -177,16 +203,33 @@ export default function ExpenseEntryForm({
         options={ENTRY_KIND_OPTIONS}
       />
 
+      <FormLabel>Budget Area</FormLabel>
+      <AppPicker
+        selectedValue={selectedBudgetAreaId}
+        onValueChange={setSelectedBudgetAreaId}
+        options={budgetAreas.map((item) => ({
+          label: item.name,
+          value: item.id,
+        }))}
+      />
+
       <FormLabel>Category</FormLabel>
       <AppPicker
         selectedValue={category}
         onValueChange={setCategory}
-        options={[
-          { label: "Groceries", value: "Groceries" },
-          { label: "Transportation", value: "Transportation" },
-          { label: "Bills", value: "Bills" },
-          { label: "Medicine", value: "Medicine" },
-        ]}
+        options={
+          categories.length > 0
+            ? categories.map((item) => ({
+                label: item.name,
+                value: item.name,
+              }))
+            : [
+                { label: "Groceries", value: "Groceries" },
+                { label: "Transportation", value: "Transportation" },
+                { label: "Bills", value: "Bills" },
+                { label: "Medicine", value: "Medicine" },
+              ]
+        }
       />
 
       <FormLabel>Date</FormLabel>

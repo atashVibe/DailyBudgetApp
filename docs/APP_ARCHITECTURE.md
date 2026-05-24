@@ -120,3 +120,28 @@ Any time we change:
 - app flow
 
 we must update the docs before pushing to GitHub.
+
+## Entry Form Architecture
+
+Current ExpenseEntryForm flow:
+
+1. User selects Entry Kind (temporary legacy type field)
+2. User selects Budget Area
+3. Categories are loaded dynamically from Firestore
+4. Categories are filtered by selected Budget Area
+5. Temporary hardcoded category fallback still exists for safety
+
+Services used:
+
+- services/budgetAreas.ts
+- services/categories.ts
+- services/entryKinds.ts
+
+Future migration plan:
+
+- Replace legacy `type`
+- Replace string `category`
+- Save:
+  - entryKind
+  - budgetAreaId
+  - categoryId

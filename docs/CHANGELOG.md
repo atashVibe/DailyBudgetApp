@@ -60,3 +60,26 @@ Created:
 - Removed invalid useEffect() placement from inside handleSave().
 - Moved budget area loading into a proper component-level useEffect().
 - Restored stable entry form behavior before continuing dynamic category migration.
+
+## 2026-05-24
+
+### Added
+
+- Added dynamic category loading from Firestore
+- Added Budget Area picker to ExpenseEntryForm
+- Categories now reload automatically when Budget Area changes
+
+### Compatibility
+
+- Hardcoded category fallback still exists temporarily
+- Existing entry structure still supports:
+  - type
+  - category
+
+### Notes
+
+- Migration toward:
+  - entryKind
+  - budgetAreaId
+  - categoryId
+    is still in progress
