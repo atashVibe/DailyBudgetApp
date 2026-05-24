@@ -22,7 +22,7 @@ export default function AppPicker({
       style={{
         borderWidth: 1,
         borderColor: "#D1D5DB",
-        borderRadius: 10,
+        borderRadius: 12,
         marginBottom: 16,
         overflow: "hidden",
         backgroundColor: "#ffffff",
@@ -34,7 +34,7 @@ export default function AppPicker({
         style={{
           color: "#111827",
           backgroundColor: "#ffffff",
-          height: Platform.OS === "web" ? 50 : undefined,
+          height: Platform.OS === "web" ? 52 : undefined,
           paddingHorizontal: Platform.OS === "web" ? 12 : undefined,
           borderWidth: Platform.OS === "web" ? 0 : undefined,
         }}
