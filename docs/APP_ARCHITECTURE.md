@@ -1,200 +1,122 @@
 # DailyBudget App Architecture
 
-## Overview
+## Stack
 
-DailyBudget is a simple budgeting and lightweight business bookkeeping app.
-
-The app is designed for:
-
-- families
-- couples
-- immigrants
-- freelancers
-- small business owners
-- non-technical users
-
-Main goals:
-
-- personal budgeting
-- business expense tracking
-- tax preparation support
-- simple reporting
-- easy user experience
-
-The app is intentionally designed to stay simpler than full accounting software like QuickBooks.
-
----
-
-# Frontend Stack
+DailyBudget uses:
 
 - Expo Router
 - React Native
 - TypeScript
-
----
-
-# Backend Stack
-
 - Firebase Authentication
-- Firestore Database
+- Firestore
+- GitHub
 
 ---
 
-# Main App Features
+## Main App Flow
+
+1. User signs in.
+2. App checks user profile.
+3. If user has an active family, user goes to the drawer app.
+4. If user does not have a family, user goes to family setup.
+5. When a family is created, default finance data is seeded.
+
+---
 
 ## Authentication
 
-- Email/password login
+Current auth methods:
+
+- Email/password
 - Google login
-- Apple login architecture (in progress)
+
+Apple login architecture exists but is paused for now.
 
 ---
 
 ## Family System
 
-Each user belongs to a family.
+The app uses a family-based structure.
 
-Families contain:
+A user can belong to a family through:
 
-- members
-- invitations
-- entries
-- budget areas
-- categories
+- creating a family
+- joining with invite code
+
+Family membership is stored in:
+
+- users
+- families
+- familyMembers
 
 ---
 
-## Budget Areas
+## Finance System
 
-Budget Areas are high-level financial sections.
+The finance system uses:
+
+- budgetAreas
+- categories
+- entries
+
+Budget areas are high-level sections.
 
 Examples:
 
 - Daily Life
 - My Business
-- Rental Property
-
-Each family can create custom budget areas.
-
----
-
-## Categories
 
 Categories belong to budget areas.
 
-Examples:
+Entries belong to a family and will later connect to:
 
-- Grocery
-- Gas
-- Advertising
-- Supplies
-
-Each family can:
-
-- create categories
-- rename categories
-- archive categories
+- budgetAreaId
+- categoryId
 
 ---
 
-## Entries
+## Services
 
-Entries are financial transactions.
+Finance data is loaded through service files:
 
-Entry kinds:
-
-- expense
-- income
-- refund
-- cashback
-- transfer
+- services/budgetAreas.ts
+- services/categories.ts
+- services/seedFinanceData.ts
+- services/entries.ts
 
 ---
 
-# Main Project Folders
+## UI Components
 
-## app
+Reusable UI components are stored in:
 
-Contains screens and routes.
+- app/components/AppTextInput.tsx
+- app/components/PrimaryButton.tsx
+- app/components/AppPicker.tsx
+- app/components/AppScreen.tsx
+- app/components/FormLabel.tsx
 
-Examples:
+Important:
 
-- login
-- dashboard
-- settings
-- family setup
+Do not create duplicate selector components.
 
----
+Use:
 
-## components
+- AppPicker
 
-Reusable UI components.
+Do not use:
 
-Examples:
-
-- buttons
-- forms
-- dropdowns
-- cards
+- AppSelect
 
 ---
 
-## services
+## Documentation Rule
 
-Backend and Firebase logic.
+Any time we change:
 
-Examples:
+- code structure
+- database structure
+- Firestore rules
+- app flow
 
-- authentication
-- Google login
-- Firestore seeding
-
----
-
-## models
-
-TypeScript interfaces and shared types.
-
----
-
-## constants
-
-Shared default/static data.
-
-Examples:
-
-- default budget areas
-- default categories
-
----
-
-## docs
-
-Project documentation.
-
----
-
-# Important Architecture Rules
-
-- Avoid hardcoded categories
-- Prefer reusable components
-- Use centralized constants
-- Standardize styling
-- Never hard delete categories or budget areas
-- Use:
-  isArchived: true
-
----
-
-# Long-Term Vision
-
-The app should eventually support:
-
-- recurring subscriptions
-- monthly reports
-- tax reports
-- CPA exports
-- business summaries
-- profit/loss reports
-
-while remaining simple and easy to use.
+we must update the docs before pushing to GitHub.

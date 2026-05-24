@@ -18,6 +18,10 @@ Added default budget areas:
 
 Added default categories.
 
+- Added budget area and category service files for dynamic finance loading.
+- Standardized reusable picker/input/button direction.
+- Removed duplicate select component and kept AppPicker as the reusable selector.
+
 ### Firestore
 
 Created:

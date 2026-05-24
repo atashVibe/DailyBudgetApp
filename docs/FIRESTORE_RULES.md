@@ -1,92 +1,49 @@
-# Firestore Rules Documentation
+rules_version = '2';
 
-This file describes the intended Firestore security behavior in human language.
+service cloud.firestore {
+match /databases/{database}/documents {
 
-Actual Firebase rules may evolve over time.
+    // USERS
+    match /users/{userId} {
+      allow read, write: if request.auth != null
+        && request.auth.uid == userId;
+    }
 
----
+// FAMILIES
+match /families/{familyId} {
+allow create: if request.auth != null;
+allow read: if request.auth != null;
+allow update: if request.auth != null;
+}
 
-# Users
+// FAMILY MEMBERS
+match /familyMembers/{memberId} {
+allow create: if request.auth != null;
+allow read: if request.auth != null;
+allow update: if request.auth != null;
+}
 
-Users can:
+// BUDGET AREAS
+match /budgetAreas/{budgetAreaId} {
+allow read, create, update: if request.auth != null;
+}
 
-- read their own user document
-- update their own user document
+// CATEGORIES
+match /categories/{categoryId} {
+allow read, create, update: if request.auth != null;
+}
 
-Users should not access other users' documents.
+    // ENTRIES
+    match /entries/{entryId} {
+      allow read, create, update, delete: if request.auth != null;
+    }
 
----
+    // INVITES
+    match /invites/{inviteId} {
+      allow create: if request.auth != null;
+      allow read: if true;
+      allow update: if true;
+    }
 
-# Families
-
-Only family members should access family data.
-
----
-
-# Family Members
-
-Family members can:
-
-- read family member records inside their own family
-
-Only admins should manage roles.
-
----
-
-# Invites
-
-Only family admins should:
-
-- create invites
-- revoke invites
-
-Invitations should expire automatically.
-
----
-
-# Budget Areas
-
-Only admins can:
-
-- create budget areas
-- rename budget areas
-- archive budget areas
-
-Members can read budget areas.
-
-Budget areas should never be permanently deleted.
-
----
-
-# Categories
-
-Only admins can:
-
-- create categories
-- rename categories
-- archive categories
-
-Members can read categories.
-
-Categories should never be permanently deleted.
-
----
-
-# Entries
-
-Family members can:
-
-- create entries
-- read entries
-
-Only entry owners or admins should edit/delete entries.
-
----
-
-# Important Security Goals
-
-- Prevent cross-family access
-- Prevent unauthorized writes
-- Protect private financial data
-- Keep rules scalable
-- Minimize Firestore read costs
+}
+}
