@@ -122,6 +122,7 @@ Current fields:
 - familyId
 - amount
 - type
+- budgetAreaId
 - category
 - note
 - date

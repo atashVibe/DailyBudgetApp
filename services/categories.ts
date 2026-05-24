@@ -2,7 +2,18 @@ import { collection, getDocs, query, where } from "firebase/firestore";
 
 import { db } from "./auth";
 
-export const getCategories = async (familyId: string, budgetAreaId: string) => {
+export type Category = {
+  id: string;
+  name: string;
+  familyId: string;
+  budgetAreaId: string;
+  isArchived: boolean;
+};
+
+export const getCategories = async (
+  familyId: string,
+  budgetAreaId: string,
+): Promise<Category[]> => {
   const q = query(
     collection(db, "categories"),
     where("familyId", "==", familyId),
@@ -14,6 +25,6 @@ export const getCategories = async (familyId: string, budgetAreaId: string) => {
 
   return snapshot.docs.map((doc) => ({
     id: doc.id,
-    ...doc.data(),
+    ...(doc.data() as Omit<Category, "id">),
   }));
 };

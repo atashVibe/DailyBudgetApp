@@ -21,6 +21,7 @@ type Entry = {
   id: string;
   amount: number;
   type: string;
+  budgetAreaId?: string;
   category: string;
   note: string;
   date?: string;

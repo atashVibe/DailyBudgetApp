@@ -15,6 +15,7 @@ type Entry = {
   id: string;
   amount: number;
   type: string;
+  budgetAreaId?: string;
   category: string;
   note: string;
   date?: string;
@@ -58,6 +59,7 @@ export default function ExpenseEntryForm({
       setAmount(String(entryToEdit.amount ?? ""));
       setType(entryToEdit.type ?? "Expense");
       setCategory(entryToEdit.category ?? "Groceries");
+      setSelectedBudgetAreaId(entryToEdit.budgetAreaId ?? "");
       setNote(entryToEdit.note ?? "");
       setDate(
         entryToEdit.date
@@ -135,6 +137,7 @@ export default function ExpenseEntryForm({
         await updateEntry(entryToEdit.id, {
           amount: parseFloat(amount),
           type,
+          budgetAreaId: selectedBudgetAreaId,
           category,
           note,
           date,
@@ -145,6 +148,7 @@ export default function ExpenseEntryForm({
           familyId,
           amount: parseFloat(amount),
           type,
+          budgetAreaId: selectedBudgetAreaId,
           category,
           note,
           date,
