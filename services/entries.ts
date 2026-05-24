@@ -8,7 +8,11 @@ import {
 } from "firebase/firestore";
 import { db } from "./auth";
 
-// Save a new entry to Firestore
+// Creates a new financial entry inside the shared "entries" collection.
+// Each entry belongs to a specific family and user.
+//
+// We add serverTimestamp() so Firestore stores a consistent creation time
+// regardless of the user's local device clock.
 export async function addEntry(data: any) {
   try {
     if (!data.familyId) {
@@ -27,7 +31,7 @@ export async function addEntry(data: any) {
   }
 }
 
-// Delete an entry
+// Permanently removes an entry document from Firestore.
 export async function deleteEntry(entryId: string) {
   try {
     await deleteDoc(doc(db, "entries", entryId));
@@ -37,7 +41,7 @@ export async function deleteEntry(entryId: string) {
   }
 }
 
-// Update an entry
+// Updates editable fields of an existing financial entry.
 export async function updateEntry(entryId: string, data: any) {
   try {
     await updateDoc(doc(db, "entries", entryId), {

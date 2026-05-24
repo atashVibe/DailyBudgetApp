@@ -1,4 +1,6 @@
-import { onAuthStateChanged } from "firebase/auth";
+import { GoogleSignin } from "@react-native-google-signin/google-signin";
+import { useRouter } from "expo-router";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 import {
   addDoc,
   collection,
@@ -8,11 +10,12 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import { Text, TextInput, View } from "react-native";
+import { ScrollView, Text, TextInput, View } from "react-native";
 import { auth, db } from "../../services/auth";
 import PrimaryButton from "../components/PrimaryButton";
 
 export default function SettingsScreen() {
+  const router = useRouter();
   const [dailyBudget, setDailyBudget] = useState(0);
   const [budgetInput, setBudgetInput] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
@@ -48,6 +51,18 @@ export default function SettingsScreen() {
 
     return unsubscribe;
   }, []);
+
+  const handleSwitchUser = async () => {
+    try {
+      await GoogleSignin.signOut();
+    } catch (error) {
+      console.log("Google sign-out skipped:", error);
+    }
+
+    await signOut(auth);
+
+    router.replace("/login");
+  };
 
   const handleUpdateBudget = async () => {
     if (!isAdmin || !familyId) return;
@@ -86,9 +101,12 @@ export default function SettingsScreen() {
   };
 
   return (
-    <View style={{ flex: 1, padding: 24, paddingTop: 80 }}>
+    <ScrollView
+      style={{ flex: 1 }}
+      contentContainerStyle={{ padding: 24, paddingTop: 80 }}
+    >
       <Text style={{ fontSize: 28, fontWeight: "700", marginBottom: 20 }}>
-        Settings
+        Settings test
       </Text>
 
       <Text style={{ marginBottom: 10 }}>
@@ -121,6 +139,9 @@ export default function SettingsScreen() {
           Only the account admin can change the family budget.
         </Text>
       )}
-    </View>
+      <View style={{ marginTop: 24 }}>
+        <PrimaryButton title="Switch User" onPress={handleSwitchUser} />
+      </View>
+    </ScrollView>
   );
 }

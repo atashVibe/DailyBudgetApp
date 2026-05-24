@@ -10,7 +10,8 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.atashvibe.dailybudget"
+      "bundleIdentifier": "com.atashvibe.dailybudget",
+      "usesAppleSignIn": true
     },
     "android": {
       "googleServicesFile": "./google-services.json",
@@ -30,6 +31,7 @@
     },
     "plugins": [
       "expo-router",
+      "expo-apple-authentication",
       [
         "expo-splash-screen",
         {

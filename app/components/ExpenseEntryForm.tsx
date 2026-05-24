@@ -55,14 +55,14 @@ export default function ExpenseEntryForm({
       setDate(
         entryToEdit.date
           ? entryToEdit.date.split("T")[0]
-          : new Date().toISOString().split("T")[0],
+          : formatLocalDate(new Date()),
       );
     } else {
       setAmount("");
       setType("Expense");
       setCategory("Groceries");
       setNote("");
-      setDate(new Date().toISOString().split("T")[0]);
+      setDate(formatLocalDate(new Date()));
     }
   }, [entryToEdit]);
   const handleSave = async () => {
@@ -220,7 +220,7 @@ export default function ExpenseEntryForm({
             setShowDatePicker(false);
 
             if (selectedDate) {
-              setDate(selectedDate.toISOString().split("T")[0]);
+              setDate(formatLocalDate(selectedDate));
             }
           }}
         />

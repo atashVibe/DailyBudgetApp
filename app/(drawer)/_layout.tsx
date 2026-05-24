@@ -2,17 +2,46 @@ import { DrawerItemList } from "@react-navigation/drawer";
 import { useRouter } from "expo-router";
 import { Drawer } from "expo-router/drawer";
 import { signOut } from "firebase/auth";
-import { Text, View } from "react-native";
-import { auth } from "../../services/auth";
+import { doc, getDoc } from "firebase/firestore";
+import { useEffect, useState } from "react";
+import { StyleSheet, Text, View } from "react-native";
+import { auth, db } from "../../services/auth";
 
 export default function DrawerLayout() {
   const router = useRouter();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isRoleLoaded, setIsRoleLoaded] = useState(false);
+  useEffect(() => {
+    const loadUserRole = async () => {
+      const user = auth.currentUser;
+
+      if (!user) {
+        setIsRoleLoaded(true);
+        return;
+      }
+
+      const userRef = doc(db, "users", user.uid);
+      const userSnap = await getDoc(userRef);
+
+      if (!userSnap.exists()) {
+        setIsRoleLoaded(true);
+        return;
+      }
+
+      setIsAdmin(userSnap.data().role === "admin");
+      setIsRoleLoaded(true);
+    };
+
+    loadUserRole();
+  }, []);
 
   const handleSignOut = async () => {
     await signOut(auth);
     router.replace("/login");
   };
-
+  if (!isRoleLoaded) {
+    return null;
+  }
   return (
     <Drawer
       screenOptions={{
@@ -20,16 +49,13 @@ export default function DrawerLayout() {
       }}
       drawerContent={(props) => {
         return (
-          <View style={{ flex: 1, padding: 20 }}>
-            <Text style={{ fontSize: 24, marginBottom: 20 }}>Menu</Text>
+          <View style={styles.container}>
+            <Text style={styles.menuTitle}>Menu</Text>
 
             <DrawerItemList {...props} />
 
-            <View style={{ marginTop: 40 }}>
-              <Text
-                style={{ color: "red", fontSize: 16 }}
-                onPress={handleSignOut}
-              >
+            <View style={styles.signOutContainer}>
+              <Text style={styles.signOutText} onPress={handleSignOut}>
                 Sign Out
               </Text>
             </View>
@@ -54,8 +80,26 @@ export default function DrawerLayout() {
         options={{
           drawerLabel: "Join Family",
           title: "Join Family",
+          drawerItemStyle: isAdmin ? { display: "none" } : undefined,
         }}
       />
     </Drawer>
   );
 }
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 20,
+  },
+  menuTitle: {
+    fontSize: 24,
+    marginBottom: 20,
+  },
+  signOutContainer: {
+    marginTop: 40,
+  },
+  signOutText: {
+    color: "red",
+    fontSize: 16,
+  },
+});

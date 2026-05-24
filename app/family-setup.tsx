@@ -1,17 +1,18 @@
 import { useRouter } from "expo-router";
 import {
-    addDoc,
-    collection,
-    doc,
-    getDocs,
-    query,
-    setDoc,
-    updateDoc,
-    where,
+  addDoc,
+  collection,
+  doc,
+  getDocs,
+  query,
+  setDoc,
+  updateDoc,
+  where,
 } from "firebase/firestore";
 import { useState } from "react";
 import { Text } from "react-native";
 import { auth, db } from "../services/auth";
+import { seedFinanceData } from "../services/seedFinanceData";
 import AppTextInput from "./components/AppTextInput";
 import PrimaryButton from "./components/PrimaryButton";
 
@@ -67,6 +68,7 @@ export default function FamilySetupScreen() {
         status: "active",
         joinedAt: new Date(),
       });
+      await seedFinanceData(familyRef.id, user.uid);
 
       setMessage("Family created successfully!");
 

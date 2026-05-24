@@ -3,9 +3,9 @@ import { useRouter } from "expo-router";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { useCallback, useState } from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { Platform, Text, TouchableOpacity, View } from "react-native";
 import { auth, db } from "../services/auth";
-import { signInWithGoogle } from "../services/googleAuth";
+import { signInWithApple, signInWithGoogle } from "../services/googleAuth";
 import AppScreen from "./components/AppScreen";
 import AppTextInput from "./components/AppTextInput";
 import PrimaryButton from "./components/PrimaryButton";
@@ -89,6 +89,37 @@ export default function LoginScreen() {
       setLoading(false);
     }
   };
+  const handleAppleLogin = async () => {
+    try {
+      setLoading(true);
+      setMessage("");
+
+      const user = await signInWithApple();
+
+      const userDocRef = doc(db, "users", user.uid);
+      const userDoc = await getDoc(userDocRef);
+
+      if (userDoc.exists() && userDoc.data().activeFamilyId) {
+        setMessage(`Signed in: ${user.email}`);
+
+        setTimeout(() => {
+          router.push("/(drawer)/dashboard");
+        }, 1000);
+      } else {
+        setMessage("Please finish your family setup.");
+
+        setTimeout(() => {
+          router.push("/family-setup");
+        }, 1000);
+      }
+    } catch (error: any) {
+      console.log(error);
+
+      setMessage("Apple sign-in failed.");
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <AppScreen>
       <View
@@ -165,6 +196,22 @@ export default function LoginScreen() {
             </Text>
           </TouchableOpacity>
         }
+        {Platform.OS !== "android" && (
+          <TouchableOpacity
+            onPress={handleAppleLogin}
+            style={{
+              backgroundColor: "#000000",
+              padding: 16,
+              borderRadius: 10,
+              alignItems: "center",
+              marginBottom: 12,
+            }}
+          >
+            <Text style={{ color: "#ffffff", fontSize: 16, fontWeight: "600" }}>
+              Continue with Apple
+            </Text>
+          </TouchableOpacity>
+        )}
 
         {message ? (
           <Text
