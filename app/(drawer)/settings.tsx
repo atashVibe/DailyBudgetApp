@@ -10,9 +10,10 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import { ScrollView, Text, TextInput, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 import { auth, db } from "../../services/auth";
 import PrimaryButton from "../components/PrimaryButton";
+import FamilyBudgetSection from "../components/settings/FamilyBudgetSection";
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -109,36 +110,14 @@ export default function SettingsScreen() {
         Settings test
       </Text>
 
-      <Text style={{ marginBottom: 10 }}>
-        Current Daily Budget: {dailyBudget}
-      </Text>
+      <FamilyBudgetSection
+        dailyBudget={dailyBudget}
+        budgetInput={budgetInput}
+        isAdmin={isAdmin}
+        onBudgetInputChange={setBudgetInput}
+        onUpdateBudget={handleUpdateBudget}
+      />
 
-      {isAdmin ? (
-        <>
-          <TextInput
-            value={budgetInput}
-            onChangeText={setBudgetInput}
-            placeholder="Enter new daily budget"
-            keyboardType="numeric"
-            style={{
-              borderWidth: 1,
-              borderColor: "#ccc",
-              padding: 10,
-              borderRadius: 8,
-              marginBottom: 10,
-            }}
-          />
-
-          <PrimaryButton
-            title="Update Family Daily Budget"
-            onPress={handleUpdateBudget}
-          />
-        </>
-      ) : (
-        <Text style={{ color: "#666", marginTop: 10 }}>
-          Only the account admin can change the family budget.
-        </Text>
-      )}
       <View style={{ marginTop: 24 }}>
         <PrimaryButton title="Switch User" onPress={handleSwitchUser} />
       </View>

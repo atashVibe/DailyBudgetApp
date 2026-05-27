@@ -65,7 +65,13 @@ export default function DrawerLayout() {
     >
       <Drawer.Screen name="dashboard" options={{ title: "Dashboard" }} />
 
-      <Drawer.Screen name="settings" options={{ title: "Settings" }} />
+      <Drawer.Screen
+        name="settings"
+        options={{
+          drawerLabel: "Family Settings",
+          title: "Family Settings",
+        }}
+      />
 
       <Drawer.Screen
         name="invite-family"
