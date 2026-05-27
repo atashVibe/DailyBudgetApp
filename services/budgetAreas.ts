@@ -57,3 +57,12 @@ export const archiveBudgetArea = async (budgetAreaId: string) => {
     isArchived: true,
   });
 };
+
+export const updateBudgetAreaName = async (
+  budgetAreaId: string,
+  name: string,
+) => {
+  await updateDoc(doc(db, "budgetAreas", budgetAreaId), {
+    name,
+  });
+};

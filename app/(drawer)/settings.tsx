@@ -16,10 +16,20 @@ import {
   addBudgetArea,
   archiveBudgetArea,
   getBudgetAreas,
+  updateBudgetAreaName,
   type BudgetArea,
 } from "../../services/budgetAreas";
+import {
+  addCategory,
+  archiveCategory,
+  getCategories,
+  updateCategory,
+  type Category,
+  type CategoryType,
+} from "../../services/categories";
 import PrimaryButton from "../components/PrimaryButton";
 import BudgetAreasSection from "../components/settings/BudgetAreasSection";
+import CategoriesSection from "../components/settings/CategoriesSection";
 import FamilyBudgetSection from "../components/settings/FamilyBudgetSection";
 
 export default function SettingsScreen() {
@@ -31,6 +41,12 @@ export default function SettingsScreen() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [budgetAreas, setBudgetAreas] = useState<BudgetArea[]>([]);
   const [newBudgetAreaName, setNewBudgetAreaName] = useState("");
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategoryBudgetAreaId, setSelectedCategoryBudgetAreaId] =
+    useState("");
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [newCategoryType, setNewCategoryType] =
+    useState<CategoryType>("expense");
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -60,10 +76,31 @@ export default function SettingsScreen() {
 
       const areas = await getBudgetAreas(famId);
       setBudgetAreas(areas);
+      if (areas.length > 0) {
+        setSelectedCategoryBudgetAreaId(areas[0].id);
+
+        const loadedCategories = await getCategories(famId, areas[0].id);
+        setCategories(loadedCategories);
+      }
     });
 
     return unsubscribe;
   }, []);
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      if (!familyId || !selectedCategoryBudgetAreaId) return;
+
+      const loadedCategories = await getCategories(
+        familyId,
+        selectedCategoryBudgetAreaId,
+      );
+
+      setCategories(loadedCategories);
+    };
+
+    loadCategories();
+  }, [familyId, selectedCategoryBudgetAreaId]);
 
   const handleSwitchUser = async () => {
     try {
@@ -136,6 +173,89 @@ export default function SettingsScreen() {
     setBudgetAreas(areas);
   };
 
+  const handleEditBudgetArea = async (
+    budgetAreaId: string,
+    currentName: string,
+  ) => {
+    const newName = window.prompt("Edit budget area name", currentName);
+
+    if (!newName || newName.trim() === "") return;
+
+    await updateBudgetAreaName(budgetAreaId, newName.trim());
+
+    const areas = await getBudgetAreas(familyId!);
+    setBudgetAreas(areas);
+  };
+
+  const handleAddCategory = async () => {
+    if (!isAdmin || !familyId || !auth.currentUser) return;
+
+    const name = newCategoryName.trim();
+
+    if (!name || !selectedCategoryBudgetAreaId) return;
+
+    const addedCategory = await addCategory(
+      familyId,
+      auth.currentUser.uid,
+      selectedCategoryBudgetAreaId,
+      name,
+      newCategoryType,
+    );
+
+    setCategories((currentCategories) =>
+      [...currentCategories, addedCategory].sort((a, b) =>
+        a.name.localeCompare(b.name),
+      ),
+    );
+
+    setNewCategoryName("");
+    setNewCategoryType("expense");
+  };
+
+  const handleArchiveCategory = async (categoryId: string) => {
+    if (!isAdmin || !familyId || !selectedCategoryBudgetAreaId) return;
+
+    await archiveCategory(categoryId);
+
+    const loadedCategories = await getCategories(
+      familyId,
+      selectedCategoryBudgetAreaId,
+    );
+
+    setCategories(loadedCategories);
+  };
+
+  const handleEditCategory = async (
+    categoryId: string,
+    currentName: string,
+    currentType: CategoryType,
+  ) => {
+    const newName = window.prompt("Edit category name", currentName);
+
+    if (!newName || newName.trim() === "") return;
+
+    const typeInput = window.prompt(
+      "Category type: expense, income, refund, cashback",
+      currentType,
+    );
+
+    if (
+      !typeInput ||
+      !["expense", "income", "refund", "cashback"].includes(typeInput)
+    ) {
+      return;
+    }
+
+    await updateCategory(categoryId, newName.trim(), typeInput as CategoryType);
+
+    const loadedCategories = await getCategories(
+      familyId!,
+      selectedCategoryBudgetAreaId,
+    );
+
+    setCategories(loadedCategories);
+  };
+
   return (
     <ScrollView
       style={{ flex: 1 }}
@@ -160,6 +280,22 @@ export default function SettingsScreen() {
         onNewBudgetAreaNameChange={setNewBudgetAreaName}
         onAddBudgetArea={handleAddBudgetArea}
         onArchiveBudgetArea={handleArchiveBudgetArea}
+        onEditBudgetArea={handleEditBudgetArea}
+      />
+
+      <CategoriesSection
+        budgetAreas={budgetAreas}
+        categories={categories}
+        selectedBudgetAreaId={selectedCategoryBudgetAreaId}
+        newCategoryName={newCategoryName}
+        newCategoryType={newCategoryType}
+        isAdmin={isAdmin}
+        onSelectedBudgetAreaIdChange={setSelectedCategoryBudgetAreaId}
+        onNewCategoryNameChange={setNewCategoryName}
+        onNewCategoryTypeChange={setNewCategoryType}
+        onAddCategory={handleAddCategory}
+        onArchiveCategory={handleArchiveCategory}
+        onEditCategory={handleEditCategory}
       />
 
       <View style={{ marginTop: 24 }}>

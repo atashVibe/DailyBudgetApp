@@ -100,36 +100,38 @@ export default function ExpenseEntryForm({
     }, [familyId, selectedBudgetAreaId]),
   );
 
-  useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        if (!familyId || !selectedBudgetAreaId) return;
+  useFocusEffect(
+    useCallback(() => {
+      const loadCategories = async () => {
+        try {
+          if (!familyId || !selectedBudgetAreaId) return;
 
-        const loadedCategories = await getCategories(
-          familyId,
-          selectedBudgetAreaId,
-        );
-
-        setCategories(loadedCategories);
-
-        if (loadedCategories.length > 0) {
-          const categoryExists = loadedCategories.some(
-            (item) => item.id === selectedCategoryId,
+          const loadedCategories = await getCategories(
+            familyId,
+            selectedBudgetAreaId,
           );
 
-          if (!selectedCategoryId || !categoryExists) {
-            setSelectedCategoryId(loadedCategories[0].id);
-          }
-        } else {
-          setSelectedCategoryId("");
-        }
-      } catch (error) {
-        console.log("Error loading categories:", error);
-      }
-    };
+          setCategories(loadedCategories);
 
-    loadCategories();
-  }, [familyId, selectedBudgetAreaId, selectedCategoryId]);
+          if (loadedCategories.length > 0) {
+            const categoryExists = loadedCategories.some(
+              (item) => item.id === selectedCategoryId,
+            );
+
+            if (!selectedCategoryId || !categoryExists) {
+              setSelectedCategoryId(loadedCategories[0].id);
+            }
+          } else {
+            setSelectedCategoryId("");
+          }
+        } catch (error) {
+          console.log("Error loading categories:", error);
+        }
+      };
+
+      loadCategories();
+    }, [familyId, selectedBudgetAreaId, selectedCategoryId]),
+  );
 
   const handleSave = async () => {
     if (!amount || isNaN(Number(amount))) {

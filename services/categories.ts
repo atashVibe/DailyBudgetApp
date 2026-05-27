@@ -49,8 +49,8 @@ export const addCategory = async (
   budgetAreaId: string,
   name: string,
   type: CategoryType,
-) => {
-  await addDoc(collection(db, "categories"), {
+): Promise<Category> => {
+  const docRef = await addDoc(collection(db, "categories"), {
     name,
     type,
     budgetAreaId,
@@ -60,10 +60,30 @@ export const addCategory = async (
     createdBy: userId,
     createdAt: serverTimestamp(),
   });
+
+  return {
+    id: docRef.id,
+    name,
+    type,
+    budgetAreaId,
+    familyId,
+    isArchived: false,
+  };
 };
 
 export const archiveCategory = async (categoryId: string) => {
   await updateDoc(doc(db, "categories", categoryId), {
     isArchived: true,
+  });
+};
+
+export const updateCategory = async (
+  categoryId: string,
+  name: string,
+  type: CategoryType,
+) => {
+  await updateDoc(doc(db, "categories", categoryId), {
+    name,
+    type,
   });
 };
