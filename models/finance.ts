@@ -1,9 +1,4 @@
-export type EntryKind =
-  | "expense"
-  | "income"
-  | "refund"
-  | "cashback"
-  | "transfer";
+export type EntryType = "expense" | "income" | "refund" | "cashback";
 
 export interface BudgetArea {
   id: string;
@@ -50,13 +45,7 @@ export interface Entry {
 
   categoryId: string;
 
-  entryKind: EntryKind;
+  type: EntryType;
 
   amount: number;
-
-  note: string;
-
-  date: any;
-
-  createdAt: any;
 }
