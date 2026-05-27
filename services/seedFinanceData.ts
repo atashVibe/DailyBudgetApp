@@ -11,7 +11,6 @@ export const seedFinanceData = async (familyId: string, userId: string) => {
 
     const budgetAreaRef = await addDoc(collection(db, "budgetAreas"), {
       name: area.name,
-      kind: area.kind,
       familyId,
       isDefault: true,
       isArchived: false,

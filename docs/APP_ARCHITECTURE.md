@@ -80,7 +80,7 @@ Examples:
 Groceries → expense
 Sales → income
 Cashback → income
-Return → reduce_expense
+Return → refund
 ```
 
 This will remove the need for manual transaction types.

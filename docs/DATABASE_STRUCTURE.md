@@ -124,7 +124,7 @@ Possible values:
 ```txt
 expense
 income
-reduce_expense
+refund
 ```
 
 ---

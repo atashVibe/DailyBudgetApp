@@ -1,7 +1,6 @@
 export const DEFAULT_BUDGET_AREAS = [
   {
     name: "Daily Life",
-    kind: "personal",
     categories: [
       { name: "Clothes", type: "expense" },
       { name: "Eating Out", type: "expense" },
@@ -10,15 +9,14 @@ export const DEFAULT_BUDGET_AREAS = [
       { name: "Grocery", type: "expense" },
       { name: "Health", type: "expense" },
       { name: "Subscriptions", type: "expense" },
-      { name: "Cashback", type: "income" },
-      { name: "Refund", type: "reduce_expense" },
-      { name: "Return", type: "reduce_expense" },
+      { name: "Cashback", type: "cashback" },
+      { name: "Refund", type: "refund" },
+      { name: "Return", type: "refund" },
       { name: "Other", type: "expense" },
     ],
   },
   {
     name: "My Business",
-    kind: "business",
     categories: [
       { name: "Advertising", type: "expense" },
       { name: "Assets", type: "expense" },
@@ -29,9 +27,9 @@ export const DEFAULT_BUDGET_AREAS = [
       { name: "Recurring", type: "income" },
       { name: "Tip", type: "income" },
       { name: "Sales", type: "income" },
-      { name: "Cashback", type: "income" },
-      { name: "Refund", type: "reduce_expense" },
-      { name: "Return", type: "reduce_expense" },
+      { name: "Cashback", type: "cashback" },
+      { name: "Refund", type: "refund" },
+      { name: "Return", type: "refund" },
       { name: "Other Expense", type: "expense" },
       { name: "Other Income", type: "income" },
     ],
