@@ -8,12 +8,25 @@ import {
 } from "firebase/firestore";
 import { db } from "./auth";
 
+export type EntryType = "expense" | "income" | "refund" | "cashback";
+
+export type EntryData = {
+  familyId: string;
+  userId?: string;
+  amount: number;
+  budgetAreaId: string;
+  categoryId: string;
+  type: EntryType;
+  note: string;
+  date: string;
+};
+
 // Creates a new financial entry inside the shared "entries" collection.
 // Each entry belongs to a specific family and user.
 //
 // We add serverTimestamp() so Firestore stores a consistent creation time
 // regardless of the user's local device clock.
-export async function addEntry(data: any) {
+export async function addEntry(data: EntryData) {
   try {
     if (!data.familyId) {
       throw new Error("Missing familyId when adding entry");
@@ -42,7 +55,7 @@ export async function deleteEntry(entryId: string) {
 }
 
 // Updates editable fields of an existing financial entry.
-export async function updateEntry(entryId: string, data: any) {
+export async function updateEntry(entryId: string, data: Partial<EntryData>) {
   try {
     await updateDoc(doc(db, "entries", entryId), {
       ...data,

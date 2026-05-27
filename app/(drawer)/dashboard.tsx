@@ -12,6 +12,11 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { auth, db } from "../../services/auth";
+import {
+  calculateMonthlyTotal,
+  calculateYearlyTotal,
+  type ReportEntry,
+} from "../../services/reports";
 import AppScreen from "../components/AppScreen";
 import BudgetSummaryCard from "../components/BudgetSummaryCard";
 import ExpenseEntryForm from "../components/ExpenseEntryForm";
@@ -89,34 +94,25 @@ export default function DashboardScreen() {
 
       const snapshot = await getDocs(q);
 
-      let monthTotal = 0;
-      let yearTotal = 0;
-
-      snapshot.forEach((doc) => {
+      const entries: ReportEntry[] = snapshot.docs.map((doc) => {
         const data: any = doc.data();
 
-        if (!data.date) return;
-
-        const entryDate = new Date(data.date + "T00:00:00");
-
-        const isThisMonth =
-          entryDate.getFullYear() === currentYear &&
-          entryDate.getMonth() === currentMonth;
-
-        const isThisYear = entryDate.getFullYear() === currentYear;
-
-        const amount = Number(data.amount || 0);
-
-        if (data.type === "Expense") {
-          if (isThisMonth) monthTotal += amount;
-          if (isThisYear) yearTotal += amount;
-        }
-
-        if (data.type === "Refund") {
-          if (isThisMonth) monthTotal -= amount;
-          if (isThisYear) yearTotal -= amount;
-        }
+        return {
+          amount: Number(data.amount || 0),
+          type: String(
+            data.type || "expense",
+          ).toLowerCase() as ReportEntry["type"],
+          date: data.date,
+        };
       });
+
+      const monthTotal = calculateMonthlyTotal(
+        entries,
+        currentYear,
+        currentMonth,
+      );
+
+      const yearTotal = calculateYearlyTotal(entries, currentYear);
 
       setSpentThisMonth(monthTotal);
       setSpentThisYear(yearTotal);

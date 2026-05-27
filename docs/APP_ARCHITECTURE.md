@@ -1,122 +1,82 @@
-# DailyBudget App Architecture
+# Current Data Architecture
 
-## Purpose
+## Main Structure
 
-DailyBudget is a budgeting and lightweight bookkeeping app for:
+Family
+├── Budget Areas
+│ ├── Categories
+│ │ ├── type
+│ │ ├── expense
+│ │ ├── income
+│ │ ├── refund
+│ │ └── cashback
+│ └── Entries
 
-- families
-- immigrants
-- small business owners
-- self-employed users
+## Architecture Rules
 
-Goals:
+### Budget Area
 
-- simple budgeting
-- expense tracking
-- business bookkeeping
-- future CPA/tax preparation support
-- very easy UI for non-technical users
-
----
-
-# Current Financial Architecture
-
-## Main Flow
-
-```txt
-Budget Area
-   ↓
-Category
-   ↓
-Entry
-```
-
-Example:
-
-```txt
-Daily Life
-  → Groceries
-  → Bills
-  → Cashback
-
-Business
-  → Sales
-  → Supplies
-```
-
----
-
-# Entry System
-
-Entries now store stable IDs instead of text labels.
-
-Current structure:
-
-```txt
-budgetAreaId
-categoryId
-```
-
-Advantages:
-
-- categories can be renamed safely
-- prevents duplicate-name problems
-- cleaner calculations
-- supports future admin editing
-
----
-
-# Future Planned Architecture
-
-Later categories will control calculations using:
-
-```txt
-type
-```
+Represents a major financial area.
 
 Examples:
 
-```txt
-Groceries → expense
-Sales → income
-Cashback → income
-Return → refund
-```
+- Daily Life
+- Business
+- Travel
 
-This will remove the need for manual transaction types.
+### Category
 
-Future user flow:
+Belongs permanently to one Budget Area.
 
-```txt
-Budget Area → Category → Amount
-```
+Category owns:
 
----
+- financial type
+- reporting behavior
 
-# Current UI Principles
+Examples:
 
-- simple mobile-first UI
-- minimal steps
-- reusable components
-- standardized buttons and inputs
-- non-technical-user friendly
+- Groceries → expense
+- Salary → income
+- Amazon Return → refund
+- Credit Card Cashback → cashback
 
----
+### Entry
 
-# Current Technical Stack
+Stores:
 
-Frontend:
+- amount
+- budgetAreaId
+- categoryId
+- type
+- note
+- date
 
-- React Native
-- Expo
-- TypeScript
+Entry type is copied from Category at save time.
 
-Backend:
+## Important Design Decision
 
-- Firebase Authentication
-- Firestore
+EntryKind was removed completely.
 
-Navigation:
+Reason:
 
-- Expo Router
-- Drawer Navigation
+- reduced complexity
+- easier UI
+- easier reporting
+- easier maintenance
+- better user experience
+
+## Admin Settings Structure
+
+settings.tsx
+├── FamilyBudgetSection
+├── BudgetAreasSection
+└── CategoriesSection
+
+## Soft Delete Strategy
+
+The app uses archive behavior instead of permanent delete.
+
+Archived items:
+
+- hidden from normal UI
+- preserved for reports/history
