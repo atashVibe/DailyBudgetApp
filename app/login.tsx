@@ -178,7 +178,7 @@ export default function LoginScreen() {
             loading={loading}
           />
         </View>
-        {
+        {false && (
           <TouchableOpacity
             onPress={handleGoogleLogin}
             style={{
@@ -195,8 +195,8 @@ export default function LoginScreen() {
               Continue with Google
             </Text>
           </TouchableOpacity>
-        }
-        {Platform.OS !== "android" && (
+        )}
+        {false && Platform.OS !== "android" && (
           <TouchableOpacity
             onPress={handleAppleLogin}
             style={{
@@ -234,5 +234,3 @@ export default function LoginScreen() {
     </AppScreen>
   );
 }
-
-

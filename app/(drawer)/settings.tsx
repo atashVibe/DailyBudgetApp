@@ -10,7 +10,7 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { auth, db } from "../../services/auth";
 import {
   addBudgetArea,
@@ -27,12 +27,15 @@ import {
   type Category,
   type CategoryType,
 } from "../../services/categories";
+import AppScreen from "../components/common/AppScreen";
+import LoadingSpinner from "../components/common/LoadingSpinner";
 import PrimaryButton from "../components/common/PrimaryButton";
 import BudgetAreasSection from "../components/settings/BudgetAreasSection";
 import CategoriesSection from "../components/settings/CategoriesSection";
 import FamilyBudgetSection from "../components/settings/FamilyBudgetSection";
 
 export default function SettingsScreen() {
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
   const [dailyBudget, setDailyBudget] = useState(0);
   const [budgetInput, setBudgetInput] = useState("");
@@ -50,13 +53,19 @@ export default function SettingsScreen() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (!user) return;
+      if (!user) {
+        setLoading(false);
+        return;
+      }
 
       // 🔹 1. Get user's account
       const userRef = doc(db, "users", user.uid);
       const userSnap = await getDoc(userRef);
 
-      if (!userSnap.exists()) return;
+      if (!userSnap.exists()) {
+        setLoading(false);
+        return;
+      }
 
       const userData = userSnap.data();
       const famId = userData.activeFamilyId;
@@ -81,6 +90,7 @@ export default function SettingsScreen() {
 
         const loadedCategories = await getCategories(famId, areas[0].id);
         setCategories(loadedCategories);
+        setLoading(false);
       }
     });
 
@@ -255,14 +265,13 @@ export default function SettingsScreen() {
 
     setCategories(loadedCategories);
   };
-
+  if (loading) {
+    return <LoadingSpinner message="Loading family settings..." />;
+  }
   return (
-    <ScrollView
-      style={{ flex: 1 }}
-      contentContainerStyle={{ padding: 24, paddingTop: 80 }}
-    >
+    <AppScreen style={{ paddingTop: 80 }}>
       <Text style={{ fontSize: 28, fontWeight: "700", marginBottom: 20 }}>
-        Settings test
+        Familly Settings
       </Text>
 
       <FamilyBudgetSection
@@ -301,8 +310,6 @@ export default function SettingsScreen() {
       <View style={{ marginTop: 24 }}>
         <PrimaryButton title="Switch User" onPress={handleSwitchUser} />
       </View>
-    </ScrollView>
+    </AppScreen>
   );
 }
-
-
