@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Alert, Platform, Text, View } from "react-native";
 import { auth, db } from "../../services/auth";
 import { deleteEntry } from "../../services/entries";
-import PrimaryButton from "./PrimaryButton";
+import PrimaryButton from "./common/PrimaryButton";
 
 type Entry = {
   id: string;
@@ -189,3 +189,5 @@ export default function RecentEntriesList({
     </View>
   );
 }
+
+

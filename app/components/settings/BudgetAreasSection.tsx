@@ -1,7 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Alert, Platform, Text, TextInput, View } from "react-native";
 import type { BudgetArea } from "../../../services/budgetAreas";
-import PrimaryButton from "../PrimaryButton";
+import PrimaryButton from "../common/PrimaryButton";
 
 type Props = {
   budgetAreas: BudgetArea[];
@@ -112,3 +112,5 @@ export default function BudgetAreasSection({
     </View>
   );
 }
+
+

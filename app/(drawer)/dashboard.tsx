@@ -17,7 +17,7 @@ import {
   calculateYearlyTotal,
   type ReportEntry,
 } from "../../services/reports";
-import AppScreen from "../components/AppScreen";
+import AppScreen from "../components/common/AppScreen";
 import BudgetSummaryCard from "../components/BudgetSummaryCard";
 import ExpenseEntryForm from "../components/ExpenseEntryForm";
 import RecentEntriesList from "../components/RecentEntriesList";
@@ -258,3 +258,5 @@ export default function DashboardScreen() {
     </AppScreen>
   );
 }
+
+

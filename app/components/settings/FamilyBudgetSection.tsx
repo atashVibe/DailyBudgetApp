@@ -1,5 +1,5 @@
 import { Text, TextInput } from "react-native";
-import PrimaryButton from "../PrimaryButton";
+import PrimaryButton from "../common/PrimaryButton";
 
 type Props = {
   dailyBudget: number;
@@ -55,3 +55,5 @@ export default function FamilyBudgetSection({
     </>
   );
 }
+
+

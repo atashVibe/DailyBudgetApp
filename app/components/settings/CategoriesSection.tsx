@@ -2,8 +2,8 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { Alert, Platform, Text, TextInput, View } from "react-native";
 import type { BudgetArea } from "../../../services/budgetAreas";
 import type { Category, CategoryType } from "../../../services/categories";
-import AppPicker from "../AppPicker";
-import PrimaryButton from "../PrimaryButton";
+import AppPicker from "../common/AppPicker";
+import PrimaryButton from "../common/PrimaryButton";
 
 type Props = {
   budgetAreas: BudgetArea[];
@@ -161,3 +161,5 @@ export default function CategoriesSection({
     </View>
   );
 }
+
+

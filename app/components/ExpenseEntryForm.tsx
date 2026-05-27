@@ -7,10 +7,10 @@ import { getBudgetAreas } from "../../services/budgetAreas";
 import type { Category } from "../../services/categories";
 import { getCategories } from "../../services/categories";
 import { addEntry, updateEntry } from "../../services/entries";
-import AppPicker from "./AppPicker";
-import AppTextInput from "./AppTextInput";
-import FormLabel from "./FormLabel";
-import PrimaryButton from "./PrimaryButton";
+import AppPicker from "./common/AppPicker";
+import AppTextInput from "./common/AppTextInput";
+import FormLabel from "./common/FormLabel";
+import PrimaryButton from "./common/PrimaryButton";
 
 type Entry = {
   id: string;
@@ -333,3 +333,5 @@ export default function ExpenseEntryForm({
     </View>
   );
 }
+
+

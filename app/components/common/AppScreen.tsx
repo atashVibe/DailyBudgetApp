@@ -32,3 +32,5 @@ export default function AppScreen({ children, style }: Props) {
     </KeyboardAvoidingView>
   );
 }
+
+

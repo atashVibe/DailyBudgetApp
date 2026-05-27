@@ -15,10 +15,10 @@ import { useCallback, useState } from "react";
 import { Text, TouchableOpacity } from "react-native";
 import { auth, db } from "../services/auth";
 import { seedFinanceData } from "../services/seedFinanceData";
-import AppScreen from "./components/AppScreen";
-import AppTextInput from "./components/AppTextInput";
-import ModeToggle from "./components/ModeToggle";
-import PrimaryButton from "./components/PrimaryButton";
+import AppScreen from "./components/common/AppScreen";
+import AppTextInput from "./components/common/AppTextInput";
+import ModeToggle from "./components/common/ModeToggle";
+import PrimaryButton from "./components/common/PrimaryButton";
 
 export default function SignupScreen() {
   const router = useRouter();
@@ -310,3 +310,5 @@ export default function SignupScreen() {
     </AppScreen>
   );
 }
+
+

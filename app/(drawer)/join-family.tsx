@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Text, TextInput, View } from "react-native";
-import PrimaryButton from "../components/PrimaryButton";
+import PrimaryButton from "../components/common/PrimaryButton";
 
 export default function JoinFamilyScreen() {
   const [code, setCode] = useState("");
@@ -45,3 +45,5 @@ export default function JoinFamilyScreen() {
     </View>
   );
 }
+
+

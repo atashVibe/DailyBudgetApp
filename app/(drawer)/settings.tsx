@@ -27,7 +27,7 @@ import {
   type Category,
   type CategoryType,
 } from "../../services/categories";
-import PrimaryButton from "../components/PrimaryButton";
+import PrimaryButton from "../components/common/PrimaryButton";
 import BudgetAreasSection from "../components/settings/BudgetAreasSection";
 import CategoriesSection from "../components/settings/CategoriesSection";
 import FamilyBudgetSection from "../components/settings/FamilyBudgetSection";
@@ -304,3 +304,5 @@ export default function SettingsScreen() {
     </ScrollView>
   );
 }
+
+

@@ -13,11 +13,11 @@ import { useState } from "react";
 import { Text } from "react-native";
 import { auth, db } from "../services/auth";
 import { seedFinanceData } from "../services/seedFinanceData";
-import AppTextInput from "./components/AppTextInput";
-import PrimaryButton from "./components/PrimaryButton";
+import AppTextInput from "./components/common/AppTextInput";
+import PrimaryButton from "./components/common/PrimaryButton";
 
-import AppScreen from "./components/AppScreen";
-import ModeToggle from "./components/ModeToggle";
+import AppScreen from "./components/common/AppScreen";
+import ModeToggle from "./components/common/ModeToggle";
 
 export default function FamilySetupScreen() {
   const [mode, setMode] = useState<"start" | "join" | null>(null);
@@ -257,3 +257,5 @@ export default function FamilySetupScreen() {
     </AppScreen>
   );
 }
+
+

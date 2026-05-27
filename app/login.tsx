@@ -6,9 +6,9 @@ import { useCallback, useState } from "react";
 import { Platform, Text, TouchableOpacity, View } from "react-native";
 import { auth, db } from "../services/auth";
 import { signInWithApple, signInWithGoogle } from "../services/googleAuth";
-import AppScreen from "./components/AppScreen";
-import AppTextInput from "./components/AppTextInput";
-import PrimaryButton from "./components/PrimaryButton";
+import AppScreen from "./components/common/AppScreen";
+import AppTextInput from "./components/common/AppTextInput";
+import PrimaryButton from "./components/common/PrimaryButton";
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -234,3 +234,5 @@ export default function LoginScreen() {
     </AppScreen>
   );
 }
+
+
