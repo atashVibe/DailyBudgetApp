@@ -116,7 +116,7 @@ createdAt
 Future planned field:
 
 ```txt
-mathType
+type
 ```
 
 Possible values:

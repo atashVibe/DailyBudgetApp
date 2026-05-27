@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { Platform, Text, TouchableOpacity, View } from "react-native";
 import { auth } from "../../services/auth";
 import { getBudgetAreas } from "../../services/budgetAreas";
+import type { Category } from "../../services/categories";
 import { getCategories } from "../../services/categories";
 import { addEntry, updateEntry } from "../../services/entries";
 import AppPicker from "./AppPicker";
@@ -41,7 +42,7 @@ export default function ExpenseEntryForm({
 }: Props) {
   const [amount, setAmount] = useState("");
   const [budgetAreas, setBudgetAreas] = useState<any[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [selectedBudgetAreaId, setSelectedBudgetAreaId] = useState("");
   const [selectedCategoryId, setSelectedCategoryId] = useState("");
   const [note, setNote] = useState("");
@@ -100,7 +101,13 @@ export default function ExpenseEntryForm({
         setCategories(loadedCategories);
 
         if (loadedCategories.length > 0) {
-          setSelectedCategoryId(loadedCategories[0].id);
+          const categoryExists = loadedCategories.some(
+            (item) => item.id === selectedCategoryId,
+          );
+
+          if (!selectedCategoryId || !categoryExists) {
+            setSelectedCategoryId(loadedCategories[0].id);
+          }
         } else {
           setSelectedCategoryId("");
         }
@@ -110,7 +117,7 @@ export default function ExpenseEntryForm({
     };
 
     loadCategories();
-  }, [familyId, selectedBudgetAreaId]);
+  }, [familyId, selectedBudgetAreaId, selectedCategoryId]);
 
   const handleSave = async () => {
     if (!amount || isNaN(Number(amount))) {
@@ -128,10 +135,21 @@ export default function ExpenseEntryForm({
         return;
       }
 
+      const selectedCategory = categories.find(
+        (item) => item.id === selectedCategoryId,
+      );
+
+      if (!selectedCategory) {
+        setMessage("Please select a category");
+        setTimeout(() => setMessage(""), 2000);
+        return;
+      }
+
       const entryData = {
         amount: parseFloat(amount),
         budgetAreaId: selectedBudgetAreaId,
         categoryId: selectedCategoryId,
+        type: selectedCategory.type,
         note,
         date,
       };

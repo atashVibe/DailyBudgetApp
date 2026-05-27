@@ -46,7 +46,7 @@ Benefits:
 Planned future category field:
 
 ```txt
-mathType
+type
 ```
 
 Possible values:

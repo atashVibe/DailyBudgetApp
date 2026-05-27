@@ -71,7 +71,7 @@ Advantages:
 Later categories will control calculations using:
 
 ```txt
-mathType
+type
 ```
 
 Examples:

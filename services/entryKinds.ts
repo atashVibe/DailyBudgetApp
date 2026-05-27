@@ -7,7 +7,7 @@ export type EntryKind = {
   familyId: string;
   budgetAreaId: string;
   name: string;
-  mathType: "expense" | "income" | "reduce_expense";
+  type: "expense" | "income" | "reduce_expense";
   isArchived: boolean;
 };
 

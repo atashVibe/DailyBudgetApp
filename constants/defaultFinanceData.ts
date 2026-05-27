@@ -2,76 +2,38 @@ export const DEFAULT_BUDGET_AREAS = [
   {
     name: "Daily Life",
     kind: "personal",
-    entryKinds: [
-      {
-        name: "Expense",
-        mathType: "expense",
-        categories: [
-          "Clothes",
-          "Eating Out",
-          "Fun",
-          "Gas",
-          "Grocery",
-          "Health",
-          "Subscriptions",
-          "Other",
-        ],
-      },
-      {
-        name: "Cashback",
-        mathType: "income",
-        categories: ["Cashback"],
-      },
-      {
-        name: "Refund",
-        mathType: "reduce_expense",
-        categories: ["Refund"],
-      },
-      {
-        name: "Return",
-        mathType: "reduce_expense",
-        categories: ["Return"],
-      },
+    categories: [
+      { name: "Clothes", type: "expense" },
+      { name: "Eating Out", type: "expense" },
+      { name: "Fun", type: "expense" },
+      { name: "Gas", type: "expense" },
+      { name: "Grocery", type: "expense" },
+      { name: "Health", type: "expense" },
+      { name: "Subscriptions", type: "expense" },
+      { name: "Cashback", type: "income" },
+      { name: "Refund", type: "reduce_expense" },
+      { name: "Return", type: "reduce_expense" },
+      { name: "Other", type: "expense" },
     ],
   },
-
   {
     name: "My Business",
     kind: "business",
-    entryKinds: [
-      {
-        name: "Expense",
-        mathType: "expense",
-        categories: [
-          "Advertising",
-          "Assets",
-          "Commissions",
-          "Subscriptions",
-          "Supplies",
-          "Travel",
-          "Other Expense",
-        ],
-      },
-      {
-        name: "Income",
-        mathType: "income",
-        categories: ["Recurring", "Tip", "Sales", "Other Income"],
-      },
-      {
-        name: "Cashback",
-        mathType: "income",
-        categories: ["Cashback"],
-      },
-      {
-        name: "Refund",
-        mathType: "reduce_expense",
-        categories: ["Refund"],
-      },
-      {
-        name: "Return",
-        mathType: "reduce_expense",
-        categories: ["Return"],
-      },
+    categories: [
+      { name: "Advertising", type: "expense" },
+      { name: "Assets", type: "expense" },
+      { name: "Commissions", type: "expense" },
+      { name: "Subscriptions", type: "expense" },
+      { name: "Supplies", type: "expense" },
+      { name: "Travel", type: "expense" },
+      { name: "Recurring", type: "income" },
+      { name: "Tip", type: "income" },
+      { name: "Sales", type: "income" },
+      { name: "Cashback", type: "income" },
+      { name: "Refund", type: "reduce_expense" },
+      { name: "Return", type: "reduce_expense" },
+      { name: "Other Expense", type: "expense" },
+      { name: "Other Income", type: "income" },
     ],
   },
 ];
