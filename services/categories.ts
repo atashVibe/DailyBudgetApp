@@ -87,3 +87,22 @@ export const updateCategory = async (
     type,
   });
 };
+
+export const getAllCategoriesForFamily = async (
+  familyId: string,
+): Promise<Category[]> => {
+  const q = query(
+    collection(db, "categories"),
+    where("familyId", "==", familyId),
+    where("isArchived", "==", false),
+  );
+
+  const snapshot = await getDocs(q);
+
+  return snapshot.docs
+    .map((docItem) => ({
+      id: docItem.id,
+      ...(docItem.data() as Omit<Category, "id">),
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+};

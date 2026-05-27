@@ -8,6 +8,7 @@ export type BudgetSummary = {
   recoveryDays: number;
   usedPercent: number;
   progressPercent: number;
+  monthPassedPercent: number;
   status: BudgetStatus;
   yearlyUsedPercent: number;
   yearlyProgressPercent: number;
@@ -58,6 +59,8 @@ export function calculateBudgetSummary(
 
   const progressPercent = Math.min(usedPercent, 100);
 
+  const monthPassedPercent = (dayOfMonth / totalDaysInMonth) * 100;
+
   const startOfYear = new Date(today.getFullYear(), 0, 1);
 
   const daysPassedThisYear =
@@ -77,6 +80,7 @@ export function calculateBudgetSummary(
     recoveryDays,
     usedPercent,
     progressPercent,
+    monthPassedPercent,
     status: getBudgetStatus(usedPercent),
     yearlyUsedPercent,
     yearlyProgressPercent,

@@ -3,6 +3,7 @@ import { collection, getDocs, orderBy, query, where } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { Alert, Platform, Text, View } from "react-native";
 import { auth, db } from "../../services/auth";
+import { getAllCategoriesForFamily } from "../../services/categories";
 import { deleteEntry } from "../../services/entries";
 import PrimaryButton from "./common/PrimaryButton";
 
@@ -34,6 +35,7 @@ export default function RecentEntriesList({
   onEntryDeleted,
 }: Props) {
   const [entries, setEntries] = useState<Entry[]>([]);
+  const [categoryMap, setCategoryMap] = useState<Record<string, string>>({});
   const [visibleCount, setVisibleCount] = useState(10);
 
   useEffect(() => {
@@ -52,6 +54,15 @@ export default function RecentEntriesList({
         );
 
         const snapshot = await getDocs(entriesQuery);
+        const categories = await getAllCategoriesForFamily(familyId);
+
+        const mappedCategories: Record<string, string> = {};
+
+        categories.forEach((category) => {
+          mappedCategories[category.id] = category.name;
+        });
+
+        setCategoryMap(mappedCategories);
 
         const items: Entry[] = snapshot.docs.map((doc) => ({
           id: doc.id,
@@ -139,7 +150,8 @@ export default function RecentEntriesList({
               {/* LEFT SIDE */}
               <View style={{ flex: 1, paddingRight: 10 }}>
                 <Text style={{ fontSize: 16, fontWeight: "600" }}>
-                  ${Number(entry.amount || 0).toFixed(2)} - {entry.category}
+                  ${Number(entry.amount || 0).toFixed(2)} -{" "}
+                  {categoryMap[entry.categoryId ?? ""] ?? "Unknown Category"}
                 </Text>
 
                 <Text style={{ fontSize: 14, color: "#666" }}>
@@ -189,5 +201,3 @@ export default function RecentEntriesList({
     </View>
   );
 }
-
-

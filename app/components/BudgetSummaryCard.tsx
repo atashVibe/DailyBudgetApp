@@ -45,6 +45,15 @@ export default function BudgetSummaryCard({
       <Text style={{ fontSize: 16, marginBottom: 6 }}>
         Total Expences: ${spentThisMonth.toFixed(2)}
       </Text>
+      <Text
+        style={{
+          fontSize: 16,
+          color: summary.status.color,
+          fontWeight: summary.usedPercent > 100 ? "bold" : "normal",
+        }}
+      >
+        Status: {summary.status.text}
+      </Text>
 
       {summary.recoveryDays > 0 && (
         <Text
@@ -77,20 +86,32 @@ export default function BudgetSummaryCard({
           }}
         />
       </View>
-      <Text
+      <View
         style={{
-          fontSize: 16,
-          color: summary.status.color,
-          fontWeight: summary.usedPercent > 100 ? "bold" : "normal",
+          height: 12,
+          backgroundColor: "#E5E7EB",
+          borderRadius: 999,
+          overflow: "hidden",
+          marginBottom: 6,
         }}
       >
-        Status: {summary.status.text}
+        <View
+          style={{
+            height: "100%",
+            width: `${summary.monthPassedPercent}%`,
+            backgroundColor: "#0ea249",
+          }}
+        />
+      </View>
+      <Text style={{ fontSize: 13, color: "#666", marginBottom: 6 }}>
+        Month passed: {summary.monthPassedPercent.toFixed(0)}% | Money used:{" "}
+        {summary.progressPercent.toFixed(0)}%
       </Text>
+
       <View style={{ marginTop: 20 }}>
         <Text style={{ fontSize: 16, marginBottom: 6 }}>
           Yearly Spending: ${spentThisYear.toFixed(2)}
         </Text>
-
         <View
           style={{
             height: 12,
