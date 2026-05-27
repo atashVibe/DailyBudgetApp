@@ -1,13 +1,24 @@
-import { collection, getDocs, query, where } from "firebase/firestore";
+import {
+  addDoc,
+  collection,
+  doc,
+  getDocs,
+  query,
+  serverTimestamp,
+  updateDoc,
+  where,
+} from "firebase/firestore";
 
 import { db } from "./auth";
+
+export type CategoryType = "expense" | "income" | "refund" | "cashback";
 
 export type Category = {
   id: string;
   name: string;
   familyId: string;
   budgetAreaId: string;
-  type: string;
+  type: CategoryType;
   isArchived: boolean;
 };
 
@@ -24,8 +35,35 @@ export const getCategories = async (
 
   const snapshot = await getDocs(q);
 
-  return snapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...(doc.data() as Omit<Category, "id">),
-  }));
+  return snapshot.docs
+    .map((docItem) => ({
+      id: docItem.id,
+      ...(docItem.data() as Omit<Category, "id">),
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+};
+
+export const addCategory = async (
+  familyId: string,
+  userId: string,
+  budgetAreaId: string,
+  name: string,
+  type: CategoryType,
+) => {
+  await addDoc(collection(db, "categories"), {
+    name,
+    type,
+    budgetAreaId,
+    familyId,
+    isDefault: false,
+    isArchived: false,
+    createdBy: userId,
+    createdAt: serverTimestamp(),
+  });
+};
+
+export const archiveCategory = async (categoryId: string) => {
+  await updateDoc(doc(db, "categories", categoryId), {
+    isArchived: true,
+  });
 };

@@ -1,5 +1,6 @@
 import DateTimePicker from "@react-native-community/datetimepicker";
-import React, { useEffect, useState } from "react";
+import { useFocusEffect } from "expo-router";
+import React, { useCallback, useEffect, useState } from "react";
 import { Platform, Text, TouchableOpacity, View } from "react-native";
 import { auth } from "../../services/auth";
 import { getBudgetAreas } from "../../services/budgetAreas";
@@ -25,6 +26,7 @@ type Props = {
   onEntrySaved?: () => void;
   entryToEdit?: Entry | null;
   onCancelEdit?: () => void;
+  refreshSignal?: number;
 };
 
 function formatLocalDate(date: Date) {
@@ -39,6 +41,7 @@ export default function ExpenseEntryForm({
   onEntrySaved,
   entryToEdit,
   onCancelEdit,
+  refreshSignal,
 }: Props) {
   const [amount, setAmount] = useState("");
   const [budgetAreas, setBudgetAreas] = useState<any[]>([]);
@@ -69,24 +72,33 @@ export default function ExpenseEntryForm({
     }
   }, [entryToEdit]);
 
-  useEffect(() => {
-    const loadBudgetAreas = async () => {
-      try {
-        if (!familyId) return;
+  useFocusEffect(
+    useCallback(() => {
+      const loadBudgetAreas = async () => {
+        try {
+          if (!familyId) return;
 
-        const areas = await getBudgetAreas(familyId);
-        setBudgetAreas(areas);
+          const areas = await getBudgetAreas(familyId);
+          setBudgetAreas(areas);
 
-        if (areas.length > 0 && !selectedBudgetAreaId) {
-          setSelectedBudgetAreaId(areas[0].id);
+          const selectedAreaStillExists = areas.some(
+            (area) => area.id === selectedBudgetAreaId,
+          );
+
+          if (
+            areas.length > 0 &&
+            (!selectedBudgetAreaId || !selectedAreaStillExists)
+          ) {
+            setSelectedBudgetAreaId(areas[0].id);
+          }
+        } catch (error) {
+          console.log("Error loading budget areas:", error);
         }
-      } catch (error) {
-        console.log("Error loading budget areas:", error);
-      }
-    };
+      };
 
-    loadBudgetAreas();
-  }, [familyId]);
+      loadBudgetAreas();
+    }, [familyId, selectedBudgetAreaId]),
+  );
 
   useEffect(() => {
     const loadCategories = async () => {

@@ -29,10 +29,12 @@ export const getBudgetAreas = async (
 
   const snapshot = await getDocs(q);
 
-  return snapshot.docs.map((docItem) => ({
-    id: docItem.id,
-    ...(docItem.data() as Omit<BudgetArea, "id">),
-  }));
+  return snapshot.docs
+    .map((docItem) => ({
+      id: docItem.id,
+      ...(docItem.data() as Omit<BudgetArea, "id">),
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 };
 
 export const addBudgetArea = async (

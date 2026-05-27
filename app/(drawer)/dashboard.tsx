@@ -204,6 +204,7 @@ export default function DashboardScreen() {
         {familyId && (
           <ExpenseEntryForm
             familyId={familyId}
+            refreshSignal={refreshSignal}
             onEntrySaved={handleEntrySaved}
             entryToEdit={editingEntry}
             onCancelEdit={handleCancelEdit}

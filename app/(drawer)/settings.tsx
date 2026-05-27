@@ -12,7 +12,14 @@ import {
 import { useEffect, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { auth, db } from "../../services/auth";
+import {
+  addBudgetArea,
+  archiveBudgetArea,
+  getBudgetAreas,
+  type BudgetArea,
+} from "../../services/budgetAreas";
 import PrimaryButton from "../components/PrimaryButton";
+import BudgetAreasSection from "../components/settings/BudgetAreasSection";
 import FamilyBudgetSection from "../components/settings/FamilyBudgetSection";
 
 export default function SettingsScreen() {
@@ -22,6 +29,8 @@ export default function SettingsScreen() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [familyId, setFamilyId] = useState<string | null>(null);
   const [inviteEmail, setInviteEmail] = useState("");
+  const [budgetAreas, setBudgetAreas] = useState<BudgetArea[]>([]);
+  const [newBudgetAreaName, setNewBudgetAreaName] = useState("");
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -48,6 +57,9 @@ export default function SettingsScreen() {
         const accountData = accountSnap.data();
         setDailyBudget(accountData.dailyBudget);
       }
+
+      const areas = await getBudgetAreas(famId);
+      setBudgetAreas(areas);
     });
 
     return unsubscribe;
@@ -101,6 +113,29 @@ export default function SettingsScreen() {
     setInviteEmail("");
   };
 
+  const handleAddBudgetArea = async () => {
+    if (!isAdmin || !familyId || !auth.currentUser) return;
+
+    const name = newBudgetAreaName.trim();
+
+    if (!name) return;
+
+    await addBudgetArea(familyId, auth.currentUser.uid, name);
+
+    const areas = await getBudgetAreas(familyId);
+    setBudgetAreas(areas);
+    setNewBudgetAreaName("");
+  };
+
+  const handleArchiveBudgetArea = async (budgetAreaId: string) => {
+    if (!isAdmin || !familyId) return;
+
+    await archiveBudgetArea(budgetAreaId);
+
+    const areas = await getBudgetAreas(familyId);
+    setBudgetAreas(areas);
+  };
+
   return (
     <ScrollView
       style={{ flex: 1 }}
@@ -116,6 +151,15 @@ export default function SettingsScreen() {
         isAdmin={isAdmin}
         onBudgetInputChange={setBudgetInput}
         onUpdateBudget={handleUpdateBudget}
+      />
+
+      <BudgetAreasSection
+        budgetAreas={budgetAreas}
+        newBudgetAreaName={newBudgetAreaName}
+        isAdmin={isAdmin}
+        onNewBudgetAreaNameChange={setNewBudgetAreaName}
+        onAddBudgetArea={handleAddBudgetArea}
+        onArchiveBudgetArea={handleArchiveBudgetArea}
       />
 
       <View style={{ marginTop: 24 }}>
