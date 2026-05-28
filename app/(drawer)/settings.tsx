@@ -11,6 +11,7 @@ import {
 } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { Text, View } from "react-native";
+import { useBudgetAreas } from "../../hooks/useBudgetAreas";
 import { auth, db } from "../../services/auth";
 import {
   addBudgetArea,
@@ -18,7 +19,6 @@ import {
   getBudgetAreas,
   setDefaultBudgetArea,
   updateBudgetAreaName,
-  type BudgetArea,
 } from "../../services/budgetAreas";
 import {
   addCategory,
@@ -43,8 +43,10 @@ export default function SettingsScreen() {
   const [budgetInput, setBudgetInput] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
   const [familyId, setFamilyId] = useState<string | null>(null);
+  const { budgetAreas, setBudgetAreas, refreshBudgetAreas } = useBudgetAreas(
+    familyId ?? "",
+  );
   const [inviteEmail, setInviteEmail] = useState("");
-  const [budgetAreas, setBudgetAreas] = useState<BudgetArea[]>([]);
   const [newBudgetAreaName, setNewBudgetAreaName] = useState("");
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategoryBudgetAreaId, setSelectedCategoryBudgetAreaId] =
@@ -58,6 +60,11 @@ export default function SettingsScreen() {
 
     await setDefaultBudgetArea(familyId, budgetAreaId);
 
+    // IMPORTANT UX RULE:
+    // Do NOT call refreshBudgetAreas() here.
+    // Refreshing from Firestore may reorder the list and move the default budget area
+    // to the top, which feels like the item "jumps" and confuses users.
+    // Instead, update only the isDefault flag locally and preserve the current order.
     setBudgetAreas((currentAreas) =>
       currentAreas.map((area) => ({
         ...area,
@@ -65,7 +72,6 @@ export default function SettingsScreen() {
       })),
     );
   };
-
   const handleSetDefaultCategory = async (categoryId: string) => {
     if (!isAdmin || !familyId || !selectedCategoryBudgetAreaId) return;
 
@@ -120,7 +126,6 @@ export default function SettingsScreen() {
       }
 
       const areas = await getBudgetAreas(famId);
-      setBudgetAreas(areas);
       if (areas.length > 0) {
         setSelectedCategoryBudgetAreaId(areas[0].id);
 
@@ -205,8 +210,7 @@ export default function SettingsScreen() {
 
     await addBudgetArea(familyId, auth.currentUser.uid, name);
 
-    const areas = await getBudgetAreas(familyId);
-    setBudgetAreas(areas);
+    await refreshBudgetAreas();
     setNewBudgetAreaName("");
   };
 
@@ -215,8 +219,7 @@ export default function SettingsScreen() {
 
     await archiveBudgetArea(familyId, budgetAreaId);
 
-    const areas = await getBudgetAreas(familyId);
-    setBudgetAreas(areas);
+    await refreshBudgetAreas();
   };
 
   const handleEditBudgetArea = async (
@@ -229,8 +232,7 @@ export default function SettingsScreen() {
 
     await updateBudgetAreaName(budgetAreaId, newName.trim());
 
-    const areas = await getBudgetAreas(familyId!);
-    setBudgetAreas(areas);
+    await refreshBudgetAreas();
   };
 
   const handleAddCategory = async () => {

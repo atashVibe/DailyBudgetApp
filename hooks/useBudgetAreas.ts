@@ -31,6 +31,7 @@ export function useBudgetAreas(familyId: string) {
 
   return {
     budgetAreas,
+    setBudgetAreas,
     loading,
     refreshBudgetAreas: loadBudgetAreas,
   };
