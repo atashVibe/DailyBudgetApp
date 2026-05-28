@@ -10,7 +10,7 @@ type Props = {
   onNewBudgetAreaNameChange: (value: string) => void;
   onAddBudgetArea: () => void;
   onArchiveBudgetArea: (budgetAreaId: string) => void;
-
+  onSetDefaultBudgetArea: (budgetAreaId: string) => void;
   onEditBudgetArea: (budgetAreaId: string, currentName: string) => void;
 };
 
@@ -22,6 +22,7 @@ export default function BudgetAreasSection({
   onAddBudgetArea,
   onArchiveBudgetArea,
   onEditBudgetArea,
+  onSetDefaultBudgetArea,
 }: Props) {
   const handleConfirmArchive = (budgetAreaId: string) => {
     if (Platform.OS === "web") {
@@ -74,6 +75,16 @@ export default function BudgetAreasSection({
               style={{ flexDirection: "row", alignItems: "center", gap: 12 }}
             >
               <Ionicons
+                name={area.isDefault ? "checkmark-circle" : "ellipse-outline"}
+                size={24}
+                color={area.isDefault ? "green" : "#666"}
+                onPress={() => {
+                  if (!area.isDefault) {
+                    onSetDefaultBudgetArea(area.id);
+                  }
+                }}
+              />
+              <Ionicons
                 name="create-outline"
                 size={22}
                 color="#111"
@@ -112,5 +123,3 @@ export default function BudgetAreasSection({
     </View>
   );
 }
-
-

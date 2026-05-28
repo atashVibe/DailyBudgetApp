@@ -16,6 +16,7 @@ import {
   addBudgetArea,
   archiveBudgetArea,
   getBudgetAreas,
+  setDefaultBudgetArea,
   updateBudgetAreaName,
   type BudgetArea,
 } from "../../services/budgetAreas";
@@ -23,6 +24,7 @@ import {
   addCategory,
   archiveCategory,
   getCategories,
+  setDefaultCategory,
   updateCategory,
   type Category,
   type CategoryType,
@@ -50,6 +52,40 @@ export default function SettingsScreen() {
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryType, setNewCategoryType] =
     useState<CategoryType>("expense");
+
+  const handleSetDefaultBudgetArea = async (budgetAreaId: string) => {
+    if (!isAdmin || !familyId) return;
+
+    await setDefaultBudgetArea(familyId, budgetAreaId);
+
+    setBudgetAreas((currentAreas) =>
+      currentAreas.map((area) => ({
+        ...area,
+        isDefault: area.id === budgetAreaId,
+      })),
+    );
+  };
+
+  const handleSetDefaultCategory = async (categoryId: string) => {
+    if (!isAdmin || !familyId || !selectedCategoryBudgetAreaId) return;
+
+    try {
+      await setDefaultCategory(
+        familyId,
+        selectedCategoryBudgetAreaId,
+        categoryId,
+      );
+
+      setCategories((currentCategories) =>
+        currentCategories.map((category) => ({
+          ...category,
+          isDefault: category.id === categoryId,
+        })),
+      );
+    } catch (error) {
+      console.error("Failed to set default category:", error);
+    }
+  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -177,7 +213,7 @@ export default function SettingsScreen() {
   const handleArchiveBudgetArea = async (budgetAreaId: string) => {
     if (!isAdmin || !familyId) return;
 
-    await archiveBudgetArea(budgetAreaId);
+    await archiveBudgetArea(familyId, budgetAreaId);
 
     const areas = await getBudgetAreas(familyId);
     setBudgetAreas(areas);
@@ -290,6 +326,7 @@ export default function SettingsScreen() {
         onAddBudgetArea={handleAddBudgetArea}
         onArchiveBudgetArea={handleArchiveBudgetArea}
         onEditBudgetArea={handleEditBudgetArea}
+        onSetDefaultBudgetArea={handleSetDefaultBudgetArea}
       />
 
       <CategoriesSection
@@ -305,6 +342,7 @@ export default function SettingsScreen() {
         onAddCategory={handleAddCategory}
         onArchiveCategory={handleArchiveCategory}
         onEditCategory={handleEditCategory}
+        onSetDefaultCategory={handleSetDefaultCategory}
       />
 
       <View style={{ marginTop: 24 }}>

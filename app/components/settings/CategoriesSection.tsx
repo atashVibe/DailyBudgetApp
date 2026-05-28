@@ -22,6 +22,7 @@ type Props = {
     currentName: string,
     currentType: CategoryType,
   ) => void;
+  onSetDefaultCategory: (categoryId: string) => void;
 };
 
 const CATEGORY_TYPE_OPTIONS: { label: string; value: CategoryType }[] = [
@@ -44,6 +45,7 @@ export default function CategoriesSection({
   onAddCategory,
   onArchiveCategory,
   onEditCategory,
+  onSetDefaultCategory,
 }: Props) {
   const handleConfirmArchive = (categoryId: string) => {
     if (Platform.OS === "web") {
@@ -112,6 +114,18 @@ export default function CategoriesSection({
               style={{ flexDirection: "row", alignItems: "center", gap: 12 }}
             >
               <Ionicons
+                name={
+                  category.isDefault ? "checkmark-circle" : "ellipse-outline"
+                }
+                size={24}
+                color={category.isDefault ? "green" : "#666"}
+                onPress={() => {
+                  if (!category.isDefault) {
+                    onSetDefaultCategory(category.id);
+                  }
+                }}
+              />
+              <Ionicons
                 name="create-outline"
                 size={22}
                 color="#111"
@@ -161,5 +175,3 @@ export default function CategoriesSection({
     </View>
   );
 }
-
-

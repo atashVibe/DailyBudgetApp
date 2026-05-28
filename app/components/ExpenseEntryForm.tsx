@@ -119,7 +119,13 @@ export default function ExpenseEntryForm({
             );
 
             if (!selectedCategoryId || !categoryExists) {
-              setSelectedCategoryId(loadedCategories[0].id);
+              const defaultCategory = loadedCategories.find(
+                (item) => item.isDefault === true,
+              );
+
+              setSelectedCategoryId(
+                defaultCategory?.id ?? loadedCategories[0].id,
+              );
             }
           } else {
             setSelectedCategoryId("");
@@ -333,5 +339,3 @@ export default function ExpenseEntryForm({
     </View>
   );
 }
-
-

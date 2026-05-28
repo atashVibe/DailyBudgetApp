@@ -17,8 +17,8 @@ import {
   calculateYearlyTotal,
   type ReportEntry,
 } from "../../services/reports";
-import AppScreen from "../components/common/AppScreen";
 import BudgetSummaryCard from "../components/BudgetSummaryCard";
+import AppScreen from "../components/common/AppScreen";
 import ExpenseEntryForm from "../components/ExpenseEntryForm";
 import RecentEntriesList from "../components/RecentEntriesList";
 
@@ -52,6 +52,7 @@ export default function DashboardScreen() {
   };
   const [budgetInput, setBudgetInput] = useState("");
   const [familyId, setFamilyId] = useState<string | null>(null);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUserEmail(user?.email ?? "Unknown user");
@@ -258,5 +259,3 @@ export default function DashboardScreen() {
     </AppScreen>
   );
 }
-
-

@@ -1,5 +1,4 @@
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-
 import { DEFAULT_BUDGET_AREAS } from "../constants/defaultFinanceData";
 import { db } from "./auth";
 
@@ -12,7 +11,7 @@ export const seedFinanceData = async (familyId: string, userId: string) => {
     const budgetAreaRef = await addDoc(collection(db, "budgetAreas"), {
       name: area.name,
       familyId,
-      isDefault: true,
+      isDefault: area.isDefault,
       isArchived: false,
       createdBy: userId,
       createdAt: serverTimestamp(),
@@ -26,7 +25,7 @@ export const seedFinanceData = async (familyId: string, userId: string) => {
         type: category.type,
         budgetAreaId: budgetAreaRef.id,
         familyId,
-        isDefault: true,
+        isDefault: category.isDefault,
         isArchived: false,
         createdBy: userId,
         createdAt: serverTimestamp(),

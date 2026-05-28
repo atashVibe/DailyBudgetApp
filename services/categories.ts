@@ -7,6 +7,7 @@ import {
   serverTimestamp,
   updateDoc,
   where,
+  writeBatch,
 } from "firebase/firestore";
 
 import { db } from "./auth";
@@ -19,6 +20,7 @@ export type Category = {
   familyId: string;
   budgetAreaId: string;
   type: CategoryType;
+  isDefault: boolean;
   isArchived: boolean;
 };
 
@@ -67,8 +69,26 @@ export const addCategory = async (
     type,
     budgetAreaId,
     familyId,
+    isDefault: false,
     isArchived: false,
   };
+};
+
+export const setDefaultCategory = async (
+  familyId: string,
+  budgetAreaId: string,
+  categoryId: string,
+) => {
+  const categories = await getCategories(familyId, budgetAreaId);
+  const batch = writeBatch(db);
+
+  categories.forEach((category) => {
+    batch.update(doc(db, "categories", category.id), {
+      isDefault: category.id === categoryId,
+    });
+  });
+
+  await batch.commit();
 };
 
 export const archiveCategory = async (categoryId: string) => {
