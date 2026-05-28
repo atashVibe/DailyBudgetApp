@@ -1,11 +1,9 @@
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { useFocusEffect } from "expo-router";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Platform, Text, TouchableOpacity, View } from "react-native";
+import { useBudgetAreas } from "../../hooks/useBudgetAreas";
+import { useCategories } from "../../hooks/useCategories";
 import { auth } from "../../services/auth";
-import { getBudgetAreas } from "../../services/budgetAreas";
-import type { Category } from "../../services/categories";
-import { getCategories } from "../../services/categories";
 import { addEntry, updateEntry } from "../../services/entries";
 import AppPicker from "./common/AppPicker";
 import AppTextInput from "./common/AppTextInput";
@@ -44,14 +42,45 @@ export default function ExpenseEntryForm({
   refreshSignal,
 }: Props) {
   const [amount, setAmount] = useState("");
-  const [budgetAreas, setBudgetAreas] = useState<any[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
   const [selectedBudgetAreaId, setSelectedBudgetAreaId] = useState("");
+  const { budgetAreas } = useBudgetAreas(familyId);
   const [selectedCategoryId, setSelectedCategoryId] = useState("");
+  const { categories, defaultCategory } = useCategories(
+    familyId,
+    selectedBudgetAreaId,
+  );
   const [note, setNote] = useState("");
   const [message, setMessage] = useState("");
   const [date, setDate] = useState(formatLocalDate(new Date()));
   const [showDatePicker, setShowDatePicker] = useState(false);
+  useEffect(() => {
+    if (budgetAreas.length === 0) return;
+
+    const selectedAreaStillExists = budgetAreas.some(
+      (area) => area.id === selectedBudgetAreaId,
+    );
+
+    if (!selectedBudgetAreaId || !selectedAreaStillExists) {
+      const defaultArea = budgetAreas.find((area) => area.isDefault === true);
+
+      setSelectedBudgetAreaId(defaultArea?.id ?? budgetAreas[0].id);
+    }
+  }, [budgetAreas, selectedBudgetAreaId]);
+
+  useEffect(() => {
+    if (categories.length === 0) {
+      setSelectedCategoryId("");
+      return;
+    }
+
+    const selectedCategoryStillExists = categories.some(
+      (category) => category.id === selectedCategoryId,
+    );
+
+    if (!selectedCategoryId || !selectedCategoryStillExists) {
+      setSelectedCategoryId(defaultCategory?.id ?? categories[0].id);
+    }
+  }, [categories, defaultCategory, selectedCategoryId]);
 
   useEffect(() => {
     if (entryToEdit) {
@@ -71,73 +100,6 @@ export default function ExpenseEntryForm({
       setDate(formatLocalDate(new Date()));
     }
   }, [entryToEdit]);
-
-  useFocusEffect(
-    useCallback(() => {
-      const loadBudgetAreas = async () => {
-        try {
-          if (!familyId) return;
-
-          const areas = await getBudgetAreas(familyId);
-          setBudgetAreas(areas);
-
-          const selectedAreaStillExists = areas.some(
-            (area) => area.id === selectedBudgetAreaId,
-          );
-
-          if (
-            areas.length > 0 &&
-            (!selectedBudgetAreaId || !selectedAreaStillExists)
-          ) {
-            setSelectedBudgetAreaId(areas[0].id);
-          }
-        } catch (error) {
-          console.log("Error loading budget areas:", error);
-        }
-      };
-
-      loadBudgetAreas();
-    }, [familyId, selectedBudgetAreaId]),
-  );
-
-  useFocusEffect(
-    useCallback(() => {
-      const loadCategories = async () => {
-        try {
-          if (!familyId || !selectedBudgetAreaId) return;
-
-          const loadedCategories = await getCategories(
-            familyId,
-            selectedBudgetAreaId,
-          );
-
-          setCategories(loadedCategories);
-
-          if (loadedCategories.length > 0) {
-            const categoryExists = loadedCategories.some(
-              (item) => item.id === selectedCategoryId,
-            );
-
-            if (!selectedCategoryId || !categoryExists) {
-              const defaultCategory = loadedCategories.find(
-                (item) => item.isDefault === true,
-              );
-
-              setSelectedCategoryId(
-                defaultCategory?.id ?? loadedCategories[0].id,
-              );
-            }
-          } else {
-            setSelectedCategoryId("");
-          }
-        } catch (error) {
-          console.log("Error loading categories:", error);
-        }
-      };
-
-      loadCategories();
-    }, [familyId, selectedBudgetAreaId, selectedCategoryId]),
-  );
 
   const handleSave = async () => {
     if (!amount || isNaN(Number(amount))) {
