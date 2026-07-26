@@ -1,14 +1,56 @@
+import { FontAwesome } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { useCallback, useState } from "react";
-import { Platform, Text, TouchableOpacity, View } from "react-native";
+import {
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { auth, db } from "../services/auth";
 import { signInWithApple, signInWithGoogle } from "../services/googleAuth";
 import AppScreen from "./components/common/AppScreen";
 import AppTextInput from "./components/common/AppTextInput";
 import PrimaryButton from "./components/common/PrimaryButton";
+
+type SocialLoginButtonProps = {
+  provider: "google" | "apple";
+  title: string;
+  disabled: boolean;
+  onPress: () => void;
+};
+
+function SocialLoginButton({
+  provider,
+  title,
+  disabled,
+  onPress,
+}: SocialLoginButtonProps) {
+  return (
+    <TouchableOpacity
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      activeOpacity={0.75}
+      disabled={disabled}
+      onPress={onPress}
+      style={[styles.socialButton, disabled && styles.disabledButton]}
+    >
+      <View style={styles.socialButtonContent}>
+        <FontAwesome
+          name={provider}
+          size={22}
+          color={provider === "google" ? "#4285F4" : "#111111"}
+          style={styles.socialIcon}
+        />
+        <Text style={styles.socialButtonText}>{title}</Text>
+      </View>
+    </TouchableOpacity>
+  );
+}
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -178,39 +220,19 @@ export default function LoginScreen() {
             loading={loading}
           />
         </View>
-        <TouchableOpacity
-          onPress={handleGoogleLogin}
+        <SocialLoginButton
+          provider="google"
+          title="Continue with Google"
           disabled={loading}
-          style={{
-            backgroundColor: "#ffffff",
-            padding: 16,
-            borderRadius: 10,
-            alignItems: "center",
-            marginBottom: 12,
-            borderWidth: 1,
-            borderColor: "#ccc",
-            opacity: loading ? 0.6 : 1,
-          }}
-        >
-          <Text style={{ color: "#111", fontSize: 16, fontWeight: "600" }}>
-            Continue with Google
-          </Text>
-        </TouchableOpacity>
-        {false && Platform.OS !== "android" && (
-          <TouchableOpacity
+          onPress={handleGoogleLogin}
+        />
+        {Platform.OS !== "android" && (
+          <SocialLoginButton
+            provider="apple"
+            title="Continue with Apple"
+            disabled={loading}
             onPress={handleAppleLogin}
-            style={{
-              backgroundColor: "#000000",
-              padding: 16,
-              borderRadius: 10,
-              alignItems: "center",
-              marginBottom: 12,
-            }}
-          >
-            <Text style={{ color: "#ffffff", fontSize: 16, fontWeight: "600" }}>
-              Continue with Apple
-            </Text>
-          </TouchableOpacity>
+          />
         )}
 
         {message ? (
@@ -234,3 +256,34 @@ export default function LoginScreen() {
     </AppScreen>
   );
 }
+
+const styles = StyleSheet.create({
+  socialButton: {
+    height: 58,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#D1D5DB",
+    borderRadius: 29,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  socialButtonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  socialIcon: {
+    width: 30,
+    textAlign: "center",
+    marginRight: 8,
+  },
+  socialButtonText: {
+    color: "#111111",
+    fontSize: 17,
+    fontWeight: "600",
+  },
+  disabledButton: {
+    opacity: 0.55,
+  },
+});
