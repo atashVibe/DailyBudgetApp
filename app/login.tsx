@@ -178,24 +178,24 @@ export default function LoginScreen() {
             loading={loading}
           />
         </View>
-        {false && (
-          <TouchableOpacity
-            onPress={handleGoogleLogin}
-            style={{
-              backgroundColor: "#ffffff",
-              padding: 16,
-              borderRadius: 10,
-              alignItems: "center",
-              marginBottom: 12,
-              borderWidth: 1,
-              borderColor: "#ccc",
-            }}
-          >
-            <Text style={{ color: "#111", fontSize: 16, fontWeight: "600" }}>
-              Continue with Google
-            </Text>
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity
+          onPress={handleGoogleLogin}
+          disabled={loading}
+          style={{
+            backgroundColor: "#ffffff",
+            padding: 16,
+            borderRadius: 10,
+            alignItems: "center",
+            marginBottom: 12,
+            borderWidth: 1,
+            borderColor: "#ccc",
+            opacity: loading ? 0.6 : 1,
+          }}
+        >
+          <Text style={{ color: "#111", fontSize: 16, fontWeight: "600" }}>
+            Continue with Google
+          </Text>
+        </TouchableOpacity>
         {false && Platform.OS !== "android" && (
           <TouchableOpacity
             onPress={handleAppleLogin}
