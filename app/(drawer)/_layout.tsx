@@ -2,7 +2,7 @@ import { DrawerItemList } from "@react-navigation/drawer";
 import { useRouter } from "expo-router";
 import { Drawer } from "expo-router/drawer";
 import { signOut } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, onSnapshot } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { auth, db } from "../../services/auth";
@@ -12,27 +12,23 @@ export default function DrawerLayout() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isRoleLoaded, setIsRoleLoaded] = useState(false);
   useEffect(() => {
-    const loadUserRole = async () => {
-      const user = auth.currentUser;
-
-      if (!user) {
-        setIsRoleLoaded(true);
-        return;
-      }
-
-      const userRef = doc(db, "users", user.uid);
-      const userSnap = await getDoc(userRef);
-
-      if (!userSnap.exists()) {
-        setIsRoleLoaded(true);
-        return;
-      }
-
-      setIsAdmin(userSnap.data().role === "admin");
+    const user = auth.currentUser;
+    if (!user) {
       setIsRoleLoaded(true);
-    };
+      return;
+    }
 
-    loadUserRole();
+    return onSnapshot(
+      doc(db, "users", user.uid),
+      (snapshot) => {
+        setIsAdmin(snapshot.exists() && snapshot.data().role === "admin");
+        setIsRoleLoaded(true);
+      },
+      () => {
+        setIsAdmin(false);
+        setIsRoleLoaded(true);
+      },
+    );
   }, []);
 
   const handleSignOut = async () => {
@@ -78,15 +74,15 @@ export default function DrawerLayout() {
         options={{
           drawerLabel: "Invite Family Member",
           title: "Invite Family Member",
+          drawerItemStyle: isAdmin ? undefined : { display: "none" },
         }}
       />
 
       <Drawer.Screen
         name="join-family"
         options={{
-          drawerLabel: "Join Family",
-          title: "Join Family",
-          drawerItemStyle: isAdmin ? { display: "none" } : undefined,
+          drawerLabel: "Switch Family",
+          title: "Switch Family",
         }}
       />
     </Drawer>

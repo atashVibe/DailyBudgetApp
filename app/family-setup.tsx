@@ -64,6 +64,7 @@ export default function FamilySetupScreen() {
       await setDoc(doc(db, "familyMembers", `${familyRef.id}_${user.uid}`), {
         familyId: familyRef.id,
         userId: user.uid,
+        email: user.email?.toLowerCase() || "",
         role: "admin",
         status: "active",
         joinedAt: new Date(),
@@ -130,11 +131,12 @@ export default function FamilySetupScreen() {
       }
 
       const familyId = inviteData.familyId;
+      const invitedRole = inviteData.role === "admin" ? "admin" : "member";
 
       // Create user profile
       await setDoc(doc(db, "users", user.uid), {
         activeFamilyId: familyId,
-        role: "member",
+        role: invitedRole,
         email: googleEmail,
       });
 
@@ -142,7 +144,8 @@ export default function FamilySetupScreen() {
       await setDoc(doc(db, "familyMembers", `${familyId}_${user.uid}`), {
         familyId,
         userId: user.uid,
-        role: "member",
+        email: googleEmail,
+        role: invitedRole,
         status: "active",
         joinedAt: new Date(),
       });
@@ -150,6 +153,7 @@ export default function FamilySetupScreen() {
       // Mark invite accepted
       await updateDoc(doc(db, "invites", inviteDoc.id), {
         status: "accepted",
+        acceptedBy: user.uid,
       });
 
       setMessage("Joined family successfully!");

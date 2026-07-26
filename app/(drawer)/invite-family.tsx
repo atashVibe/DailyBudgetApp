@@ -19,20 +19,42 @@ import { auth, db } from "../../services/auth";
 
 const InviteScreen = () => {
   const [email, setEmail] = useState("");
+  const [role, setRole] = useState<"member" | "admin">("member");
   const [familyId, setFamilyId] = useState<string | null>(null);
+  const [canInvite, setCanInvite] = useState<boolean | null>(null);
   const [createdCode, setCreatedCode] = useState("");
 
   useEffect(() => {
     const fetchUserAccount = async () => {
       const user = auth.currentUser;
 
-      if (!user) return;
+      if (!user) {
+        setCanInvite(false);
+        return;
+      }
 
       const userRef = doc(db, "users", user.uid);
       const userSnap = await getDoc(userRef);
 
       if (userSnap.exists()) {
-        setFamilyId(userSnap.data().activeFamilyId);
+        const activeFamilyId = userSnap.data().activeFamilyId;
+        if (!activeFamilyId) {
+          setCanInvite(false);
+          return;
+        }
+
+        const memberSnap = await getDoc(
+          doc(db, "familyMembers", `${activeFamilyId}_${user.uid}`),
+        );
+        const isActiveAdmin =
+          memberSnap.exists() &&
+          memberSnap.data().role === "admin" &&
+          memberSnap.data().status === "active";
+
+        setFamilyId(activeFamilyId);
+        setCanInvite(isActiveAdmin);
+      } else {
+        setCanInvite(false);
       }
     };
 
@@ -48,6 +70,14 @@ const InviteScreen = () => {
   };
 
   const sendInvite = async () => {
+    if (!canInvite) {
+      Alert.alert(
+        "Administrators only",
+        "Only an active family administrator can invite members.",
+      );
+      return;
+    }
+
     if (!email) {
       Alert.alert("Error", "Please enter an email address");
       return;
@@ -61,10 +91,11 @@ const InviteScreen = () => {
 
     const expiresAt = Timestamp.fromDate(new Date(Date.now() + 10 * 60 * 1000));
     try {
-      const docRef = await addDoc(collection(db, "invites"), {
+      await addDoc(collection(db, "invites"), {
         email: email.toLowerCase().trim(),
         familyId: familyId,
-        role: "member",
+        role,
+        createdBy: auth.currentUser?.uid,
         code: code,
         status: "pending",
         createdAt: serverTimestamp(),
@@ -82,6 +113,26 @@ const InviteScreen = () => {
     }
   };
 
+  if (canInvite === null) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.label}>Loading invitation permissions...</Text>
+      </View>
+    );
+  }
+
+  if (!canInvite) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.label}>Administrators only</Text>
+        <Text style={{ color: "gray", textAlign: "center" }}>
+          Only an active family administrator can invite members or other
+          administrators.
+        </Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <Text style={styles.label}>Invite a Family Member</Text>
@@ -98,6 +149,36 @@ const InviteScreen = () => {
         autoCapitalize="none"
         keyboardType="email-address"
       />
+
+      <Text style={styles.roleLabel}>Invitation role</Text>
+      <View style={styles.roleRow}>
+        {(["member", "admin"] as const).map((option) => (
+          <TouchableOpacity
+            key={option}
+            style={[
+              styles.roleButton,
+              role === option && styles.selectedRoleButton,
+            ]}
+            onPress={() => setRole(option)}
+          >
+            <Text
+              style={[
+                styles.roleText,
+                role === option && styles.selectedRoleText,
+              ]}
+            >
+              {option === "admin" ? "Administrator" : "Member"}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {role === "admin" ? (
+        <Text style={styles.adminHelp}>
+          Administrators can manage the family budget and allow another
+          administrator to leave safely.
+        </Text>
+      ) : null}
 
       {isValidEmail(email) && (
         <TouchableOpacity style={styles.button} onPress={sendInvite}>
@@ -136,6 +217,20 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     marginBottom: 20,
   },
+  roleLabel: { fontSize: 15, fontWeight: "600", marginBottom: 8 },
+  roleRow: { flexDirection: "row", gap: 10, marginBottom: 10 },
+  roleButton: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "#CBD5E1",
+    borderRadius: 8,
+    padding: 12,
+    alignItems: "center",
+  },
+  selectedRoleButton: { backgroundColor: "#E6FAF5", borderColor: "#2BCEA6" },
+  roleText: { color: "#475569", fontWeight: "600" },
+  selectedRoleText: { color: "#087F65" },
+  adminHelp: { color: "#64748B", lineHeight: 20, marginBottom: 16 },
   button: {
     backgroundColor: "#007bff",
     padding: 15,

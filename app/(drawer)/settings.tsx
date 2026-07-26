@@ -29,19 +29,27 @@ import {
   type Category,
   type CategoryType,
 } from "../../services/categories";
+import {
+  getFamilyAdmins,
+  type FamilyAdmin,
+} from "../../services/families";
 import AppScreen from "../components/common/AppScreen";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import PrimaryButton from "../components/common/PrimaryButton";
 import BudgetAreasSection from "../components/settings/BudgetAreasSection";
 import CategoriesSection from "../components/settings/CategoriesSection";
 import FamilyBudgetSection from "../components/settings/FamilyBudgetSection";
+import AdminsSection from "../components/settings/AdminsSection";
 
 export default function SettingsScreen() {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const [dailyBudget, setDailyBudget] = useState(0);
+  const [familyName, setFamilyName] = useState("");
   const [budgetInput, setBudgetInput] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
+  const [admins, setAdmins] = useState<FamilyAdmin[]>([]);
+  const [adminsLoading, setAdminsLoading] = useState(false);
   const [familyId, setFamilyId] = useState<string | null>(null);
   const { budgetAreas, setBudgetAreas, refreshBudgetAreas } = useBudgetAreas(
     familyId ?? "",
@@ -111,7 +119,10 @@ export default function SettingsScreen() {
 
       const userData = userSnap.data();
       const famId = userData.activeFamilyId;
-      if (!famId) return;
+      if (!famId) {
+        setLoading(false);
+        return;
+      }
 
       setFamilyId(famId);
       setIsAdmin(userData.role === "admin");
@@ -122,6 +133,7 @@ export default function SettingsScreen() {
 
       if (accountSnap.exists()) {
         const accountData = accountSnap.data();
+        setFamilyName(accountData.name || "Family");
         setDailyBudget(accountData.dailyBudget);
       }
 
@@ -131,8 +143,8 @@ export default function SettingsScreen() {
 
         const loadedCategories = await getCategories(famId, areas[0].id);
         setCategories(loadedCategories);
-        setLoading(false);
       }
+      setLoading(false);
     });
 
     return unsubscribe;
@@ -152,6 +164,28 @@ export default function SettingsScreen() {
 
     loadCategories();
   }, [familyId, selectedCategoryBudgetAreaId]);
+
+  useEffect(() => {
+    const loadAdmins = async () => {
+      const user = auth.currentUser;
+      if (!familyId || !user) {
+        setAdmins([]);
+        return;
+      }
+
+      setAdminsLoading(true);
+      try {
+        setAdmins(await getFamilyAdmins(familyId, user.uid, user.email));
+      } catch (error) {
+        console.error("Failed to load family administrators:", error);
+        setAdmins([]);
+      } finally {
+        setAdminsLoading(false);
+      }
+    };
+
+    void loadAdmins();
+  }, [familyId]);
 
   const handleSwitchUser = async () => {
     try {
@@ -308,8 +342,18 @@ export default function SettingsScreen() {
   }
   return (
     <AppScreen style={{ paddingTop: 80 }}>
-      <Text style={{ fontSize: 28, fontWeight: "700", marginBottom: 20 }}>
-        Familly Settings
+      <Text
+        style={{
+          fontSize: 22,
+          fontWeight: "700",
+          color: "#087F65",
+          marginBottom: 2,
+        }}
+      >
+        {familyName || "Family"} Family
+      </Text>
+      <Text style={{ fontSize: 30, fontWeight: "700", marginBottom: 20 }}>
+        Settings
       </Text>
 
       <FamilyBudgetSection
@@ -319,6 +363,8 @@ export default function SettingsScreen() {
         onBudgetInputChange={setBudgetInput}
         onUpdateBudget={handleUpdateBudget}
       />
+
+      <AdminsSection admins={admins} loading={adminsLoading} />
 
       <BudgetAreasSection
         budgetAreas={budgetAreas}

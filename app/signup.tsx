@@ -111,7 +111,7 @@ export default function SignupScreen() {
         }
 
         finalFamilyId = inviteData.familyId;
-        userRole = "member";
+        userRole = inviteData.role === "admin" ? "admin" : "member";
         acceptedInviteId = inviteDoc.id;
       }
 
@@ -152,6 +152,7 @@ export default function SignupScreen() {
       await setDoc(doc(db, "familyMembers", `${finalFamilyId}_${user.uid}`), {
         familyId: finalFamilyId,
         userId: user.uid,
+        email: email.toLowerCase().trim(),
         role: userRole,
         status: "active",
         joinedAt: new Date(),
@@ -160,6 +161,7 @@ export default function SignupScreen() {
       if (mode === "join" && acceptedInviteId) {
         await updateDoc(doc(db, "invites", acceptedInviteId), {
           status: "accepted",
+          acceptedBy: user.uid,
         });
       }
 

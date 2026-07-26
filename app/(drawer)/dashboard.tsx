@@ -1,15 +1,13 @@
 import { useFocusEffect, useRouter } from "expo-router";
-import { onAuthStateChanged } from "firebase/auth";
 import {
   collection,
   doc,
   getDoc,
   getDocs,
   query,
-  updateDoc,
   where,
 } from "firebase/firestore";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { auth, db } from "../../services/auth";
 import {
@@ -19,6 +17,7 @@ import {
 } from "../../services/reports";
 import BudgetSummaryCard from "../components/BudgetSummaryCard";
 import AppScreen from "../components/common/AppScreen";
+import LoadingSpinner from "../components/common/LoadingSpinner";
 import ExpenseEntryForm from "../components/ExpenseEntryForm";
 import RecentEntriesList from "../components/RecentEntriesList";
 
@@ -33,9 +32,10 @@ type Entry = {
 };
 
 export default function DashboardScreen() {
-  const [userId, setUserId] = useState<string | null>(null);
   const router = useRouter();
   const [userEmail, setUserEmail] = useState("Loading...");
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [refreshSignal, setRefreshSignal] = useState(0);
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
   const scrollRef = useRef<ScrollView>(null);
@@ -50,36 +50,77 @@ export default function DashboardScreen() {
     setRefreshSignal((prev) => prev + 1);
     setEditingEntry(null);
   };
-  const [budgetInput, setBudgetInput] = useState("");
   const [familyId, setFamilyId] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setUserEmail(user?.email ?? "Unknown user");
-      setUserId(user?.uid ?? null);
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
 
-      if (!user) {
-        setFamilyId(null);
-        setIsAdmin(false);
-        setDailyBudget(30);
-        setSpentThisMonth(0);
-        setSpentThisYear(0);
-        setEditingEntry(null);
-        setUserEmail("Loading...");
-        return;
-      }
+      const loadDashboardContext = async () => {
+        const user = auth.currentUser;
+        if (!user) {
+          router.replace("/login");
+          return;
+        }
 
-      const userRef = doc(db, "users", user.uid);
-      const userSnap = await getDoc(userRef);
+        setLoading(true);
+        setLoadError("");
+        try {
+          const userSnap = await getDoc(doc(db, "users", user.uid));
+          const nextFamilyId = userSnap.data()?.activeFamilyId as
+            | string
+            | undefined;
 
-      if (userSnap.exists()) {
-        const data = userSnap.data();
-        setFamilyId(data.activeFamilyId);
-      }
-    });
+          if (!nextFamilyId) {
+            router.replace("/family-setup");
+            return;
+          }
 
-    return unsubscribe;
-  }, []);
+          const [familySnap, memberSnap] = await Promise.all([
+            getDoc(doc(db, "families", nextFamilyId)),
+            getDoc(
+              doc(db, "familyMembers", `${nextFamilyId}_${user.uid}`),
+            ),
+          ]);
+
+          if (
+            !familySnap.exists() ||
+            familySnap.data().status === "deleted"
+          ) {
+            router.replace("/family-setup");
+            return;
+          }
+
+          if (!active) return;
+          setUserEmail(user.email ?? "Unknown user");
+          setEditingEntry(null);
+          setSpentThisMonth(0);
+          setSpentThisYear(0);
+          setFamilyId(nextFamilyId);
+          setDailyBudget(Number(familySnap.data().dailyBudget || 30));
+          setIsAdmin(
+            memberSnap.exists() && memberSnap.data().role === "admin",
+          );
+          setRefreshSignal((current) => current + 1);
+        } catch (error) {
+          console.error("Failed to load dashboard:", error);
+          if (active) {
+            setLoadError(
+              "The dashboard could not be loaded. Please try opening it again.",
+            );
+          }
+        } finally {
+          if (active) setLoading(false);
+        }
+      };
+
+      void loadDashboardContext();
+      return () => {
+        active = false;
+      };
+    }, [router]),
+  );
 
   useEffect(() => {
     if (!familyId) return;
@@ -122,50 +163,19 @@ export default function DashboardScreen() {
     loadMonthSpending();
   }, [refreshSignal, familyId]);
 
-  const handleUpdateBudget = async () => {
-    const newBudget = Number(budgetInput);
+  if (loading) {
+    return <LoadingSpinner message="Loading dashboard..." />;
+  }
 
-    if (!newBudget || newBudget <= 0) return;
-
-    if (!familyId) return;
-    const docRef = doc(db, "families", familyId);
-
-    await updateDoc(docRef, {
-      dailyBudget: newBudget,
-    });
-
-    setDailyBudget(newBudget);
-    setBudgetInput("");
-  };
-
-  const [isAdmin, setIsAdmin] = useState(false);
-
-  useFocusEffect(() => {
-    const fetchAccountData = async () => {
-      if (!familyId) return;
-
-      const docRef = doc(db, "families", familyId);
-      const docSnap = await getDoc(docRef);
-
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-
-        setDailyBudget(data.dailyBudget);
-
-        const memberDocRef = doc(db, "familyMembers", `${familyId}_${userId}`);
-        const memberDocSnap = await getDoc(memberDocRef);
-
-        if (memberDocSnap.exists()) {
-          const memberData = memberDocSnap.data();
-          setIsAdmin(memberData.role === "admin");
-        } else {
-          setIsAdmin(false);
-        }
-      }
-    };
-
-    fetchAccountData();
-  });
+  if (loadError) {
+    return (
+      <AppScreen style={{ justifyContent: "center" }}>
+        <Text style={{ color: "#B91C1C", textAlign: "center" }}>
+          {loadError}
+        </Text>
+      </AppScreen>
+    );
+  }
 
   return (
     <AppScreen
