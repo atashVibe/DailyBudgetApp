@@ -29,10 +29,11 @@ import {
   type Category,
   type CategoryType,
 } from "../../services/categories";
+import { getFamilyAdmins, type FamilyAdmin } from "../../services/families";
 import {
-  getFamilyAdmins,
-  type FamilyAdmin,
-} from "../../services/families";
+  deleteCurrentAccount,
+  getAccountReauthenticationMethod,
+} from "../../services/accountDeletion";
 import AppScreen from "../components/common/AppScreen";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import PrimaryButton from "../components/common/PrimaryButton";
@@ -40,6 +41,7 @@ import BudgetAreasSection from "../components/settings/BudgetAreasSection";
 import CategoriesSection from "../components/settings/CategoriesSection";
 import FamilyBudgetSection from "../components/settings/FamilyBudgetSection";
 import AdminsSection from "../components/settings/AdminsSection";
+import AccountSection from "../components/settings/AccountSection";
 
 export default function SettingsScreen() {
   const [loading, setLoading] = useState(true);
@@ -195,6 +197,18 @@ export default function SettingsScreen() {
     }
 
     await signOut(auth);
+
+    router.replace("/login");
+  };
+
+  const handleDeleteAccount = async (password?: string) => {
+    await deleteCurrentAccount(password);
+
+    try {
+      await GoogleSignin.signOut();
+    } catch (error) {
+      console.log("Google sign-out skipped after account deletion:", error);
+    }
 
     router.replace("/login");
   };
@@ -396,6 +410,15 @@ export default function SettingsScreen() {
       <View style={{ marginTop: 24 }}>
         <PrimaryButton title="Switch User" onPress={handleSwitchUser} />
       </View>
+
+      {auth.currentUser ? (
+        <AccountSection
+          reauthenticationMethod={getAccountReauthenticationMethod(
+            auth.currentUser,
+          )}
+          onDeleteAccount={handleDeleteAccount}
+        />
+      ) : null}
     </AppScreen>
   );
 }
