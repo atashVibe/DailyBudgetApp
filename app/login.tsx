@@ -1,9 +1,10 @@
 import { FontAwesome } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
+import * as AppleAuthentication from "expo-apple-authentication";
 import { useRouter } from "expo-router";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Platform,
   StyleSheet,
@@ -58,6 +59,18 @@ export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [appleSignInAvailable, setAppleSignInAvailable] = useState(
+    Platform.OS === "web",
+  );
+
+  useEffect(() => {
+    if (Platform.OS !== "ios") return;
+
+    AppleAuthentication.isAvailableAsync()
+      .then(setAppleSignInAvailable)
+      .catch(() => setAppleSignInAvailable(false));
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
       return () => {
@@ -157,7 +170,27 @@ export default function LoginScreen() {
     } catch (error: any) {
       console.log(error);
 
-      setMessage("Apple sign-in failed.");
+      if (
+        error?.code === "ERR_REQUEST_CANCELED" ||
+        error?.code === "auth/popup-closed-by-user" ||
+        error?.code === "auth/cancelled-popup-request"
+      ) {
+        setMessage("");
+      } else if (error?.code === "auth/popup-blocked") {
+        setMessage("Please allow pop-ups to continue with Apple.");
+      } else if (error?.code === "auth/operation-not-allowed") {
+        setMessage("Apple sign-in is not enabled yet.");
+      } else if (error?.code === "auth/unauthorized-domain") {
+        setMessage("Apple sign-in is not allowed on this website yet.");
+      } else if (
+        error?.code === "auth/account-exists-with-different-credential"
+      ) {
+        setMessage(
+          "An account already exists with this email. Use its original sign-in method.",
+        );
+      } else {
+        setMessage("Apple sign-in failed. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -226,13 +259,34 @@ export default function LoginScreen() {
           disabled={loading}
           onPress={handleGoogleLogin}
         />
-        {Platform.OS !== "android" && (
+        {Platform.OS === "web" && (
           <SocialLoginButton
             provider="apple"
             title="Continue with Apple"
             disabled={loading}
             onPress={handleAppleLogin}
           />
+        )}
+        {Platform.OS === "ios" && appleSignInAvailable && (
+          <View
+            pointerEvents={loading ? "none" : "auto"}
+            style={[
+              styles.appleButtonContainer,
+              loading && styles.disabledButton,
+            ]}
+          >
+            <AppleAuthentication.AppleAuthenticationButton
+              buttonType={
+                AppleAuthentication.AppleAuthenticationButtonType.CONTINUE
+              }
+              buttonStyle={
+                AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
+              }
+              cornerRadius={29}
+              onPress={handleAppleLogin}
+              style={styles.appleButton}
+            />
+          </View>
         )}
 
         {message ? (
@@ -285,5 +339,12 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     opacity: 0.55,
+  },
+  appleButtonContainer: {
+    marginBottom: 12,
+  },
+  appleButton: {
+    width: "100%",
+    height: 58,
   },
 });

@@ -1,10 +1,12 @@
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import * as AppleAuthentication from "expo-apple-authentication";
+import * as Crypto from "expo-crypto";
 import {
   GoogleAuthProvider,
   OAuthProvider,
   signInWithCredential,
   signInWithPopup,
+  updateProfile,
 } from "firebase/auth";
 import { Platform } from "react-native";
 import { auth } from "./auth";
@@ -50,6 +52,8 @@ export const signInWithApple = async () => {
   // WEB LOGIN
   if (Platform.OS === "web") {
     const provider = new OAuthProvider("apple.com");
+    provider.addScope("email");
+    provider.addScope("name");
 
     const result = await signInWithPopup(auth, provider);
 
@@ -57,7 +61,21 @@ export const signInWithApple = async () => {
   }
 
   // iPHONE LOGIN
+  const isAvailable = await AppleAuthentication.isAvailableAsync();
+
+  if (!isAvailable) {
+    throw new Error("Apple Sign-In is not available on this device.");
+  }
+
+  // Firebase verifies this one-time nonce to prevent replay attacks.
+  const rawNonce = Crypto.randomUUID();
+  const hashedNonce = await Crypto.digestStringAsync(
+    Crypto.CryptoDigestAlgorithm.SHA256,
+    rawNonce,
+  );
+
   const credential = await AppleAuthentication.signInAsync({
+    nonce: hashedNonce,
     requestedScopes: [
       AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
       AppleAuthentication.AppleAuthenticationScope.EMAIL,
@@ -72,9 +90,22 @@ export const signInWithApple = async () => {
 
   const appleCredential = provider.credential({
     idToken: credential.identityToken,
+    rawNonce,
   });
 
   const userCredential = await signInWithCredential(auth, appleCredential);
+
+  // Apple only returns the user's name on the first authorization.
+  // Preserve it in Firebase while it is available.
+  if (!userCredential.user.displayName && credential.fullName) {
+    const displayName = AppleAuthentication.formatFullName(
+      credential.fullName,
+    ).trim();
+
+    if (displayName) {
+      await updateProfile(userCredential.user, { displayName });
+    }
+  }
 
   return userCredential.user;
 };
