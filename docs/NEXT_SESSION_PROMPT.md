@@ -15,6 +15,7 @@ Start by reading the repository, `docs/ROADMAP.md`, Git status, and recent commi
 - Account deletion, secure invitations, admin-name handling, Apple web login, mobile configuration, and several dashboard improvements are implemented.
 - TypeScript, lint, Expo dependency checks, Firestore rule tests, and the production web export passed at the checkpoint.
 - An Android internal-preview APK was successfully built, installed, and opened on a real Android phone.
+- The public beta, support, and feedback email is `dailybudgethub@gmail.com`.
 - Apple login is intentionally unavailable in the native Android app.
 - Apple Developer identifiers, Firebase configuration, and Sign in with Apple are configured.
 - The iOS preview build is waiting until I have access to the trusted device needed for Apple two-factor authentication.
@@ -29,7 +30,7 @@ Start by reading the repository, `docs/ROADMAP.md`, Git status, and recent commi
    - Warn Apple-only users to add another method.
    - Prevent Hide My Email users from accidentally creating a second account.
    - Test the complete iPhone-to-Android account-access path when an iPhone build is available.
-3. Finish the required public Privacy Policy, account-deletion, support/contact, and Terms pages using `dailybudgethub.com`.
+3. Finish the required public Privacy Policy, account-deletion, support/contact, and Terms pages using `dailybudgethub.com` and `dailybudgethub@gmail.com`.
 4. Continue the beta-readiness and real-device checklist in `docs/ROADMAP.md`.
 
 Reports and graphs are important, but they are planned as a later Version 2 candidate. The roadmap includes category, budget-area, trend, comparison, filter, accessibility, and export ideas. Do not let reporting delay the first safe beta.

@@ -30,6 +30,15 @@ The sequence is:
 - [ ] Test Google login on real iPhone and Android devices
 - [x] Build and install an Android internal-preview APK on a real phone
 - [ ] Build and install an iOS preview after Apple two-factor access is available
+- [x] Select the public beta/support email: `dailybudgethub@gmail.com`
+
+## Milestone Tracking Rules
+
+- Mark a roadmap item `[x]` only after the result is implemented or completed and verified.
+- Do not mark an attempted, partially completed, or blocked task as finished.
+- Record meaningful completed milestones in `docs/PROJECT_LOG.md` with the date and evidence.
+- Commit and push every stable milestone so the roadmap and implementation remain synchronized.
+- Update `docs/NEXT_SESSION_PROMPT.md` whenever a session materially changes the project state or next priority.
 
 ---
 
@@ -88,7 +97,7 @@ Create a small public DailyBudget website containing:
 - [ ] Account/Data Deletion Request
 - [ ] Support/contact page
 - [ ] Terms of Use
-- [ ] Public support email address
+- [x] Public support email address selected: `dailybudgethub@gmail.com`
 - [ ] Links that work without signing into the app
 
 Add these links inside:
@@ -220,7 +229,8 @@ Proceed only when:
 ## Prepare the Beta
 
 - [ ] Write a short explanation of what DailyBudget does
-- [ ] Create a feedback email or form
+- [x] Select the beta feedback email: `dailybudgethub@gmail.com`
+- [ ] Create a feedback form if email alone is insufficient
 - [ ] Prepare a simple “What to test” checklist
 - [ ] Explain that beta data might be reset
 - [ ] Never use real banking passwords or highly sensitive notes
