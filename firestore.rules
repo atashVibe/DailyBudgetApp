@@ -1,0 +1,290 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isCurrentUser(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    function membershipPath(familyId, userId) {
+      return /databases/$(database)/documents/familyMembers/$(familyId + '_' + userId);
+    }
+
+    function isActiveMember(familyId) {
+      return signedIn()
+        && exists(membershipPath(familyId, request.auth.uid))
+        && get(membershipPath(familyId, request.auth.uid)).data.status == 'active';
+    }
+
+    function isActiveMemberAfter(familyId) {
+      return signedIn()
+        && existsAfter(membershipPath(familyId, request.auth.uid))
+        && getAfter(membershipPath(familyId, request.auth.uid)).data.status == 'active';
+    }
+
+    function isAdmin(familyId) {
+      return isActiveMember(familyId)
+        && get(membershipPath(familyId, request.auth.uid)).data.role == 'admin';
+    }
+
+    function hasAuthenticatedEmail(data) {
+      return signedIn()
+        && request.auth.token.email != null
+        && data.keys().hasAny(['email'])
+        && data.email == request.auth.token.email;
+    }
+
+    function fieldMatchesCurrentUser(data, fieldName) {
+      return signedIn()
+        && data.keys().hasAny([fieldName])
+        && data[fieldName] == request.auth.uid;
+    }
+
+    function removesOnlyOwnField(fieldName) {
+      return fieldMatchesCurrentUser(resource.data, fieldName)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([fieldName])
+        && !request.resource.data.keys().hasAny([fieldName]);
+    }
+
+    function removesOwnFamilyIdentity() {
+      let affected = request.resource.data.diff(resource.data).affectedKeys();
+      return affected.size() > 0
+        && affected.hasOnly(['createdBy', 'deletedBy'])
+        && (!affected.hasAny(['createdBy'])
+          || (fieldMatchesCurrentUser(resource.data, 'createdBy')
+            && !request.resource.data.keys().hasAny(['createdBy'])))
+        && (!affected.hasAny(['deletedBy'])
+          || (fieldMatchesCurrentUser(resource.data, 'deletedBy')
+            && !request.resource.data.keys().hasAny(['deletedBy'])));
+    }
+
+    function removesOwnInviteIdentity() {
+      let affected = request.resource.data.diff(resource.data).affectedKeys();
+      return affected.size() > 0
+        && affected.hasOnly(['createdBy', 'acceptedBy'])
+        && (!affected.hasAny(['createdBy'])
+          || (fieldMatchesCurrentUser(resource.data, 'createdBy')
+            && !request.resource.data.keys().hasAny(['createdBy'])))
+        && (!affected.hasAny(['acceptedBy'])
+          || (fieldMatchesCurrentUser(resource.data, 'acceptedBy')
+            && !request.resource.data.keys().hasAny(['acceptedBy'])));
+    }
+
+    function keepsFamilyId() {
+      return request.resource.data.familyId == resource.data.familyId;
+    }
+
+    match /users/{userId} {
+      allow get: if isCurrentUser(userId);
+      allow list: if false;
+
+      allow create, update: if isCurrentUser(userId)
+        && request.resource.data.keys().hasAll(['activeFamilyId', 'role', 'email'])
+        && request.resource.data.email == request.auth.token.email
+        && (
+          (request.resource.data.activeFamilyId == null
+            && request.resource.data.role == null)
+          || (
+            isActiveMemberAfter(request.resource.data.activeFamilyId)
+            && getAfter(
+              membershipPath(request.resource.data.activeFamilyId, userId)
+            ).data.role == request.resource.data.role
+          )
+        );
+
+      allow delete: if isCurrentUser(userId);
+    }
+
+    match /families/{familyId} {
+      allow create: if signedIn()
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.status == 'active';
+
+      allow read: if isActiveMember(familyId);
+
+      allow update: if (
+          isAdmin(familyId)
+          && !request.resource.data.diff(resource.data).affectedKeys()
+            .hasAny(['createdBy'])
+        )
+        || removesOwnFamilyIdentity();
+
+      allow delete: if isAdmin(familyId)
+        || (signedIn() && resource.data.createdBy == request.auth.uid);
+    }
+
+    match /familyMembers/{memberId} {
+      function isOwnMembership() {
+        return signedIn()
+          && resource.data.userId == request.auth.uid;
+      }
+
+      function isOwnMembershipCreate() {
+        return signedIn()
+          && memberId == request.resource.data.familyId + '_' + request.auth.uid
+          && request.resource.data.userId == request.auth.uid
+          && request.resource.data.status == 'active'
+          && request.resource.data.email == request.auth.token.email;
+      }
+
+      function isCreatorMembership() {
+        return get(
+          /databases/$(database)/documents/families/$(request.resource.data.familyId)
+        ).data.createdBy == request.auth.uid
+          && request.resource.data.role == 'admin';
+      }
+
+      function isInvitedMembership() {
+        return request.resource.data.keys().hasAll(['inviteId'])
+          && getAfter(
+            /databases/$(database)/documents/invites/$(request.resource.data.inviteId)
+          ).data.familyId == request.resource.data.familyId
+          && getAfter(
+            /databases/$(database)/documents/invites/$(request.resource.data.inviteId)
+          ).data.email == request.auth.token.email
+          && getAfter(
+            /databases/$(database)/documents/invites/$(request.resource.data.inviteId)
+          ).data.role == request.resource.data.role
+          && getAfter(
+            /databases/$(database)/documents/invites/$(request.resource.data.inviteId)
+          ).data.status == 'accepted'
+          && getAfter(
+            /databases/$(database)/documents/invites/$(request.resource.data.inviteId)
+          ).data.acceptedBy == request.auth.uid;
+      }
+
+      function updatesOwnIdentity() {
+        let affected = request.resource.data.diff(resource.data).affectedKeys();
+        return isOwnMembership()
+          && affected.size() > 0
+          && affected.hasOnly(['email', 'displayName'])
+          && (!affected.hasAny(['email'])
+            || request.resource.data.email == request.auth.token.email)
+          && (!affected.hasAny(['displayName'])
+            || (request.resource.data.displayName is string
+              && request.resource.data.displayName.size() > 0
+              && request.resource.data.displayName.size() <= 80));
+      }
+
+      allow read: if isOwnMembership()
+        || isActiveMember(resource.data.familyId);
+
+      allow create: if isOwnMembershipCreate()
+        && (isCreatorMembership() || isInvitedMembership());
+
+      allow update: if keepsFamilyId()
+        && request.resource.data.userId == resource.data.userId
+        && (
+          isAdmin(resource.data.familyId)
+          || updatesOwnIdentity()
+          || (
+            isOwnMembership()
+            && request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(['status', 'leftAt'])
+            && request.resource.data.status == 'inactive'
+          )
+        );
+
+      allow delete: if isOwnMembership()
+        || isAdmin(resource.data.familyId);
+    }
+
+    match /budgetAreas/{budgetAreaId} {
+      allow read: if isActiveMember(resource.data.familyId);
+
+      allow create: if isAdmin(request.resource.data.familyId)
+        && request.resource.data.createdBy == request.auth.uid;
+
+      allow update: if (
+          isAdmin(resource.data.familyId)
+          && keepsFamilyId()
+          && !request.resource.data.diff(resource.data).affectedKeys()
+            .hasAny(['createdBy'])
+        )
+        || (signedIn() && keepsFamilyId() && removesOnlyOwnField('createdBy'));
+
+      allow delete: if isAdmin(resource.data.familyId);
+    }
+
+    match /categories/{categoryId} {
+      allow read: if isActiveMember(resource.data.familyId);
+
+      allow create: if isAdmin(request.resource.data.familyId)
+        && request.resource.data.createdBy == request.auth.uid;
+
+      allow update: if (
+          isAdmin(resource.data.familyId)
+          && keepsFamilyId()
+          && !request.resource.data.diff(resource.data).affectedKeys()
+            .hasAny(['createdBy'])
+        )
+        || (signedIn() && keepsFamilyId() && removesOnlyOwnField('createdBy'));
+
+      allow delete: if isAdmin(resource.data.familyId);
+    }
+
+    match /entries/{entryId} {
+      allow read: if isActiveMember(resource.data.familyId);
+
+      allow create: if isActiveMember(request.resource.data.familyId)
+        && request.resource.data.userId == request.auth.uid;
+
+      allow update: if (
+          isActiveMember(resource.data.familyId)
+          && keepsFamilyId()
+          && !request.resource.data.diff(resource.data).affectedKeys()
+            .hasAny(['userId'])
+        )
+        || (signedIn() && keepsFamilyId() && removesOnlyOwnField('userId'));
+
+      allow delete: if isActiveMember(resource.data.familyId);
+    }
+
+    match /invites/{inviteId} {
+      function isInviteRecipient() {
+        return hasAuthenticatedEmail(resource.data);
+      }
+
+      allow read: if isActiveMember(resource.data.familyId)
+        || (isInviteRecipient() && resource.data.status == 'pending');
+
+      allow create: if isAdmin(request.resource.data.familyId)
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.status == 'pending'
+        && request.resource.data.code is string
+        && request.resource.data.code.size() == 8
+        && request.resource.data.email is string
+        && request.resource.data.expiresAt is timestamp
+        && request.resource.data.expiresAt > request.time;
+
+      allow update: if keepsFamilyId()
+        && (
+          isAdmin(resource.data.familyId)
+          || (
+            isInviteRecipient()
+            && resource.data.status == 'pending'
+            && request.resource.data.status == 'accepted'
+            && request.resource.data.acceptedBy == request.auth.uid
+            && request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(['status', 'acceptedBy', 'acceptedAt'])
+          )
+          || removesOwnInviteIdentity()
+        );
+
+      allow delete: if isAdmin(resource.data.familyId)
+        || isInviteRecipient();
+    }
+
+    match /entryKinds/{entryKindId} {
+      allow read, write: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

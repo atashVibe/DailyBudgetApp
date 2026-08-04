@@ -2,6 +2,11 @@
 
 # dependencies
 node_modules/
+.npm-cache/
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
 
 # Expo
 .expo/

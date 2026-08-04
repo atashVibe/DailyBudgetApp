@@ -5,9 +5,9 @@ import {
   doc,
   getDocs,
   query,
-  setDoc,
-  updateDoc,
+  serverTimestamp,
   where,
+  writeBatch,
 } from "firebase/firestore";
 import { useState } from "react";
 import { Text } from "react-native";
@@ -50,25 +50,27 @@ export default function FamilySetupScreen() {
         dailyBudget: 30,
         status: "active",
         createdBy: user.uid,
-        createdAt: new Date(),
+        createdAt: serverTimestamp(),
       });
 
-      // Create user profile
-      await setDoc(doc(db, "users", user.uid), {
+      const batch = writeBatch(db);
+      batch.set(doc(db, "users", user.uid), {
         activeFamilyId: familyRef.id,
         role: "admin",
         email: user.email?.toLowerCase() || "",
       });
-
-      // Create family member record
-      await setDoc(doc(db, "familyMembers", `${familyRef.id}_${user.uid}`), {
+      batch.set(doc(db, "familyMembers", `${familyRef.id}_${user.uid}`), {
         familyId: familyRef.id,
         userId: user.uid,
         email: user.email?.toLowerCase() || "",
         role: "admin",
         status: "active",
-        joinedAt: new Date(),
+        ...(user.displayName?.trim()
+          ? { displayName: user.displayName.trim() }
+          : {}),
+        joinedAt: serverTimestamp(),
       });
+      await batch.commit();
       await seedFinanceData(familyRef.id, user.uid);
 
       setMessage("Family created successfully!");
@@ -99,8 +101,8 @@ export default function FamilySetupScreen() {
         return;
       }
 
-      if (inviteCode.length !== 6) {
-        setMessage("Enter a valid 6-digit code.");
+      if (inviteCode.length !== 8) {
+        setMessage("Enter a valid 8-digit code.");
         return;
       }
 
@@ -108,6 +110,7 @@ export default function FamilySetupScreen() {
         collection(db, "invites"),
         where("code", "==", inviteCode),
         where("status", "==", "pending"),
+        where("email", "==", user.email?.trim().toLowerCase() || ""),
       );
 
       const snapshot = await getDocs(q);
@@ -133,28 +136,30 @@ export default function FamilySetupScreen() {
       const familyId = inviteData.familyId;
       const invitedRole = inviteData.role === "admin" ? "admin" : "member";
 
-      // Create user profile
-      await setDoc(doc(db, "users", user.uid), {
+      const batch = writeBatch(db);
+      batch.set(doc(db, "users", user.uid), {
         activeFamilyId: familyId,
         role: invitedRole,
         email: googleEmail,
       });
-
-      // Create family member record
-      await setDoc(doc(db, "familyMembers", `${familyId}_${user.uid}`), {
+      batch.set(doc(db, "familyMembers", `${familyId}_${user.uid}`), {
         familyId,
         userId: user.uid,
         email: googleEmail,
         role: invitedRole,
         status: "active",
-        joinedAt: new Date(),
+        joinedAt: serverTimestamp(),
+        inviteId: inviteDoc.id,
+        ...(user.displayName?.trim()
+          ? { displayName: user.displayName.trim() }
+          : {}),
       });
-
-      // Mark invite accepted
-      await updateDoc(doc(db, "invites", inviteDoc.id), {
+      batch.update(doc(db, "invites", inviteDoc.id), {
         status: "accepted",
         acceptedBy: user.uid,
+        acceptedAt: serverTimestamp(),
       });
+      await batch.commit();
 
       setMessage("Joined family successfully!");
 
@@ -242,13 +247,13 @@ export default function FamilySetupScreen() {
           <Text style={{ marginBottom: 8, fontSize: 16 }}>Invite Code</Text>
 
           <AppTextInput
-            placeholder="Enter 6-digit invite code"
+            placeholder="Enter 8-digit invitation code"
             value={inviteCode}
             onChangeText={(text) =>
-              setInviteCode(text.replace(/[^0-9]/g, "").slice(0, 6))
+              setInviteCode(text.replace(/[^0-9]/g, "").slice(0, 8))
             }
             keyboardType="number-pad"
-            maxLength={6}
+            maxLength={8}
           />
 
           <PrimaryButton

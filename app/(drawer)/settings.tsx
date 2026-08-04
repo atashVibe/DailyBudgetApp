@@ -2,11 +2,8 @@ import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { useRouter } from "expo-router";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import {
-  addDoc,
-  collection,
   doc,
   getDoc,
-  serverTimestamp,
   updateDoc,
 } from "firebase/firestore";
 import { useEffect, useState } from "react";
@@ -42,6 +39,8 @@ import CategoriesSection from "../components/settings/CategoriesSection";
 import FamilyBudgetSection from "../components/settings/FamilyBudgetSection";
 import AdminsSection from "../components/settings/AdminsSection";
 import AccountSection from "../components/settings/AccountSection";
+import ProfileNameSection from "../components/settings/ProfileNameSection";
+import { saveUserDisplayName } from "../../services/profile";
 
 export default function SettingsScreen() {
   const [loading, setLoading] = useState(true);
@@ -52,11 +51,12 @@ export default function SettingsScreen() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [admins, setAdmins] = useState<FamilyAdmin[]>([]);
   const [adminsLoading, setAdminsLoading] = useState(false);
+  const [profileName, setProfileName] = useState("");
+  const [profileMessage, setProfileMessage] = useState("");
   const [familyId, setFamilyId] = useState<string | null>(null);
   const { budgetAreas, setBudgetAreas, refreshBudgetAreas } = useBudgetAreas(
     familyId ?? "",
   );
-  const [inviteEmail, setInviteEmail] = useState("");
   const [newBudgetAreaName, setNewBudgetAreaName] = useState("");
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategoryBudgetAreaId, setSelectedCategoryBudgetAreaId] =
@@ -127,11 +127,21 @@ export default function SettingsScreen() {
       }
 
       setFamilyId(famId);
-      setIsAdmin(userData.role === "admin");
 
-      // 🔹 2. Get account data
       const accountRef = doc(db, "families", famId);
-      const accountSnap = await getDoc(accountRef);
+      const [accountSnap, membershipSnap] = await Promise.all([
+        getDoc(accountRef),
+        getDoc(doc(db, "familyMembers", `${famId}_${user.uid}`)),
+      ]);
+
+      setIsAdmin(
+        membershipSnap.exists() &&
+          membershipSnap.data().status === "active" &&
+          membershipSnap.data().role === "admin",
+      );
+      setProfileName(
+        membershipSnap.data()?.displayName || user.displayName || "",
+      );
 
       if (accountSnap.exists()) {
         const accountData = accountSnap.data();
@@ -177,7 +187,14 @@ export default function SettingsScreen() {
 
       setAdminsLoading(true);
       try {
-        setAdmins(await getFamilyAdmins(familyId, user.uid, user.email));
+        setAdmins(
+          await getFamilyAdmins(
+            familyId,
+            user.uid,
+            user.email,
+            user.displayName,
+          ),
+        );
       } catch (error) {
         console.error("Failed to load family administrators:", error);
         setAdmins([]);
@@ -199,6 +216,30 @@ export default function SettingsScreen() {
     await signOut(auth);
 
     router.replace("/login");
+  };
+
+  const handleSaveProfileName = async () => {
+    const user = auth.currentUser;
+    if (!user || !familyId) return;
+
+    setProfileMessage("");
+    try {
+      const savedName = await saveUserDisplayName(
+        user,
+        familyId,
+        profileName,
+      );
+      setProfileName(savedName);
+      setAdmins((currentAdmins) =>
+        currentAdmins.map((admin) =>
+          admin.isCurrentUser ? { ...admin, name: savedName } : admin,
+        ),
+      );
+      setProfileMessage("Name saved");
+    } catch (error) {
+      console.error("Failed to save profile name:", error);
+      setProfileMessage("The name could not be saved. Please try again.");
+    }
   };
 
   const handleDeleteAccount = async (password?: string) => {
@@ -228,25 +269,6 @@ export default function SettingsScreen() {
 
     setDailyBudget(newBudget);
     setBudgetInput("");
-  };
-
-  const handleInviteMember = async () => {
-    if (!isAdmin || !familyId || !auth.currentUser) return;
-
-    const email = inviteEmail.trim().toLowerCase();
-
-    if (!email) return;
-
-    await addDoc(collection(db, "invites"), {
-      email,
-      familyId,
-      role: "member",
-      createdBy: auth.currentUser.uid,
-      status: "pending",
-      createdAt: serverTimestamp(),
-    });
-
-    setInviteEmail("");
   };
 
   const handleAddBudgetArea = async () => {
@@ -376,6 +398,13 @@ export default function SettingsScreen() {
         isAdmin={isAdmin}
         onBudgetInputChange={setBudgetInput}
         onUpdateBudget={handleUpdateBudget}
+      />
+
+      <ProfileNameSection
+        name={profileName}
+        message={profileMessage}
+        onNameChange={setProfileName}
+        onSave={handleSaveProfileName}
       />
 
       <AdminsSection admins={admins} loading={adminsLoading} />

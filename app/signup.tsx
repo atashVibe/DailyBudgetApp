@@ -1,15 +1,16 @@
 import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword, deleteUser } from "firebase/auth";
 import {
   addDoc,
   collection,
+  deleteDoc,
   doc,
   getDocs,
   query,
-  setDoc,
-  updateDoc,
+  serverTimestamp,
   where,
+  writeBatch,
 } from "firebase/firestore";
 import { useCallback, useState } from "react";
 import { Text, TouchableOpacity } from "react-native";
@@ -51,8 +52,13 @@ export default function SignupScreen() {
 
   const handleSignup = async () => {
     setLoading(true);
+    let createdFamilyId = "";
+    let setupFinished = false;
+
     try {
-      if (!email.trim()) {
+      const normalizedEmail = email.trim().toLowerCase();
+
+      if (!normalizedEmail) {
         setMessage("Please enter your email.");
         return;
       }
@@ -64,41 +70,51 @@ export default function SignupScreen() {
         setMessage("Passwords do not match");
         return;
       }
+      if (!mode) {
+        setMessage("Choose whether to start or join a family budget.");
+        return;
+      }
+      if (mode === "start" && !familyName.trim()) {
+        setMessage("Please enter a family name.");
+        return;
+      }
+      if (mode === "join" && inviteCode.length !== 8) {
+        setMessage("Enter a valid invitation code.");
+        return;
+      }
 
-      // 2. Create or join family
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        normalizedEmail,
+        password,
+      );
+      const user = userCredential.user;
+
       let finalFamilyId = "";
       let userRole = "admin";
       let acceptedInviteId = "";
 
-      // If joining, validate invite BEFORE creating Auth user
       if (mode === "join") {
-        if (inviteCode.length !== 6) {
-          setMessage("Enter a valid 6-digit code.");
-          return;
-        }
-
         const q = query(
           collection(db, "invites"),
           where("code", "==", inviteCode),
           where("status", "==", "pending"),
+          where("email", "==", normalizedEmail),
         );
 
         const snapshot = await getDocs(q);
 
         if (snapshot.empty) {
-          setMessage("Invalid or expired code.");
-          return;
+          throw new Error("INVALID_INVITE");
         }
 
         const inviteDoc = snapshot.docs[0];
         const inviteData = inviteDoc.data();
 
-        const signupEmail = email.trim().toLowerCase();
         const inviteEmail = inviteData.email?.trim().toLowerCase();
 
-        if (inviteEmail !== signupEmail) {
-          setMessage("This invite code does not match your email address.");
-          return;
+        if (inviteEmail !== normalizedEmail) {
+          throw new Error("INVITE_EMAIL_MISMATCH");
         }
 
         const expiresAt = inviteData.expiresAt?.toDate
@@ -106,8 +122,7 @@ export default function SignupScreen() {
           : new Date(inviteData.expiresAt);
 
         if (expiresAt < new Date()) {
-          setMessage("This invite code has expired.");
-          return;
+          throw new Error("INVITE_EXPIRED");
         }
 
         finalFamilyId = inviteData.familyId;
@@ -115,54 +130,49 @@ export default function SignupScreen() {
         acceptedInviteId = inviteDoc.id;
       }
 
-      // Now create the Firebase Auth user
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password,
-      );
-      const user = userCredential.user;
-
-      // If starting, create family AFTER user exists
       if (mode === "start") {
-        if (!familyName.trim()) {
-          setMessage("Please enter a family name.");
-          return;
-        }
-
         const newFamilyRef = await addDoc(collection(db, "families"), {
           name: familyName.trim(),
           dailyBudget: 30,
           status: "active",
           createdBy: user.uid,
-          createdAt: new Date(),
+          createdAt: serverTimestamp(),
         });
 
         finalFamilyId = newFamilyRef.id;
+        createdFamilyId = newFamilyRef.id;
         userRole = "admin";
-        await seedFinanceData(newFamilyRef.id, user.uid);
       }
-      // 3. Create the user document in the "users" collection
-      await setDoc(doc(db, "users", user.uid), {
+
+      const batch = writeBatch(db);
+      batch.set(doc(db, "users", user.uid), {
         activeFamilyId: finalFamilyId,
         role: userRole,
-        email: email.toLowerCase().trim(),
+        email: normalizedEmail,
       });
-
-      await setDoc(doc(db, "familyMembers", `${finalFamilyId}_${user.uid}`), {
+      batch.set(doc(db, "familyMembers", `${finalFamilyId}_${user.uid}`), {
         familyId: finalFamilyId,
         userId: user.uid,
-        email: email.toLowerCase().trim(),
+        email: normalizedEmail,
         role: userRole,
         status: "active",
-        joinedAt: new Date(),
+        joinedAt: serverTimestamp(),
+        ...(acceptedInviteId ? { inviteId: acceptedInviteId } : {}),
       });
 
-      if (mode === "join" && acceptedInviteId) {
-        await updateDoc(doc(db, "invites", acceptedInviteId), {
+      if (acceptedInviteId) {
+        batch.update(doc(db, "invites", acceptedInviteId), {
           status: "accepted",
           acceptedBy: user.uid,
+          acceptedAt: serverTimestamp(),
         });
+      }
+
+      await batch.commit();
+      setupFinished = true;
+
+      if (mode === "start") {
+        await seedFinanceData(finalFamilyId, user.uid);
       }
 
       setMessage(`Account created successfully!`);
@@ -172,6 +182,18 @@ export default function SignupScreen() {
       // redirect
       setTimeout(() => router.push("/login"), 1000);
     } catch (error: any) {
+      const user = auth.currentUser;
+      if (user && !setupFinished) {
+        try {
+          if (createdFamilyId) {
+            await deleteDoc(doc(db, "families", createdFamilyId));
+          }
+          await deleteUser(user);
+        } catch (cleanupError) {
+          console.error("Could not clean up incomplete signup:", cleanupError);
+        }
+      }
+
       if (error.code === "auth/email-already-in-use") {
         setMessage(
           "This email already has an account. Please sign in instead.",
@@ -180,6 +202,13 @@ export default function SignupScreen() {
         setMessage("Please enter a valid email.");
       } else if (error.code === "auth/weak-password") {
         setMessage("Password should be at least 6 characters.");
+      } else if (error.message === "INVITE_EXPIRED") {
+        setMessage("This invitation code has expired.");
+      } else if (
+        error.message === "INVALID_INVITE" ||
+        error.message === "INVITE_EMAIL_MISMATCH"
+      ) {
+        setMessage("This invitation code is invalid for this email address.");
       } else {
         setMessage("Account creation failed. Please try again.");
       }
@@ -240,13 +269,13 @@ export default function SignupScreen() {
             <>
               <Text style={{ marginBottom: 8, fontSize: 16 }}>Invite Code</Text>
               <AppTextInput
-                placeholder="Enter 6-digit invite code"
+                placeholder="Enter 8-digit invitation code"
                 value={inviteCode}
                 onChangeText={(text) =>
-                  setInviteCode(text.replace(/[^0-9]/g, "").slice(0, 6))
+                  setInviteCode(text.replace(/[^0-9]/g, "").slice(0, 8))
                 }
                 keyboardType="number-pad"
-                maxLength={6}
+                maxLength={8}
               />
             </>
           )}

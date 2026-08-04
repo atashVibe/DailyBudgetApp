@@ -34,6 +34,21 @@ function formatLocalDate(date: Date) {
   return `${year}-${month}-${day}`;
 }
 
+function sanitizeAmountInput(value: string) {
+  const cleaned = value.replace(/[^0-9.]/g, "");
+  const decimalPoint = cleaned.indexOf(".");
+
+  if (decimalPoint === -1) return cleaned;
+
+  const whole = cleaned.slice(0, decimalPoint);
+  const decimals = cleaned
+    .slice(decimalPoint + 1)
+    .replace(/\./g, "")
+    .slice(0, 2);
+
+  return `${whole || "0"}.${decimals}`;
+}
+
 export default function ExpenseEntryForm({
   familyId,
   onEntrySaved,
@@ -155,7 +170,7 @@ export default function ExpenseEntryForm({
 
       setAmount("");
       setNote("");
-    } catch (error) {
+    } catch {
       setMessage("Error saving entry");
       setTimeout(() => setMessage(""), 2000);
     }
@@ -177,71 +192,119 @@ export default function ExpenseEntryForm({
         {entryToEdit ? "Edit Entry" : "Add Entry"}
       </Text>
 
-      <FormLabel>Amount</FormLabel>
-      <AppTextInput
-        placeholder="Enter amount"
-        keyboardType="numeric"
-        value={amount}
-        onChangeText={setAmount}
-      />
-
-      <FormLabel>Budget Area</FormLabel>
-      <AppPicker
-        selectedValue={selectedBudgetAreaId}
-        onValueChange={setSelectedBudgetAreaId}
-        options={budgetAreas.map((item) => ({
-          label: item.name,
-          value: item.id,
-        }))}
-      />
-
-      <FormLabel>Category</FormLabel>
-      <AppPicker
-        selectedValue={selectedCategoryId}
-        onValueChange={setSelectedCategoryId}
-        options={categories.map((item) => ({
-          label: item.name,
-          value: item.id,
-        }))}
-      />
-
-      <FormLabel>Date</FormLabel>
-      {Platform.OS === "web" ? (
-        React.createElement("input", {
-          type: "date",
-          value: date,
-          onChange: (e: any) => setDate(e.target.value),
-          style: {
-            borderWidth: 1,
-            borderColor: "#ccc",
-            borderRadius: 10,
-            padding: 14,
-            fontSize: 16,
-            marginBottom: 16,
-            backgroundColor: "#fff",
-            width: "100%",
-            boxSizing: "border-box",
-            border: "1px solid #ccc",
-          },
-        })
-      ) : (
-        <View
-          style={{
-            borderWidth: 1,
-            borderColor: "#ccc",
-            borderRadius: 10,
-            marginBottom: 16,
-            backgroundColor: "#fff",
-          }}
-        >
-          <Text
-            onPress={() => setShowDatePicker(true)}
-            style={{ padding: 14, fontSize: 16, color: "#111" }}
-          >
-            {date}
-          </Text>
+      <View
+        style={{
+          flexDirection: "row",
+          gap: 12,
+          alignItems: "flex-start",
+        }}
+      >
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <FormLabel>Budget Area</FormLabel>
+          <AppPicker
+            selectedValue={selectedBudgetAreaId}
+            onValueChange={setSelectedBudgetAreaId}
+            options={budgetAreas.map((item) => ({
+              label: item.name,
+              value: item.id,
+            }))}
+          />
         </View>
-      )}
+
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <FormLabel>Category</FormLabel>
+          <AppPicker
+            selectedValue={selectedCategoryId}
+            onValueChange={setSelectedCategoryId}
+            options={categories.map((item) => ({
+              label: item.name,
+              value: item.id,
+            }))}
+          />
+        </View>
+      </View>
+
+      <View
+        style={{
+          flexDirection: "row",
+          gap: 12,
+          alignItems: "flex-start",
+        }}
+      >
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <FormLabel>Date</FormLabel>
+          {Platform.OS === "web" ? (
+            React.createElement("input", {
+              type: "date",
+              value: date,
+              onChange: (e: any) => setDate(e.target.value),
+              style: {
+                borderWidth: 1,
+                borderColor: "#ccc",
+                borderRadius: 10,
+                padding: 14,
+                fontSize: 16,
+                marginBottom: 16,
+                backgroundColor: "#fff",
+                width: "100%",
+                height: 52,
+                boxSizing: "border-box",
+                border: "1px solid #ccc",
+              },
+            })
+          ) : (
+            <View
+              style={{
+                height: 52,
+                borderWidth: 1,
+                borderColor: "#ccc",
+                borderRadius: 10,
+                marginBottom: 16,
+                backgroundColor: "#fff",
+                justifyContent: "center",
+              }}
+            >
+              <Text
+                onPress={() => setShowDatePicker(true)}
+                style={{ padding: 14, fontSize: 16, color: "#111" }}
+              >
+                {date}
+              </Text>
+            </View>
+          )}
+        </View>
+
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <FormLabel>Amount</FormLabel>
+          <View style={{ position: "relative" }}>
+            <Text
+              style={{
+                position: "absolute",
+                left: 14,
+                top: 15,
+                zIndex: 1,
+                fontSize: 16,
+                color: "#111827",
+              }}
+            >
+              $
+            </Text>
+            <AppTextInput
+              placeholder="0.00"
+              keyboardType="decimal-pad"
+              inputMode="decimal"
+              value={amount}
+              onChangeText={(value) => setAmount(sanitizeAmountInput(value))}
+              onBlur={() => {
+                if (amount && !Number.isNaN(Number(amount))) {
+                  setAmount(Number(amount).toFixed(2));
+                }
+              }}
+              style={{ paddingLeft: 30 }}
+            />
+          </View>
+        </View>
+      </View>
 
       {showDatePicker && (
         <DateTimePicker

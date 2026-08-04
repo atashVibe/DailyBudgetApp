@@ -28,6 +28,7 @@ export type ExportBudgetArea = {
 
 export type FamilyAdmin = {
   userId: string;
+  name: string | null;
   email: string | null;
   isCurrentUser: boolean;
 };
@@ -90,6 +91,7 @@ export async function joinFamilyWithCode(
   userId: string,
   userEmail: string,
   code: string,
+  displayName?: string | null,
 ) {
   const currentContext = await getFamilyContext(userId);
 
@@ -105,6 +107,7 @@ export async function joinFamilyWithCode(
       collection(db, "invites"),
       where("code", "==", code),
       where("status", "==", "pending"),
+      where("email", "==", userEmail.trim().toLowerCase()),
     ),
   );
 
@@ -161,6 +164,8 @@ export async function joinFamilyWithCode(
     role,
     status: "active",
     joinedAt: serverTimestamp(),
+    inviteId: inviteDoc.id,
+    ...(displayName?.trim() ? { displayName: displayName.trim() } : {}),
   });
   batch.update(doc(db, "invites", inviteDoc.id), {
     status: "accepted",
@@ -201,6 +206,7 @@ export async function getFamilyAdmins(
   familyId: string,
   currentUserId: string,
   currentUserEmail?: string | null,
+  currentUserName?: string | null,
 ): Promise<FamilyAdmin[]> {
   const [memberSnapshot, inviteSnapshot] = await Promise.all([
     getDocs(
@@ -230,14 +236,20 @@ export async function getFamilyAdmins(
   const currentMembership = memberSnapshot.docs.find(
     (item) => item.data().userId === currentUserId,
   );
-  if (
-    currentMembership &&
-    !currentMembership.data().email &&
-    currentUserEmail
-  ) {
-    await updateDoc(currentMembership.ref, {
-      email: currentUserEmail.trim().toLowerCase(),
-    });
+  if (currentMembership) {
+    const membershipUpdates: Record<string, string> = {};
+    if (!currentMembership.data().email && currentUserEmail) {
+      membershipUpdates.email = currentUserEmail.trim().toLowerCase();
+    }
+    if (
+      currentUserName?.trim() &&
+      currentMembership.data().displayName !== currentUserName.trim()
+    ) {
+      membershipUpdates.displayName = currentUserName.trim();
+    }
+    if (Object.keys(membershipUpdates).length > 0) {
+      await updateDoc(currentMembership.ref, membershipUpdates);
+    }
   }
 
   return memberSnapshot.docs
@@ -248,6 +260,10 @@ export async function getFamilyAdmins(
     )
     .map((member) => ({
       userId: String(member.userId),
+      name:
+        member.displayName ||
+        (member.userId === currentUserId ? currentUserName : null) ||
+        null,
       email:
         member.email ||
         invitedEmails.get(String(member.userId)) ||
@@ -259,7 +275,9 @@ export async function getFamilyAdmins(
       if (a.isCurrentUser !== b.isCurrentUser) {
         return a.isCurrentUser ? -1 : 1;
       }
-      return (a.email || a.userId).localeCompare(b.email || b.userId);
+      return (a.name || a.email || a.userId).localeCompare(
+        b.name || b.email || b.userId,
+      );
     });
 }
 

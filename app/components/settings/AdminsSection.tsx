@@ -7,6 +7,17 @@ type Props = {
 };
 
 export default function AdminsSection({ admins, loading }: Props) {
+  const visibleAdminLabel = (admin: FamilyAdmin) => {
+    if (admin.name) return admin.name;
+    if (
+      admin.email &&
+      !admin.email.toLowerCase().endsWith("@privaterelay.appleid.com")
+    ) {
+      return admin.email;
+    }
+    return "Administrator name not set";
+  };
+
   return (
     <View style={styles.section}>
       <Text style={styles.title}>Family Administrators</Text>
@@ -27,7 +38,7 @@ export default function AdminsSection({ admins, loading }: Props) {
             </View>
             <View style={styles.details}>
               <Text style={styles.email}>
-                {admin.email || `Administrator • ${admin.userId.slice(-6)}`}
+                {visibleAdminLabel(admin)}
               </Text>
               <Text style={styles.role}>
                 Administrator{admin.isCurrentUser ? " • You" : ""}

@@ -4,6 +4,7 @@ import {
   doc,
   getDoc,
   getDocs,
+  orderBy,
   query,
   where,
 } from "firebase/firestore";
@@ -26,6 +27,7 @@ type Entry = {
   amount: number;
   type: string;
   budgetAreaId?: string;
+  categoryId?: string;
   category: string;
   note: string;
   date?: string;
@@ -33,11 +35,13 @@ type Entry = {
 
 export default function DashboardScreen() {
   const router = useRouter();
-  const [userEmail, setUserEmail] = useState("Loading...");
+  const [accountIdentifier, setAccountIdentifier] = useState("Loading...");
+  const [usesApplePrivateEmail, setUsesApplePrivateEmail] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [refreshSignal, setRefreshSignal] = useState(0);
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
+  const [entries, setEntries] = useState<Entry[]>([]);
   const scrollRef = useRef<ScrollView>(null);
   const handleCancelEdit = () => {
     setEditingEntry(null);
@@ -93,7 +97,18 @@ export default function DashboardScreen() {
           }
 
           if (!active) return;
-          setUserEmail(user.email ?? "Unknown user");
+          const email = user.email?.trim() ?? "";
+          const hasApplePrivateEmail = email
+            .toLowerCase()
+            .endsWith("@privaterelay.appleid.com");
+          const displayName = user.displayName?.trim();
+
+          setUsesApplePrivateEmail(hasApplePrivateEmail);
+          setAccountIdentifier(
+            hasApplePrivateEmail
+              ? displayName || "Email hidden by Apple"
+              : email || displayName || "Unknown user",
+          );
           setEditingEntry(null);
           setSpentThisMonth(0);
           setSpentThisYear(0);
@@ -132,29 +147,41 @@ export default function DashboardScreen() {
       const q = query(
         collection(db, "entries"),
         where("familyId", "==", familyId),
+        orderBy("createdAt", "desc"),
       );
 
       const snapshot = await getDocs(q);
 
-      const entries: ReportEntry[] = snapshot.docs.map((doc) => {
-        const data: any = doc.data();
+      const loadedEntries: Entry[] = snapshot.docs.map((entryDocument) => {
+        const data = entryDocument.data();
 
         return {
+          id: entryDocument.id,
           amount: Number(data.amount || 0),
-          type: String(
-            data.type || "expense",
-          ).toLowerCase() as ReportEntry["type"],
+          type: String(data.type || "expense").toLowerCase(),
+          budgetAreaId: data.budgetAreaId,
+          category: data.category || "",
+          categoryId: data.categoryId,
+          note: String(data.note || ""),
           date: data.date,
         };
       });
 
+      setEntries(loadedEntries);
+
+      const reportEntries: ReportEntry[] = loadedEntries.map((entry) => ({
+        amount: entry.amount,
+        type: entry.type as ReportEntry["type"],
+        date: entry.date,
+      }));
+
       const monthTotal = calculateMonthlyTotal(
-        entries,
+        reportEntries,
         currentYear,
         currentMonth,
       );
 
-      const yearTotal = calculateYearlyTotal(entries, currentYear);
+      const yearTotal = calculateYearlyTotal(reportEntries, currentYear);
 
       setSpentThisMonth(monthTotal);
       setSpentThisYear(yearTotal);
@@ -181,7 +208,7 @@ export default function DashboardScreen() {
     <AppScreen
       style={{
         padding: 24,
-        paddingTop: 80,
+        paddingTop: 24,
         justifyContent: "flex-start",
         alignItems: "stretch",
       }}
@@ -222,9 +249,15 @@ export default function DashboardScreen() {
       {familyId && (
         <RecentEntriesList
           familyId={familyId}
+          entries={entries}
           editingEntryId={editingEntry?.id ?? null}
           refreshSignal={refreshSignal}
-          onEntryDeleted={() => setRefreshSignal((prev) => prev + 1)}
+          onEntryDeleted={(entryId) => {
+            setEntries((current) =>
+              current.filter((entry) => entry.id !== entryId),
+            );
+            setRefreshSignal((prev) => prev + 1);
+          }}
           onEditEntry={(entry) => {
             setEditingEntry(entry);
             setTimeout(() => {
@@ -264,8 +297,22 @@ export default function DashboardScreen() {
           marginBottom: 24,
         }}
       >
-        {userEmail}
+        {accountIdentifier}
       </Text>
+
+      {usesApplePrivateEmail && (
+        <Text
+          style={{
+            fontSize: 13,
+            color: "#64748B",
+            textAlign: "center",
+            marginTop: -16,
+            marginBottom: 24,
+          }}
+        >
+          Signed in with Apple using Hide My Email
+        </Text>
+      )}
     </AppScreen>
   );
 }

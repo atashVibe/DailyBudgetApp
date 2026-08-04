@@ -13,7 +13,6 @@ import {
 } from "firebase/auth";
 import {
   collection,
-  deleteField,
   doc,
   getDocs,
   query,
@@ -23,6 +22,7 @@ import {
 } from "firebase/firestore";
 import { Platform } from "react-native";
 import { auth, db } from "./auth";
+import { removePersonalFamilyAttribution } from "./personalData";
 
 export type AccountReauthenticationMethod = "password" | "google" | "apple";
 
@@ -101,31 +101,17 @@ async function getDeletionPlan(userId: string): Promise<AccountDeletionPlan> {
   return { soloFamilyIds };
 }
 
-async function commitInChunks(
-  operations: Array<
-    | { kind: "delete"; ref: DocumentReference }
-    | { kind: "removeFields"; ref: DocumentReference; fields: string[] }
-  >,
-) {
-  for (let index = 0; index < operations.length; index += MAX_BATCH_WRITES) {
+async function deleteInChunks(references: DocumentReference[]) {
+  for (let index = 0; index < references.length; index += MAX_BATCH_WRITES) {
     const batch = writeBatch(db);
-    operations.slice(index, index + MAX_BATCH_WRITES).forEach((operation) => {
-      if (operation.kind === "delete") {
-        batch.delete(operation.ref);
-      } else {
-        batch.update(
-          operation.ref,
-          Object.fromEntries(
-            operation.fields.map((field) => [field, deleteField()]),
-          ),
-        );
-      }
+    references.slice(index, index + MAX_BATCH_WRITES).forEach((reference) => {
+      batch.delete(reference);
     });
     await batch.commit();
   }
 }
 
-async function hardDeleteSoloFamilies(familyIds: string[]) {
+async function hardDeleteSoloFamilies(familyIds: string[], userId: string) {
   for (const familyId of familyIds) {
     const snapshots = await Promise.all(
       ["entries", "budgetAreas", "categories", "familyMembers", "invites"].map(
@@ -138,17 +124,20 @@ async function hardDeleteSoloFamilies(familyIds: string[]) {
           ),
       ),
     );
-    const operations = snapshots.flatMap((snapshot) =>
-      snapshot.docs.map((item) => ({
-        kind: "delete" as const,
-        ref: item.ref,
-      })),
+    const currentMembershipPath = `familyMembers/${familyId}_${userId}`;
+    const references = snapshots.flatMap((snapshot) =>
+      snapshot.docs
+        .filter((item) => item.ref.path !== currentMembershipPath)
+        .map((item) => item.ref),
     );
-    operations.push({
-      kind: "delete",
-      ref: doc(db, "families", familyId),
-    });
-    await commitInChunks(operations);
+    await deleteInChunks(references);
+
+    // Keep the deleting administrator's membership until every other family
+    // document is gone so secured rules can authorize all cleanup batches.
+    await deleteInChunks([
+      doc(db, "familyMembers", `${familyId}_${userId}`),
+      doc(db, "families", familyId),
+    ]);
   }
 }
 
@@ -156,92 +145,23 @@ async function removePersonalFirestoreData(
   user: User,
   plan: AccountDeletionPlan,
 ) {
-  await hardDeleteSoloFamilies(plan.soloFamilyIds);
+  await hardDeleteSoloFamilies(plan.soloFamilyIds, user.uid);
 
-  const [
-    memberships,
-    entries,
-    budgetAreas,
-    categories,
-    createdFamilies,
-    deletedFamilies,
-    createdInvites,
-    acceptedInvites,
-    emailInvites,
-  ] = await Promise.all([
-    getDocs(
-      query(collection(db, "familyMembers"), where("userId", "==", user.uid)),
-    ),
-    getDocs(query(collection(db, "entries"), where("userId", "==", user.uid))),
-    getDocs(
-      query(collection(db, "budgetAreas"), where("createdBy", "==", user.uid)),
-    ),
-    getDocs(
-      query(collection(db, "categories"), where("createdBy", "==", user.uid)),
-    ),
-    getDocs(
-      query(collection(db, "families"), where("createdBy", "==", user.uid)),
-    ),
-    getDocs(
-      query(collection(db, "families"), where("deletedBy", "==", user.uid)),
-    ),
-    getDocs(
-      query(collection(db, "invites"), where("createdBy", "==", user.uid)),
-    ),
-    getDocs(
-      query(collection(db, "invites"), where("acceptedBy", "==", user.uid)),
-    ),
-    user.email
-      ? getDocs(
-          query(
-            collection(db, "invites"),
-            where("email", "==", user.email.trim().toLowerCase()),
-          ),
-        )
-      : Promise.resolve(null),
-  ]);
+  const memberships = await getDocs(
+    query(collection(db, "familyMembers"), where("userId", "==", user.uid)),
+  );
 
-  const deletes = new Map<string, DocumentReference>();
-  memberships.docs.forEach((item) => deletes.set(item.ref.path, item.ref));
-  emailInvites?.docs.forEach((item) => deletes.set(item.ref.path, item.ref));
+  const activeFamilyIds = memberships.docs
+    .filter((membership) => membership.data().status === "active")
+    .map((membership) => String(membership.data().familyId));
 
-  const removals = new Map<
-    string,
-    { kind: "removeFields"; ref: DocumentReference; fields: Set<string> }
-  >();
-  const addRemoval = (ref: DocumentReference, field: string) => {
-    if (!deletes.has(ref.path)) {
-      const existing = removals.get(ref.path);
-      if (existing) {
-        existing.fields.add(field);
-      } else {
-        removals.set(ref.path, {
-          kind: "removeFields",
-          ref,
-          fields: new Set([field]),
-        });
-      }
-    }
-  };
+  for (const familyId of activeFamilyIds) {
+    await removePersonalFamilyAttribution(familyId, user.uid, user.email);
+  }
 
-  entries.docs.forEach((item) => addRemoval(item.ref, "userId"));
-  budgetAreas.docs.forEach((item) => addRemoval(item.ref, "createdBy"));
-  categories.docs.forEach((item) => addRemoval(item.ref, "createdBy"));
-  createdFamilies.docs.forEach((item) => addRemoval(item.ref, "createdBy"));
-  deletedFamilies.docs.forEach((item) => addRemoval(item.ref, "deletedBy"));
-  createdInvites.docs.forEach((item) => addRemoval(item.ref, "createdBy"));
-  acceptedInvites.docs.forEach((item) => addRemoval(item.ref, "acceptedBy"));
-
-  await commitInChunks([
-    ...Array.from(deletes.values(), (ref) => ({
-      kind: "delete" as const,
-      ref,
-    })),
-    ...Array.from(removals.values(), (operation) => ({
-      ...operation,
-      fields: Array.from(operation.fields),
-    })),
-    { kind: "delete", ref: doc(db, "users", user.uid) },
+  await deleteInChunks([
+    ...memberships.docs.map((membership) => membership.ref),
+    doc(db, "users", user.uid),
   ]);
 }
 

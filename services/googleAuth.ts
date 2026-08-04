@@ -11,10 +11,12 @@ import {
 import { Platform } from "react-native";
 import { auth } from "./auth";
 
-GoogleSignin.configure({
-  webClientId:
-    "420817333542-n030vokg3pavpn571m584neqqrqo4qef.apps.googleusercontent.com",
-});
+if (Platform.OS !== "web") {
+  GoogleSignin.configure({
+    webClientId:
+      "420817333542-n030vokg3pavpn571m584neqqrqo4qef.apps.googleusercontent.com",
+  });
+}
 
 export const signInWithGoogle = async () => {
   // WEB LOGIN

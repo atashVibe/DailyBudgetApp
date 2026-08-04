@@ -71,12 +71,12 @@ export default function JoinFamilyScreen() {
 
   const handleJoinFamily = async () => {
     const user = auth.currentUser;
-    if (!user?.email || code.length !== 6) return;
+    if (!user?.email || code.length !== 8) return;
 
     setWorking(true);
     setMessage("");
     try {
-      await joinFamilyWithCode(user.uid, user.email, code);
+      await joinFamilyWithCode(user.uid, user.email, code, user.displayName);
       setCode("");
       router.replace("/(drawer)/dashboard");
     } catch (error) {
@@ -241,7 +241,7 @@ export default function JoinFamilyScreen() {
       ) : (
         <>
           <Text style={styles.body}>
-            Enter the six-digit invitation code for the family you want to
+            Enter the eight-digit invitation code for the family you want to
             join. You will leave your current family after the code is
             accepted.
           </Text>
@@ -249,16 +249,16 @@ export default function JoinFamilyScreen() {
           <AppTextInput
             value={code}
             onChangeText={(text) =>
-              setCode(text.replace(/[^0-9]/g, "").slice(0, 6))
+              setCode(text.replace(/[^0-9]/g, "").slice(0, 8))
             }
-            placeholder="6-digit code"
+            placeholder="8-digit code"
             keyboardType="number-pad"
-            maxLength={6}
+            maxLength={8}
           />
           <PrimaryButton
             title="Switch Family"
             onPress={() => void handleJoinFamily()}
-            disabled={code.length !== 6}
+            disabled={code.length !== 8}
             loading={working}
           />
         </>

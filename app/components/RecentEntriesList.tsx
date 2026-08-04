@@ -1,8 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { collection, getDocs, orderBy, query, where } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { Alert, Platform, Text, View } from "react-native";
-import { auth, db } from "../../services/auth";
 import { getAllCategoriesForFamily } from "../../services/categories";
 import { deleteEntry } from "../../services/entries";
 import PrimaryButton from "./common/PrimaryButton";
@@ -22,39 +20,32 @@ type Entry = {
 
 type Props = {
   familyId: string;
+  entries: Entry[];
   onEditEntry?: (entry: Entry) => void;
   editingEntryId?: string | null;
   refreshSignal?: number;
-  onEntryDeleted?: () => void;
+  onEntryDeleted?: (entryId: string) => void;
 };
 export default function RecentEntriesList({
   familyId,
+  entries,
   onEditEntry,
   editingEntryId,
   refreshSignal,
   onEntryDeleted,
 }: Props) {
-  const [entries, setEntries] = useState<Entry[]>([]);
   const [categoryMap, setCategoryMap] = useState<Record<string, string>>({});
   const [visibleCount, setVisibleCount] = useState(10);
 
   useEffect(() => {
     if (!familyId) return;
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      if (!user) {
-        setEntries([]);
-        return;
-      }
+    let active = true;
 
-      const loadEntries = async () => {
-        const entriesQuery = query(
-          collection(db, "entries"),
-          where("familyId", "==", familyId),
-          orderBy("createdAt", "desc"),
-        );
-
-        const snapshot = await getDocs(entriesQuery);
+    const loadCategories = async () => {
+      try {
         const categories = await getAllCategoriesForFamily(familyId);
+
+        if (!active) return;
 
         const mappedCategories: Record<string, string> = {};
 
@@ -63,27 +54,24 @@ export default function RecentEntriesList({
         });
 
         setCategoryMap(mappedCategories);
+      } catch (error) {
+        console.error("Failed to load entry categories:", error);
+        if (active) setCategoryMap({});
+      }
+    };
 
-        const items: Entry[] = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...(doc.data() as Omit<Entry, "id">),
-        }));
+    void loadCategories();
 
-        setEntries(items);
-      };
-
-      loadEntries();
-    });
-
-    return unsubscribe;
+    return () => {
+      active = false;
+    };
   }, [refreshSignal, familyId]);
 
   const handleDeleteEntry = async (entryId: string) => {
     const runDelete = async () => {
       try {
         await deleteEntry(entryId);
-        setEntries((prev) => prev.filter((e) => e.id !== entryId));
-        onEntryDeleted?.();
+        onEntryDeleted?.(entryId);
       } catch (error) {
         console.error("Delete failed", error);
       }

@@ -57,6 +57,7 @@ Add an easy-to-find **Delete Account** option under Settings.
 - [x] Delete the user profile
 - [x] Delete the user’s family-membership record
 - [x] Remove or anonymize personal data
+- [ ] Add trusted backend cleanup for personal attribution in families the user left previously
 - [x] Handle users who are the family’s only administrator
 - [x] Require the administrator to transfer ownership or explicitly delete the family
 - [ ] Test deletion with all three login methods
@@ -96,24 +97,25 @@ The privacy policy must accurately explain:
 
 Because DailyBudget stores personal financial information:
 
-- [ ] Review every Firestore security rule
-- [ ] Confirm users can only read their own families
-- [ ] Confirm members cannot perform administrator actions
-- [ ] Secure invitation codes
-- [ ] Prevent users from changing their own roles
-- [ ] Prevent access after leaving a family
-- [ ] Add Firestore rules to the repository
-- [ ] Test rules with two unrelated test families
+- [x] Review every Firestore security rule
+- [x] Confirm users can only read their own families
+- [x] Confirm members cannot perform administrator actions
+- [x] Secure invitation codes
+- [x] Prevent users from changing their own roles
+- [x] Prevent access after leaving a family
+- [x] Add Firestore rules to the repository
+- [x] Test rules with two unrelated test families
+- [x] Store the current Firestore indexes in the repository
 - [ ] Configure Firebase usage/billing alerts
 - [ ] Decide how backups and recovery will work
 - [ ] Consider Firebase App Check before public launch
 
 ## 5. Stability Pass
 
-- [ ] Install Expo’s recommended compatible package versions
-- [ ] Run TypeScript
-- [ ] Run lint
-- [ ] Run Expo dependency checks
+- [x] Install Expo’s recommended compatible package versions
+- [x] Run TypeScript
+- [x] Run lint
+- [x] Run Expo dependency checks
 - [ ] Test email, Google, and Apple authentication
 - [ ] Test sign-out for every authentication method
 - [ ] Test creating and joining families

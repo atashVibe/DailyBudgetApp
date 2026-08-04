@@ -6,6 +6,7 @@ import {
     serverTimestamp,
     Timestamp,
 } from "firebase/firestore";
+import * as Crypto from "expo-crypto";
 import React, { useEffect, useState } from "react";
 import {
     Alert,
@@ -65,8 +66,10 @@ const InviteScreen = () => {
     return /\S+@\S+\.\S+/.test(email);
   };
 
-  const generateCode = () => {
-    return Math.floor(100000 + Math.random() * 900000).toString();
+  const generateCode = async () => {
+    const bytes = await Crypto.getRandomBytesAsync(4);
+    const value = bytes.reduce((current, byte) => current * 256 + byte, 0);
+    return String(value % 100000000).padStart(8, "0");
   };
 
   const sendInvite = async () => {
@@ -87,7 +90,7 @@ const InviteScreen = () => {
       Alert.alert("Error", "Account not loaded yet");
       return;
     }
-    const code = generateCode();
+    const code = await generateCode();
 
     const expiresAt = Timestamp.fromDate(new Date(Date.now() + 10 * 60 * 1000));
     try {
