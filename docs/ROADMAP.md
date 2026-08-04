@@ -28,6 +28,8 @@ The sequence is:
 - [x] Commit and push the completed Apple-login work
 - [ ] Test Apple login on a real iPhone
 - [ ] Test Google login on real iPhone and Android devices
+- [x] Build and install an Android internal-preview APK on a real phone
+- [ ] Build and install an iOS preview after Apple two-factor access is available
 
 ---
 
@@ -62,6 +64,21 @@ Add an easy-to-find **Delete Account** option under Settings.
 - [x] Require the administrator to transfer ownership or explicitly delete the family
 - [ ] Test deletion with all three login methods
 - [ ] Confirm deleted users cannot sign back into the old account
+
+## 2A. Account Recovery and Cross-Platform Access
+
+These are beta-release requirements, not optional Version 2 features.
+
+- [ ] Add a clear **Forgot Password** action to the login screen
+- [ ] Send Firebase password-reset emails without revealing whether an address has an account
+- [ ] Show clear reset-success, expired-link, and invalid-link messages
+- [ ] Let an authenticated Apple user add an Android-compatible sign-in method
+- [ ] Support linking Google sign-in and/or an email/password login to the existing Firebase user
+- [ ] Preserve the same Firebase UID, family membership, roles, and budget data when linking providers
+- [ ] Warn Apple-only users to add another sign-in method before moving to Android
+- [ ] Prevent Apple Hide My Email users from accidentally creating a separate account on Android
+- [ ] Add recovery guidance for users who no longer have access to their original provider
+- [ ] Test this full path: create with Apple on iPhone, link another method, then sign in on Android and verify the same data
 
 ## 3. Required Public Pages
 
@@ -147,6 +164,8 @@ Proceed only when:
 
 - [ ] No known data-loss or security bug
 - [ ] No broken authentication method
+- [ ] Forgot-password recovery works safely
+- [ ] Apple-created accounts can access the same account on Android through a linked method
 - [ ] Account deletion works
 - [ ] Privacy and deletion pages are public
 - [ ] Core budget workflows work on web
@@ -173,6 +192,7 @@ Proceed only when:
 
 ## Android
 
+- [x] Create and install a direct Android internal-preview APK on a real phone
 - [ ] Create the app in Google Play Console
 - [ ] Confirm developer identity verification
 - [ ] Create an EAS Android App Bundle
@@ -318,6 +338,22 @@ Measure:
 - [ ] How many return after one week
 - [ ] Which screens cause abandonment
 - [ ] Which features testers repeatedly request
+
+## Version 2 Candidate — Reports and Graphs
+
+Do not delay the first safe beta for this work. Use beta feedback to decide which reports are genuinely useful.
+
+- [ ] Define the reporting model and useful date ranges
+- [ ] Add spending totals by category
+- [ ] Add spending totals by budget area
+- [ ] Add daily, weekly, monthly, and yearly trends
+- [ ] Add budget-versus-actual comparisons
+- [ ] Add period-over-period comparisons
+- [ ] Add clear charts for category shares and spending trends
+- [ ] Make every graph understandable without relying only on color
+- [ ] Support useful filters such as family member, category, budget area, and date range
+- [ ] Decide which reports belong in the free version and which could be paid
+- [ ] Consider CSV/PDF export after the on-screen reports are validated
 
 ## Monetization
 
