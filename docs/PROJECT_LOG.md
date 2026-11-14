@@ -117,8 +117,13 @@ This file records verified milestones, release decisions, and current blockers. 
   monthly/yearly status, fresh monthly allowance, annual compensation, leap years,
   status thresholds, period boundaries, cents, and zero budgets.
 - Added the finance checks to the Pages workflow before build/deployment.
-- Production export and publication verification are being completed. No stored
-  records were changed. Other audit findings remain open for follow-up.
+- Production Pages-path export passed. PR #3 merged as `584450f` and Pages run
+  `43585618133` successfully ran finance tests, built, and deployed the update.
+- Verified the live login HTTP 200 response and updated JavaScript summary text.
+  Rendered the actual summary component with synthetic data through React Native
+  Web: both negative-total spending bars had width 0%, and monthly over-budget
+  could coexist with annual on-track status. Authenticated phone verification is
+  still pending. No stored records changed; other audit findings remain open.
 
 ### 2026-11-14 — Accounting review requested by owner
 

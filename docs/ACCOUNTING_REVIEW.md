@@ -5,6 +5,11 @@ This reviews the deployed accounting code at `23d810b` / application merge
 corrections are now implemented on `codex/fix-budget-accounting`; their publishing
 and verification status is recorded in `PROJECT_LOG.md`. No live records were
 rewritten or deleted.
+
+Published correction: PR #3 merged as `584450f`, deployed successfully by Pages
+run `43585618133`. All 14 finance tests passed locally and in the publishing
+workflow. The live login page and updated JavaScript bundle were verified.
+Authenticated phone testing of the corrected summary remains the next check.
 The findings combine executable checks of the actual calculation functions with
 inspection of entry saving, editing, dates, permissions, and exports. Tests used
 synthetic records, not a user's Firebase records.
@@ -209,13 +214,14 @@ totals may remain. Overlapping requests are not guarded against stale responses.
    The month-passed bar remains independent of transactions. **Yearly comparison
    also agreed:** use the whole calendar-year budget. Monthly overspending may be
    compensated by lower spending in later months without declaring the full year
-   over budget. Monthly allowance carry-forward is a separate open decision.
+   over budget. Monthly allowance resets as confirmed in item 5 below.
 2. **Refund period:** A refund currently reduces spending in the month/year of its
    own entry date, even if the purchase was in a previous period. There is no link
    to an original purchase and no check against over-refunding.
 3. **Negative spending:** Should excess refunds increase this month's allowance
    above the earned daily budget? The current formula does that. The owner has
-   specified an empty bar for negative spending, but not the credit/rollover rule.
+   specified an empty bar for negative spending. The existing within-month refund
+   credit remains; balances reset at the next month under the confirmed rule.
 4. **Future-dated entries:** All entries in the selected current month count now,
    even if dated later this month. All entries in the current year count toward
    yearly spending, including future months. Reproduced with an April 20 expense
