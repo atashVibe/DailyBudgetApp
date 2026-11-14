@@ -9,18 +9,18 @@ synthetic records, not a user's Firebase records.
 ## Rules the owner has specified
 
 - Income must not change allowance or the spending status bar.
-- Cashback must not change allowance.
+- Cashback must not change allowance, status, or the spending bar, just like income.
 - Negative net expenses after returns must show an empty spending bar.
 - Owner confirmed monthly “On track / Over budget” compares spending with the
   **whole month's budget**, not the allowance earned through today. Keep the
   monthly spending bar on that same full-month basis.
 
-Recommended interpretation for review: keep both income and cashback out of
-spending totals and spending status, and show their amounts separately when those
-totals are added. Refunds/returns reverse spending. The cashback/status treatment
-and refund timing below still need agreement.
+Confirmed treatment: keep both income and cashback out of budget spending totals,
+allowance, spending status, and spending bars. A future separate income/cashback
+total may still report those receipts. Refunds/returns currently reverse spending;
+refund timing and excess-credit treatment below still need agreement.
 
-| Entry of $50 | Current calculation | Recommended spending effect | Allowance effect |
+| Entry of $50 | Current calculation | Spending effect after correction | Allowance effect |
 | --- | --- | --- | --- |
 | Expense | Adds $50 to spending | Adds $50 | Decreases $50 |
 | Refund / Return | Subtracts $50 from spending | Subtracts $50 | Increases $50 |
@@ -200,9 +200,10 @@ totals may remain. Overlapping requests are not guarded against stale responses.
 7. **Scope and currency:** All family areas share one daily budget. Dollar signs
    are fixed; currencies and conversion are not modeled. Confirm whether business
    entries should affect the same allowance as household entries.
-8. **Cashback reporting:** Recommend keeping it separate from spending/status,
-   just like income. A purchase discount entered as a lower expense is a different
-   treatment from a later cashback receipt; the app currently has no explicit link.
+8. **Cashback treatment agreed:** It must leave allowance, status, and the spending
+   bar unchanged, just like income. A future separate receipts total is optional.
+   A purchase discount entered as a lower expense is a different treatment from
+   a later cashback receipt; the app currently has no explicit link.
 
 ## Entry lifecycle, access, and exports
 
@@ -223,7 +224,8 @@ totals may remain. Overlapping requests are not guarded against stale responses.
 ## Proposed correction order after review
 
 1. Preserve the agreed full-month basis for monthly status/bar. Finish reviewing
-   cashback, refund/period rules, and the yearly comparison.
+   refund/period rules and the yearly comparison. Income/cashback exclusions are
+   also confirmed.
 2. Exclude income/cashback from budget spending and bound both bars to 0–100%.
 3. Add regression tests for all four types, negative refunds, over-budget values,
    exact cents, monthly/yearly boundaries, and agreed refund/future-date rules.

@@ -25,15 +25,16 @@ Start by reading the repository, `docs/ROADMAP.md`, Git status, and recent commi
 
 Immediate priority (2026-11-14): the owner reported accounting errors and asked
 for a full review before proceeding. Read `docs/ACCOUNTING_REVIEW.md` on branch
-`codex/accounting-review`. Income must not change allowance/status, cashback must
-not change allowance, and negative net expenses must show an empty spending bar.
+`codex/accounting-review`. The owner confirmed both income and cashback must leave
+allowance, status, and spending bars unchanged. Negative net expenses must show
+an empty spending bar.
 Audit checks reproduced the aggregation, negative-width, cent-rounding, timestamp,
 date-display, and daylight-saving problems. The report lists other code-confirmed
 risks and product rules needing agreement. No accounting implementation changes
 were deployed. The owner confirmed monthly status and the spending bar must use
 the whole month's budget, not elapsed-days allowance. Preserve that rule; negative
 allowance alongside “On track” is expected on this basis. Review remaining
-cashback, refund/period, and yearly rules, then implement and test the agreed
+refund/period and yearly rules, then implement and test the agreed
 corrections. Keep explanations plain.
 
 Current owner direction (2026-11-13): skip Apple-specific work for now and follow

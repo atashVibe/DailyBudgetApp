@@ -119,8 +119,10 @@ This file records verified milestones, release decisions, and current blockers. 
   the owner before implementing and publishing accounting corrections.
 - Owner subsequently confirmed monthly “On track / Over budget” must compare
   spending with the whole month's budget. Preserve that monthly basis; negative
-  allowance alongside “On track” is expected. Remaining cashback/refund/yearly
-  decisions are still under review; no application changes were made.
+  allowance alongside “On track” is expected.
+- Owner also confirmed cashback must leave allowance, status, and the spending
+  bar unchanged, just like income. Refund/period and yearly decisions remain
+  under review; no application changes were made.
 
 ### 2026-11-14 — Owner password-reset test and public information pages
 
