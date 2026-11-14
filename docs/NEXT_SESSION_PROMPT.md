@@ -30,8 +30,11 @@ not change allowance, and negative net expenses must show an empty spending bar.
 Audit checks reproduced the aggregation, negative-width, cent-rounding, timestamp,
 date-display, and daylight-saving problems. The report lists other code-confirmed
 risks and product rules needing agreement. No accounting implementation changes
-were deployed. Review the meaning of status and refund/period rules with the
-owner, then implement and test the agreed corrections. Keep explanations plain.
+were deployed. The owner confirmed monthly status and the spending bar must use
+the whole month's budget, not elapsed-days allowance. Preserve that rule; negative
+allowance alongside “On track” is expected on this basis. Review remaining
+cashback, refund/period, and yearly rules, then implement and test the agreed
+corrections. Keep explanations plain.
 
 Current owner direction (2026-11-13): skip Apple-specific work for now and follow
 the remaining roadmap. Keep existing Apple sign-in and leave its unverified

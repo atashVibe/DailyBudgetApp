@@ -11,6 +11,9 @@ synthetic records, not a user's Firebase records.
 - Income must not change allowance or the spending status bar.
 - Cashback must not change allowance.
 - Negative net expenses after returns must show an empty spending bar.
+- Owner confirmed monthly “On track / Over budget” compares spending with the
+  **whole month's budget**, not the allowance earned through today. Keep the
+  monthly spending bar on that same full-month basis.
 
 Recommended interpretation for review: keep both income and cashback out of
 spending totals and spending status, and show their amounts separately when those
@@ -88,7 +91,7 @@ Both monthly and yearly bars must be bounded between 0% and 100%. Keep the true
 negative amount available as a refund credit rather than turning it into a full
 bar. Whether to carry that credit across periods needs a separate decision.
 
-### 3. Status can say “On track” while allowance is negative
+### 3. Negative allowance and “On track” can coexist by the agreed rule
 
 This follows from two different comparisons: allowance uses the budget earned
 through today, while monthly status uses the whole month's budget.
@@ -98,7 +101,10 @@ the app suggests four recovery days, but monthly status is **On track**, with a
 44.44% bar against the full $900 month. Yearly status uses elapsed days instead,
 so monthly and yearly status are not directly comparable.
 
-This is a rule/display decision rather than an unambiguous arithmetic error.
+The owner has now confirmed the full-month comparison. This combination is
+therefore expected behavior, not a defect to fix by changing monthly status to
+an elapsed-days comparison. Labeling the monthly basis clearly can help users.
+The yearly comparison remains a separate decision.
 
 ### 4. Fractions of a cent can create a false recovery day
 
@@ -171,10 +177,10 @@ totals may remain. Overlapping requests are not guarded against stale responses.
 
 ## Rules needing agreement
 
-1. **What does 100% mean?** Keep spending bar = full month's budget, or compare it
-   with the allowance earned through today? A useful alternative is a full-month
-   bar paired with a status that clearly says whether today's allowance is over.
-   The month-passed bar should remain independent of transactions.
+1. **Monthly comparison agreed:** Status and spending bar compare against the
+   full month's budget. Do not change them to an elapsed-days comparison.
+   The month-passed bar remains independent of transactions. Yearly status
+   currently uses elapsed-year allowance; its intended basis still needs review.
 2. **Refund period:** A refund currently reduces spending in the month/year of its
    own entry date, even if the purchase was in a previous period. There is no link
    to an original purchase and no check against over-refunding.
@@ -216,7 +222,8 @@ totals may remain. Overlapping requests are not guarded against stale responses.
 
 ## Proposed correction order after review
 
-1. Agree the entry-type table and the meaning of the spending/status bars.
+1. Preserve the agreed full-month basis for monthly status/bar. Finish reviewing
+   cashback, refund/period rules, and the yearly comparison.
 2. Exclude income/cashback from budget spending and bound both bars to 0–100%.
 3. Add regression tests for all four types, negative refunds, over-budget values,
    exact cents, monthly/yearly boundaries, and agreed refund/future-date rules.
