@@ -23,6 +23,16 @@ Start by reading the repository, `docs/ROADMAP.md`, Git status, and recent commi
 
 ## Highest-priority work
 
+Immediate priority (2026-11-14): the owner reported accounting errors and asked
+for a full review before proceeding. Read `docs/ACCOUNTING_REVIEW.md` on branch
+`codex/accounting-review`. Income must not change allowance/status, cashback must
+not change allowance, and negative net expenses must show an empty spending bar.
+Audit checks reproduced the aggregation, negative-width, cent-rounding, timestamp,
+date-display, and daylight-saving problems. The report lists other code-confirmed
+risks and product rules needing agreement. No accounting implementation changes
+were deployed. Review the meaning of status and refund/period rules with the
+owner, then implement and test the agreed corrections. Keep explanations plain.
+
 Current owner direction (2026-11-13): skip Apple-specific work for now and follow
 the remaining roadmap. Keep existing Apple sign-in and leave its unverified
 requirements open.

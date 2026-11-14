@@ -103,6 +103,21 @@ This file records verified milestones, release decisions, and current blockers. 
 
 ## Current Blockers and Next Priorities
 
+### 2026-11-14 — Accounting review requested by owner
+
+- Owner specified that income must not change allowance/status, cashback must not
+  change allowance, and negative net expenses must display an empty spending bar.
+- Inspected reporting, summary formulas, dashboard loading, entry creation/editing,
+  categories/areas, amount/date input, daily-budget settings, rules, and CSV export.
+- Ran the actual reporting and summary functions with synthetic records. Reproduced
+  income/cashback offsets, negative progress widths, on-track status with negative
+  allowance, future-entry inclusion, timestamp omission, floating-point false
+  recovery, a daylight-saving day-count error, and the date-only display shift.
+- Saved a full plain-language review in `docs/ACCOUNTING_REVIEW.md` on branch
+  `codex/accounting-review`. No live data or application calculations were changed.
+- Next: review entry impacts, status denominator, refunds, and period rules with
+  the owner before implementing and publishing accounting corrections.
+
 ### 2026-11-14 — Owner password-reset test and public information pages
 
 - Owner reported the normal phone Forgot Password test works. This is an
