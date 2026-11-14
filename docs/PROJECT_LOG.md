@@ -103,6 +103,22 @@ This file records verified milestones, release decisions, and current blockers. 
 
 ## Current Blockers and Next Priorities
 
+### 2026-11-14 — Owner password-reset test and public information pages
+
+- Owner reported the normal phone Forgot Password test works. This is an
+  owner-reported result, not an independently observed email/reset session.
+- Added Privacy Policy, Terms of Use, Support, and Account & Data Deletion routes
+  outside the authenticated drawer. Contact email confirmed by the owner as
+  `dailybudgethub@gmail.com`.
+- Added links on login, sign-up, Settings, and the account-deletion confirmation.
+  Policy text reflects the current Firebase, family-sharing, deletion, and
+  attribution-cleanup behavior without promising immediate universal erasure.
+- TypeScript, lint, whitespace checks, and production Pages-path export passed.
+  Parsed exported HTML to verify all four public pages and their navigation links,
+  including the links rendered on login and sign-up.
+- Live publication and unauthenticated browser checks are the next verification
+  step. Custom-domain configuration for `dailybudgethub.com` is still pending.
+
 ### 2026-11-14 — GitHub Pages release preparation
 
 - Owner requested publication to the existing Pages URL for phone testing.

@@ -15,6 +15,7 @@ import {
 import { useCallback, useState } from "react";
 import { Text, TouchableOpacity } from "react-native";
 import { auth, db } from "../services/auth";
+import PolicyLinks from "../components/PolicyLinks";
 import { seedFinanceData } from "../services/seedFinanceData";
 import AppScreen from "./components/common/AppScreen";
 import AppTextInput from "./components/common/AppTextInput";
@@ -338,6 +339,7 @@ export default function SignupScreen() {
           </TouchableOpacity>
         </>
       )}
+      <PolicyLinks />
     </AppScreen>
   );
 }

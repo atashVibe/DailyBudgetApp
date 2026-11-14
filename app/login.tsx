@@ -13,6 +13,7 @@ import {
   View,
 } from "react-native";
 import { auth, db } from "../services/auth";
+import PolicyLinks from "../components/PolicyLinks";
 import { signInWithApple, signInWithGoogle } from "../services/googleAuth";
 import AppScreen from "./components/common/AppScreen";
 import AppTextInput from "./components/common/AppTextInput";
@@ -317,6 +318,7 @@ export default function LoginScreen() {
           title="Create Account"
           onPress={() => router.push("/signup")}
         />
+        <PolicyLinks />
       </View>
     </AppScreen>
   );
