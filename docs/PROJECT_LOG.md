@@ -61,10 +61,61 @@ This file records verified milestones, release decisions, and current blockers. 
 - Selected `dailybudgethub@gmail.com` for beta feedback and initial public support.
 - The roadmap, project log, and next-session prompt were synchronized.
 
+### 2026-11-13 — Password-reset request flow
+
+- Added a Forgot Password action and an accessible, scrollable reset-request screen.
+- Firebase sends the reset email; unknown/disabled accounts receive the same app
+  confirmation as successful requests. Network, rate-limit, and validation errors
+  allow retry, and a synchronous guard prevents concurrent submissions.
+- Added provider-recovery guidance and a manual verification checklist in
+  `docs/ACCOUNT_RECOVERY_TESTING.md`.
+- Verification: `npx tsc --noEmit`, `npm run lint` (with Expo telemetry disabled
+  for this workspace), and `git diff --check` passed.
+- Production web export was attempted but failed with `auth/invalid-api-key`:
+  this fresh workspace has no `EXPO_PUBLIC_FIREBASE_*` configuration. No live
+  authentication requests, email delivery, or device tests were performed.
+- Owner direction: defer Apple-specific work for now; preserve existing Apple
+  sign-in and leave unfinished Apple requirements unchecked.
+
+### 2026-11-13 — Firebase-backed cloud workspace
+
+- Corrected the missing-environment blocker: `firebaseConfig.ts` defaults to
+  public client settings from the existing tracked Android configuration.
+  Environment overrides remain supported. No Android app ID is used for web.
+- Verified the client key against Firebase Auth's public project configuration;
+  the project authorizes `localhost` for web sign-in.
+- TypeScript, lint, production web export, and whitespace checks passed.
+- Started Expo web on port 8083 and verified the login screen in shared cloud
+  Chrome. Synthetic invalid credentials received the expected "Incorrect email
+  or password" response. Verified recovery navigation, empty-email validation,
+  and navigation back to sign-in.
+- Authenticated budget workflows and reset-email delivery remain unverified.
+  No rules, users, or financial data were changed.
+- Owner selected cloud workspace only; no public web deployment was performed.
+- GitHub read access works. Push dry-run failed because this workspace lacks
+  GitHub credentials. The suggested GitHub connection is not yet confirmed.
+
+### 2026-11-14 — GitHub connection and saved cloud checkpoint
+
+- GitHub connection confirmed working with repository push permission.
+- Pushed checkpoint `9f910e2` to `codex/cloud-workspace-password-recovery`.
+- The earlier GitHub authentication blocker is resolved. Main remains unchanged.
+
 ## Current Blockers and Next Priorities
 
-1. Add forgot-password recovery.
-2. Add provider linking so Apple-only users can retain the same account and data on Android.
+### 2026-11-14 — GitHub Pages release preparation
+
+- Owner requested publication to the existing Pages URL for phone testing.
+- Verified TypeScript, lint, whitespace, and a production export with the real
+  `/DailyBudgetApp` base path. Removed an Android app-ID override from the web
+  deployment workflow; Auth and Firestore use the existing public project settings.
+- PR #1 is being merged for the Pages workflow. Confirm the deployment completes
+  and the live recovery screen works before treating publication as verified.
+
+1. Use a dedicated test account to verify authenticated cloud workflows and
+   password recovery using `docs/ACCOUNT_RECOVERY_TESTING.md`.
+2. Deferred at the owner's request: provider linking so Apple-only users can
+   retain the same account and data on Android.
 3. Publish the Privacy Policy, deletion information, support page, and Terms using `dailybudgethub.com`.
 4. Test the core workflows and account deletion on real devices.
 5. Continue iPhone registration and the iOS preview build when the trusted Apple two-factor device is available.

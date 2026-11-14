@@ -78,7 +78,15 @@ Add an easy-to-find **Delete Account** option under Settings.
 
 These are beta-release requirements, not optional Version 2 features.
 
-- [ ] Add a clear **Forgot Password** action to the login screen
+2026-11-13 session scope: Apple-specific implementation and device testing are
+deferred at the owner's request. Existing Apple sign-in stays available. Leave
+Apple checklist items open; the original cross-platform release gate is unresolved.
+
+Password-reset request UI is implemented. TypeScript, lint, and web-export checks
+are tracked in `PROJECT_LOG.md`; actual email delivery and hosted-link tests must
+pass before the recovery checklist is fully checked off.
+
+- [x] Add a clear **Forgot Password** action to the login screen
 - [ ] Send Firebase password-reset emails without revealing whether an address has an account
 - [ ] Show clear reset-success, expired-link, and invalid-link messages
 - [ ] Let an authenticated Apple user add an Android-compatible sign-in method
