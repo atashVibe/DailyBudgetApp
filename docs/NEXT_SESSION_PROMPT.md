@@ -33,18 +33,16 @@ requirements open.
    The login screen now links to `/forgot-password`, which sends Firebase reset
    emails, uses a generic confirmation for unknown/disabled accounts, and handles
    validation, network, and rate-limit errors. Firebase's default hosted email
-   action page completes the reset. Verify delivery, reset completion, invalid,
-   expired and reused links, and sign-in with the new password. Ensure Firebase
-   email enumeration protection is enabled. No live auth requests were made in
-   this session.
+   action page completes the reset. Verify invalid, expired, and reused links
+   separately and ensure Firebase email enumeration protection is enabled.
    TypeScript, lint, and production web export pass. `firebaseConfig.ts` now
    defaults to the public Firebase client configuration already tracked in
    `google-services.json`. A fresh cloud checkout runs without a `.env` file.
    Expo web is running in cloud Chrome at `http://localhost:8083/login` while the
    development server stays running. Synthetic invalid credentials received the
    expected Firebase rejection. Recovery navigation and empty-email validation
-   were verified. A signed-in test session and reset-email delivery still need
-   verification. Owner now wants the updates published to the existing GitHub
+   were verified. Core budget workflows still need signed-in testing. Owner wants
+   updates published to the existing GitHub
    Pages app at `https://atashvibe.github.io/DailyBudgetApp/` for phone testing.
    Keep that existing hosting setup rather than creating a new hosting service.
    Use plain, nontechnical explanations with the owner. GitHub access now works:
@@ -60,10 +58,13 @@ requirements open.
    - Warn Apple-only users to add another method.
    - Prevent Hide My Email users from accidentally creating a second account.
    - Test the complete iPhone-to-Android account-access path when an iPhone build is available.
-3. Public Privacy Policy, account-deletion, support/contact, and Terms routes are
-   implemented with `dailybudgethub@gmail.com`. Publish and verify them on the
-   existing GitHub Pages app. Domain connection for `dailybudgethub.com` remains
-   pending; do not change hosting or DNS without inspecting the existing setup.
+3. Public Privacy Policy, account-deletion, support/contact, and Terms pages are
+   published with `dailybudgethub@gmail.com`. PR #2 merged as `0696e7e`; Pages
+   run `43582463506` succeeded. All four live routes returned HTTP 200 with the
+   expected content and navigation links; signed-out Chrome showed Support.
+   Login, sign-up, Settings, and the deletion dialog contain links. Signed-in
+   Settings/dialog navigation still needs device verification. Domain connection
+   for `dailybudgethub.com` remains pending; inspect the existing setup first.
 4. Continue the beta-readiness and real-device checklist in `docs/ROADMAP.md`.
 
 Reports and graphs are important, but they are planned as a later Version 2 candidate. The roadmap includes category, budget-area, trend, comparison, filter, accessibility, and export ideas. Do not let reporting delay the first safe beta.

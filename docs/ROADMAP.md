@@ -97,25 +97,32 @@ remain separate verification tasks.
 - [ ] Preserve the same Firebase UID, family membership, roles, and budget data when linking providers
 - [ ] Warn Apple-only users to add another sign-in method before moving to Android
 - [ ] Prevent Apple Hide My Email users from accidentally creating a separate account on Android
-- [ ] Add recovery guidance for users who no longer have access to their original provider
+- [x] Add recovery guidance for users who no longer have access to their original provider
 - [ ] Test this full path: create with Apple on iPhone, link another method, then sign in on Android and verify the same data
 
 ## 3. Required Public Pages
 
 Create a small public DailyBudget website containing:
 
-- [ ] Privacy Policy
-- [ ] Account/Data Deletion Request
-- [ ] Support/contact page
-- [ ] Terms of Use
+- [x] Privacy Policy
+- [x] Account/Data Deletion Request
+- [x] Support/contact page
+- [x] Terms of Use
 - [x] Public support email address selected: `dailybudgethub@gmail.com`
-- [ ] Links that work without signing into the app
+- [x] Links that work without signing into the app
+- [ ] Connect `dailybudgethub.com` after verifying the existing domain/DNS setup
+
+Public pages are live under `https://atashvibe.github.io/DailyBudgetApp/` at
+`privacy`, `delete-account`, `support`, and `terms`. Pages run `43582463506`
+published them. All four returned HTTP 200 with the expected content and links;
+the live Support page was inspected in signed-out Chrome.
 
 Add these links inside:
 
-- [ ] Sign-up screen
-- [ ] Settings screen
-- [ ] Delete Account screen
+- [x] Sign-up screen
+- [x] Settings screen
+- [x] Deletion-information link in the Delete Account dialog
+- [ ] Verify Settings and deletion-dialog links on signed-in devices
 
 The privacy policy must accurately explain:
 
@@ -187,7 +194,7 @@ Proceed only when:
 - [ ] Forgot-password recovery works safely
 - [ ] Apple-created accounts can access the same account on Android through a linked method
 - [ ] Account deletion works
-- [ ] Privacy and deletion pages are public
+- [x] Privacy and deletion pages are public
 - [ ] Core budget workflows work on web
 - [ ] All work is committed and pushed
 

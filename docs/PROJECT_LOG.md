@@ -116,8 +116,12 @@ This file records verified milestones, release decisions, and current blockers. 
 - TypeScript, lint, whitespace checks, and production Pages-path export passed.
   Parsed exported HTML to verify all four public pages and their navigation links,
   including the links rendered on login and sign-up.
-- Live publication and unauthenticated browser checks are the next verification
-  step. Custom-domain configuration for `dailybudgethub.com` is still pending.
+- PR #2 merged as `0696e7e`; Pages run `43582463506` successfully published all
+  four pages. Each live route returned HTTP 200 with expected content, contact,
+  and navigation links. Inspected the live Support page in signed-out Chrome.
+- Signed-in Settings/deletion-dialog link checks on devices and custom-domain
+  configuration for `dailybudgethub.com` remain pending. Next priority is core
+  budget workflow and calculation testing, with Apple work still deferred.
 
 ### 2026-11-14 — GitHub Pages release preparation
 
