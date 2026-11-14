@@ -95,6 +95,12 @@ This file records verified milestones, release decisions, and current blockers. 
 - GitHub read access works. Push dry-run failed because this workspace lacks
   GitHub credentials. The suggested GitHub connection is not yet confirmed.
 
+### 2026-11-14 — GitHub connection and saved cloud checkpoint
+
+- GitHub connection confirmed working with repository push permission.
+- Pushed checkpoint `9f910e2` to `codex/cloud-workspace-password-recovery`.
+- The earlier GitHub authentication blocker is resolved. Main remains unchanged.
+
 ## Current Blockers and Next Priorities
 
 1. Use a dedicated test account to verify authenticated cloud workflows and

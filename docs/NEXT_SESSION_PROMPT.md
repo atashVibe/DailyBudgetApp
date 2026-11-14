@@ -43,9 +43,9 @@ requirements open.
    expected Firebase rejection. Recovery navigation and empty-email validation
    were verified. A signed-in test session and reset-email delivery still need
    verification. Owner wants the cloud workspace only, no public deployment yet.
-   Use plain, nontechnical explanations with the owner. Git read access works,
-   but `git push --dry-run origin HEAD` failed because GitHub credentials are
-   absent. A GitHub plugin connection was suggested and is not yet confirmed.
+   Use plain, nontechnical explanations with the owner. GitHub access now works:
+   checkpoint `9f910e2` was pushed to `codex/cloud-workspace-password-recovery`.
+   Main has not been changed. The earlier GitHub authentication blocker is resolved.
 2. Deferred for now: prevent Apple-only users from being locked out after moving to Android:
    - Let a signed-in Apple user link an Android-compatible login method, such as Google and/or email/password.
    - Preserve the same Firebase UID, family membership, roles, and budget data.
