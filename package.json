@@ -9,6 +9,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
+    "test:finance": "node --experimental-strip-types --test tests/finance.test.mjs",
     "test:rules": "npx --yes firebase-tools@latest emulators:exec --only firestore \"node --test tests/firestore.rules.test.mjs\""
   },
   "dependencies": {

@@ -36,10 +36,14 @@ the whole month's budget, not elapsed-days allowance. Preserve that rule; negati
 allowance alongside “On track” is expected on this basis. The owner also confirmed
 yearly status/bar must compare with the whole calendar year's budget so lower
 spending in later months can compensate for an expensive month. Use 365/366 days
-with the single daily budget. Monthly and annual status are independent. Monthly
-allowance carry-forward remains undecided. Review remaining refund/period and
-carry-forward rules, then implement and test the agreed
-corrections. Keep explanations plain.
+with the single daily budget. Monthly and annual status are independent. Owner
+confirmed each month starts fresh, with the annual total retaining past months.
+The owner then said “Let's fix it”, authorizing the agreed corrections and phone
+testing. These are implemented on `codex/fix-budget-accounting` with 14 passing
+calculation tests (`npm run test:finance`), including cent rounding and bounded
+bars. Check the project log for publication status. Other audit findings remain
+follow-up work, including date handling, duplicate-save prevention, validation,
+and preserving historical types during edits. Keep explanations plain.
 
 Current owner direction (2026-11-13): skip Apple-specific work for now and follow
 the remaining roadmap. Keep existing Apple sign-in and leave its unverified

@@ -103,6 +103,23 @@ This file records verified milestones, release decisions, and current blockers. 
 
 ## Current Blockers and Next Priorities
 
+### 2026-11-14 — Agreed budget calculation corrections
+
+- Owner confirmed monthly allowance resets, while yearly spending retains all
+  months, and authorized implementing the reviewed rules.
+- Excluded income/cashback from monthly/yearly budget spending. Refunds still
+  reverse spending in their own entry period. Monthly status remains based on
+  the full month; yearly status now uses the full 365/366-day calendar year.
+- Bounded monthly/yearly bars to 0–100% and used whole-cent arithmetic to avoid
+  false negative-zero balances and recovery days. Added clear summary guidance.
+- `npm run test:finance` passed all 14 tests; TypeScript and lint passed. Tests
+  include unchanged summaries after income/cashback, excess refunds, independent
+  monthly/yearly status, fresh monthly allowance, annual compensation, leap years,
+  status thresholds, period boundaries, cents, and zero budgets.
+- Added the finance checks to the Pages workflow before build/deployment.
+- Production export and publication verification are being completed. No stored
+  records were changed. Other audit findings remain open for follow-up.
+
 ### 2026-11-14 — Accounting review requested by owner
 
 - Owner specified that income must not change allowance/status, cashback must not

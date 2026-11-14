@@ -1,7 +1,10 @@
 # DailyBudget accounting review — November 14, 2026
 
 This reviews the deployed accounting code at `23d810b` / application merge
-`0696e7e`. No application calculations or live data were changed for this review.
+`0696e7e`. The findings below describe that original implementation. The agreed
+corrections are now implemented on `codex/fix-budget-accounting`; their publishing
+and verification status is recorded in `PROJECT_LOG.md`. No live records were
+rewritten or deleted.
 The findings combine executable checks of the actual calculation functions with
 inspection of entry saving, editing, dates, permissions, and exports. Tests used
 synthetic records, not a user's Firebase records.
@@ -19,6 +22,24 @@ synthetic records, not a user's Firebase records.
   spending in one month to be offset by lower spending in later months. With a
   single daily budget, the annual limit is daily budget × 365 (or 366 in a leap
   year). Keep monthly and yearly assessments independent.
+- Each month's allowance starts fresh, with no carry-forward of the previous
+  month's unused balance or overspending. The annual total retains all months.
+
+## Agreed corrections implemented
+
+- Budget spending is expenses minus refunds; income/cashback contribute zero.
+- Monthly status/bar use the full calendar month; yearly status/bar use the full
+  calendar year, including leap years. Month-passed progress stays independent.
+- Both spending bars are bounded to 0–100%; excess refunds can remain visible as
+  negative spending without creating a negative-width bar.
+- Totals and allowance/recovery arithmetic use whole cents to avoid false deficits.
+- Existing monthly resets remain; previous months remain in annual spending.
+- Fourteen automated calculation tests cover these rules. The Pages publishing
+  workflow runs them before building/deploying.
+
+Other findings below (date input/display, duplicate saves, edit/type preservation,
+validation, future-dated entries, and data freshness) remain separate follow-up
+work; their policies and fixes are not silently changed by this correction.
 
 Confirmed treatment: keep both income and cashback out of budget spending totals,
 allowance, spending status, and spending bars. A future separate income/cashback
@@ -203,8 +224,8 @@ totals may remain. Overlapping requests are not guarded against stale responses.
 5. **Rollover:** Allowance resets with each month; there is no carry-forward balance
    for unused allowance or overspending. Recovery days are an estimate assuming
    no further spending and do not model the month reset or changing budget.
-   The owner has confirmed compensation across months in the yearly total, but
-   has not yet specified whether a monthly allowance balance should carry forward.
+   **Owner confirmed:** each month starts fresh; only the yearly total retains the
+   previous month's spending. Do not add monthly allowance carry-forward.
 6. **Budget changes:** Updating the daily budget recalculates the entire current
    month/year at the new rate. No effective date or budget-rate history is stored.
 7. **Scope and currency:** All family areas share one daily budget. Dollar signs

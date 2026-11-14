@@ -172,7 +172,7 @@ Because DailyBudget stores personal financial information:
 - [ ] Prevent duplicate saves from repeated taps
 - [ ] Show understandable errors when requests fail
 - [ ] Test slow or disconnected internet
-- [ ] Add basic tests for financial calculations
+- [x] Add basic tests for financial calculations
 - [ ] Check text size, contrast, and accessibility labels
 
 ## 6. Release Identity
