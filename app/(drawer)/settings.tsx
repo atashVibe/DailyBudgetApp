@@ -41,6 +41,7 @@ import AdminsSection from "../components/settings/AdminsSection";
 import AccountSection from "../components/settings/AccountSection";
 import ProfileNameSection from "../components/settings/ProfileNameSection";
 import { saveUserDisplayName } from "../../services/profile";
+import PolicyLinks from "../../components/PolicyLinks";
 
 export default function SettingsScreen() {
   const [loading, setLoading] = useState(true);
@@ -448,6 +449,7 @@ export default function SettingsScreen() {
           onDeleteAccount={handleDeleteAccount}
         />
       ) : null}
+      <PolicyLinks />
     </AppScreen>
   );
 }

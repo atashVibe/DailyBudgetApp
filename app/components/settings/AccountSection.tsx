@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "expo-router";
 import {
   ActivityIndicator,
   Modal,
@@ -109,6 +110,14 @@ export default function AccountSection({
               deleted too. If other members depend on you as the only
               administrator, you must add another administrator first.
             </Text>
+            <Link
+              href="/delete-account"
+              onPress={close}
+              disabled={working}
+              style={{ color: "#155E50", textDecorationLine: "underline", paddingVertical: 12 }}
+            >
+              Read account and data deletion details
+            </Link>
             <Text style={styles.label}>Type DELETE to confirm</Text>
             <AppTextInput
               value={confirmation}

@@ -83,12 +83,15 @@ deferred at the owner's request. Existing Apple sign-in stays available. Leave
 Apple checklist items open; the original cross-platform release gate is unresolved.
 
 Password-reset request UI is implemented. TypeScript, lint, and web-export checks
-are tracked in `PROJECT_LOG.md`; actual email delivery and hosted-link tests must
-pass before the recovery checklist is fully checked off.
+are tracked in `PROJECT_LOG.md`. The owner reported the normal phone reset test
+works on 2026-11-14. Enumeration protection and invalid/expired hosted-link tests
+remain separate verification tasks.
 
 - [x] Add a clear **Forgot Password** action to the login screen
-- [ ] Send Firebase password-reset emails without revealing whether an address has an account
-- [ ] Show clear reset-success, expired-link, and invalid-link messages
+- [x] Send Firebase password-reset emails (normal phone flow confirmed by owner)
+- [ ] Verify Firebase email enumeration protection and unknown-account behavior
+- [x] Show a clear reset-request confirmation
+- [ ] Verify expired-link and invalid-link messages on Firebase's hosted page
 - [ ] Let an authenticated Apple user add an Android-compatible sign-in method
 - [ ] Support linking Google sign-in and/or an email/password login to the existing Firebase user
 - [ ] Preserve the same Firebase UID, family membership, roles, and budget data when linking providers

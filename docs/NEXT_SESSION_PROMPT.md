@@ -27,7 +27,9 @@ Current owner direction (2026-11-13): skip Apple-specific work for now and follo
 the remaining roadmap. Keep existing Apple sign-in and leave its unverified
 requirements open.
 
-1. Verify the implemented **Forgot Password** request flow with a test account.
+1. The owner reported that **Forgot Password** works on their phone. Keep that
+   result recorded; do not ask them to repeat the normal test without a reason.
+   Remaining recovery checks are enumeration protection and expired/invalid links.
    The login screen now links to `/forgot-password`, which sends Firebase reset
    emails, uses a generic confirmation for unknown/disabled accounts, and handles
    validation, network, and rate-limit errors. Firebase's default hosted email
@@ -50,7 +52,7 @@ requirements open.
    PR #1 was merged as `652d036` and published successfully by Pages run
    `43581058924`. Live login and recovery routes returned HTTP 200. In Chrome,
    verified recovery navigation, refresh, and empty-email validation. Ask the
-   owner to test actual reset-email delivery and completion on their phone.
+   owner only for the remaining recovery checks; their normal phone test passed.
    The earlier GitHub authentication blocker is resolved.
 2. Deferred for now: prevent Apple-only users from being locked out after moving to Android:
    - Let a signed-in Apple user link an Android-compatible login method, such as Google and/or email/password.
@@ -58,7 +60,10 @@ requirements open.
    - Warn Apple-only users to add another method.
    - Prevent Hide My Email users from accidentally creating a second account.
    - Test the complete iPhone-to-Android account-access path when an iPhone build is available.
-3. Finish the required public Privacy Policy, account-deletion, support/contact, and Terms pages using `dailybudgethub.com` and `dailybudgethub@gmail.com`.
+3. Public Privacy Policy, account-deletion, support/contact, and Terms routes are
+   implemented with `dailybudgethub@gmail.com`. Publish and verify them on the
+   existing GitHub Pages app. Domain connection for `dailybudgethub.com` remains
+   pending; do not change hosting or DNS without inspecting the existing setup.
 4. Continue the beta-readiness and real-device checklist in `docs/ROADMAP.md`.
 
 Reports and graphs are important, but they are planned as a later Version 2 candidate. The roadmap includes category, budget-area, trend, comparison, filter, accessibility, and export ideas. Do not let reporting delay the first safe beta.
