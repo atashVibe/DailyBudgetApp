@@ -47,8 +47,10 @@ requirements open.
    Keep that existing hosting setup rather than creating a new hosting service.
    Use plain, nontechnical explanations with the owner. GitHub access now works:
    checkpoint `9f910e2` was pushed to `codex/cloud-workspace-password-recovery`.
-   PR #1 contains the recovery and cloud changes. The current session is merging
-   it to publish through the existing Pages workflow; check its deployment result.
+   PR #1 was merged as `652d036` and published successfully by Pages run
+   `43581058924`. Live login and recovery routes returned HTTP 200. In Chrome,
+   verified recovery navigation, refresh, and empty-email validation. Ask the
+   owner to test actual reset-email delivery and completion on their phone.
    The earlier GitHub authentication blocker is resolved.
 2. Deferred for now: prevent Apple-only users from being locked out after moving to Android:
    - Let a signed-in Apple user link an Android-compatible login method, such as Google and/or email/password.

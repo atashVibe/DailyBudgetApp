@@ -109,8 +109,13 @@ This file records verified milestones, release decisions, and current blockers. 
 - Verified TypeScript, lint, whitespace, and a production export with the real
   `/DailyBudgetApp` base path. Removed an Android app-ID override from the web
   deployment workflow; Auth and Firestore use the existing public project settings.
-- PR #1 is being merged for the Pages workflow. Confirm the deployment completes
-  and the live recovery screen works before treating publication as verified.
+- PR #1 merged as `652d036`; GitHub Pages workflow run `43581058924` succeeded.
+- Live login and recovery routes returned HTTP 200 with the expected new content.
+  In shared Chrome, verified recovery navigation from the published login page,
+  recovery-page refresh, and empty-email validation.
+- Ready for owner phone testing at `https://atashvibe.github.io/DailyBudgetApp/`.
+  Actual email delivery, reset completion, and authenticated budget workflows
+  remain unverified. No reset messages were sent during this deployment check.
 
 1. Use a dedicated test account to verify authenticated cloud workflows and
    password recovery using `docs/ACCOUNT_RECOVERY_TESTING.md`.
