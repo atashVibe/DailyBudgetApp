@@ -43,7 +43,10 @@ export default function BudgetSummaryCard({
       </Text>
 
       <Text style={{ fontSize: 16, marginBottom: 6 }}>
-        Total Expences: ${spentThisMonth.toFixed(2)}
+        Total Expenses: ${spentThisMonth.toFixed(2)}
+      </Text>
+      <Text style={{ fontSize: 13, color: "#4B5563", marginBottom: 10 }}>
+        Expenses minus refunds. Income and cashback do not affect your budget.
       </Text>
       <Text
         style={{
@@ -79,6 +82,13 @@ export default function BudgetSummaryCard({
         }}
       >
         <View
+          accessibilityRole="progressbar"
+          accessibilityLabel="Monthly budget used"
+          accessibilityValue={{
+            min: 0,
+            max: 100,
+            now: summary.progressPercent,
+          }}
           style={{
             height: "100%",
             width: `${summary.progressPercent}%`,
@@ -123,6 +133,13 @@ export default function BudgetSummaryCard({
           }}
         >
           <View
+            accessibilityRole="progressbar"
+            accessibilityLabel="Yearly budget used"
+            accessibilityValue={{
+              min: 0,
+              max: 100,
+              now: summary.yearlyProgressPercent,
+            }}
             style={{
               height: "100%",
               width: `${summary.yearlyProgressPercent}%`,

@@ -103,6 +103,47 @@ This file records verified milestones, release decisions, and current blockers. 
 
 ## Current Blockers and Next Priorities
 
+### 2026-11-14 — Agreed budget calculation corrections
+
+- Owner confirmed monthly allowance resets, while yearly spending retains all
+  months, and authorized implementing the reviewed rules.
+- Excluded income/cashback from monthly/yearly budget spending. Refunds still
+  reverse spending in their own entry period. Monthly status remains based on
+  the full month; yearly status now uses the full 365/366-day calendar year.
+- Bounded monthly/yearly bars to 0–100% and used whole-cent arithmetic to avoid
+  false negative-zero balances and recovery days. Added clear summary guidance.
+- `npm run test:finance` passed all 14 tests; TypeScript and lint passed. Tests
+  include unchanged summaries after income/cashback, excess refunds, independent
+  monthly/yearly status, fresh monthly allowance, annual compensation, leap years,
+  status thresholds, period boundaries, cents, and zero budgets.
+- Added the finance checks to the Pages workflow before build/deployment.
+- Production export and publication verification are being completed. No stored
+  records were changed. Other audit findings remain open for follow-up.
+
+### 2026-11-14 — Accounting review requested by owner
+
+- Owner specified that income must not change allowance/status, cashback must not
+  change allowance, and negative net expenses must display an empty spending bar.
+- Inspected reporting, summary formulas, dashboard loading, entry creation/editing,
+  categories/areas, amount/date input, daily-budget settings, rules, and CSV export.
+- Ran the actual reporting and summary functions with synthetic records. Reproduced
+  income/cashback offsets, negative progress widths, on-track status with negative
+  allowance, future-entry inclusion, timestamp omission, floating-point false
+  recovery, a daylight-saving day-count error, and the date-only display shift.
+- Saved a full plain-language review in `docs/ACCOUNTING_REVIEW.md` on branch
+  `codex/accounting-review`. No live data or application calculations were changed.
+- Next: review entry impacts, status denominator, refunds, and period rules with
+  the owner before implementing and publishing accounting corrections.
+- Owner subsequently confirmed monthly “On track / Over budget” must compare
+  spending with the whole month's budget. Preserve that monthly basis; negative
+  allowance alongside “On track” is expected.
+- Owner also confirmed cashback must leave allowance, status, and the spending
+  bar unchanged, just like income.
+- Owner confirmed yearly status must use the whole calendar-year budget, allowing
+  a high-spending month to be offset by lower spending later in the year. Monthly
+  and yearly status are independent. Monthly allowance carry-forward and remaining
+  refund/period rules are still under review; no application changes were made.
+
 ### 2026-11-14 — Owner password-reset test and public information pages
 
 - Owner reported the normal phone Forgot Password test works. This is an

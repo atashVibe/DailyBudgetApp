@@ -37,6 +37,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Verify financial calculations
+        run: npm run test:finance
+
       - name: Build web app
         run: npx expo export --platform web
 

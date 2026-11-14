@@ -9,7 +9,7 @@ export const calculateMonthlyTotal = (
   year: number,
   month: number,
 ) => {
-  let total = 0;
+  let totalCents = 0;
 
   entries.forEach((entry) => {
     if (!entry.date) return;
@@ -21,14 +21,14 @@ export const calculateMonthlyTotal = (
 
     if (!isTargetMonth) return;
 
-    total += calculateEntryImpact(entry);
+    totalCents += Math.round(calculateEntryImpact(entry) * 100);
   });
 
-  return total;
+  return totalCents / 100;
 };
 
 export const calculateYearlyTotal = (entries: ReportEntry[], year: number) => {
-  let total = 0;
+  let totalCents = 0;
 
   entries.forEach((entry) => {
     if (!entry.date) return;
@@ -37,10 +37,10 @@ export const calculateYearlyTotal = (entries: ReportEntry[], year: number) => {
 
     if (entryDate.getFullYear() !== year) return;
 
-    total += calculateEntryImpact(entry);
+    totalCents += Math.round(calculateEntryImpact(entry) * 100);
   });
 
-  return total;
+  return totalCents / 100;
 };
 
 export const calculateEntryImpact = (entry: ReportEntry) => {
@@ -49,9 +49,11 @@ export const calculateEntryImpact = (entry: ReportEntry) => {
       return entry.amount;
 
     case "refund":
+      return -entry.amount;
+
     case "cashback":
     case "income":
-      return -entry.amount;
+      return 0;
 
     default:
       return 0;
