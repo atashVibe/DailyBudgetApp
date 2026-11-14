@@ -14,6 +14,11 @@ synthetic records, not a user's Firebase records.
 - Owner confirmed monthly “On track / Over budget” compares spending with the
   **whole month's budget**, not the allowance earned through today. Keep the
   monthly spending bar on that same full-month basis.
+- Yearly status and spending bar compare total net spending with the **whole
+  calendar year's budget**, not the budget earned so far. The owner wants higher
+  spending in one month to be offset by lower spending in later months. With a
+  single daily budget, the annual limit is daily budget × 365 (or 366 in a leap
+  year). Keep monthly and yearly assessments independent.
 
 Confirmed treatment: keep both income and cashback out of budget spending totals,
 allowance, spending status, and spending bars. A future separate income/cashback
@@ -104,7 +109,8 @@ so monthly and yearly status are not directly comparable.
 The owner has now confirmed the full-month comparison. This combination is
 therefore expected behavior, not a defect to fix by changing monthly status to
 an elapsed-days comparison. Labeling the monthly basis clearly can help users.
-The yearly comparison remains a separate decision.
+The owner also confirmed yearly status should use the full calendar-year budget.
+Replace the current elapsed-year denominator when implementing the corrections.
 
 ### 4. Fractions of a cent can create a false recovery day
 
@@ -179,8 +185,10 @@ totals may remain. Overlapping requests are not guarded against stale responses.
 
 1. **Monthly comparison agreed:** Status and spending bar compare against the
    full month's budget. Do not change them to an elapsed-days comparison.
-   The month-passed bar remains independent of transactions. Yearly status
-   currently uses elapsed-year allowance; its intended basis still needs review.
+   The month-passed bar remains independent of transactions. **Yearly comparison
+   also agreed:** use the whole calendar-year budget. Monthly overspending may be
+   compensated by lower spending in later months without declaring the full year
+   over budget. Monthly allowance carry-forward is a separate open decision.
 2. **Refund period:** A refund currently reduces spending in the month/year of its
    own entry date, even if the purchase was in a previous period. There is no link
    to an original purchase and no check against over-refunding.
@@ -195,6 +203,8 @@ totals may remain. Overlapping requests are not guarded against stale responses.
 5. **Rollover:** Allowance resets with each month; there is no carry-forward balance
    for unused allowance or overspending. Recovery days are an estimate assuming
    no further spending and do not model the month reset or changing budget.
+   The owner has confirmed compensation across months in the yearly total, but
+   has not yet specified whether a monthly allowance balance should carry forward.
 6. **Budget changes:** Updating the daily budget recalculates the entire current
    month/year at the new rate. No effective date or budget-rate history is stored.
 7. **Scope and currency:** All family areas share one daily budget. Dollar signs
@@ -224,8 +234,8 @@ totals may remain. Overlapping requests are not guarded against stale responses.
 ## Proposed correction order after review
 
 1. Preserve the agreed full-month basis for monthly status/bar. Finish reviewing
-   refund/period rules and the yearly comparison. Income/cashback exclusions are
-   also confirmed.
+   refund/period and monthly allowance carry-forward rules. Income/cashback
+   exclusions and the full-year annual comparison are also confirmed.
 2. Exclude income/cashback from budget spending and bound both bars to 0–100%.
 3. Add regression tests for all four types, negative refunds, over-budget values,
    exact cents, monthly/yearly boundaries, and agreed refund/future-date rules.

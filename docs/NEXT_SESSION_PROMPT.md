@@ -33,8 +33,12 @@ date-display, and daylight-saving problems. The report lists other code-confirme
 risks and product rules needing agreement. No accounting implementation changes
 were deployed. The owner confirmed monthly status and the spending bar must use
 the whole month's budget, not elapsed-days allowance. Preserve that rule; negative
-allowance alongside “On track” is expected on this basis. Review remaining
-refund/period and yearly rules, then implement and test the agreed
+allowance alongside “On track” is expected on this basis. The owner also confirmed
+yearly status/bar must compare with the whole calendar year's budget so lower
+spending in later months can compensate for an expensive month. Use 365/366 days
+with the single daily budget. Monthly and annual status are independent. Monthly
+allowance carry-forward remains undecided. Review remaining refund/period and
+carry-forward rules, then implement and test the agreed
 corrections. Keep explanations plain.
 
 Current owner direction (2026-11-13): skip Apple-specific work for now and follow

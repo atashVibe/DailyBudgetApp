@@ -121,8 +121,11 @@ This file records verified milestones, release decisions, and current blockers. 
   spending with the whole month's budget. Preserve that monthly basis; negative
   allowance alongside “On track” is expected.
 - Owner also confirmed cashback must leave allowance, status, and the spending
-  bar unchanged, just like income. Refund/period and yearly decisions remain
-  under review; no application changes were made.
+  bar unchanged, just like income.
+- Owner confirmed yearly status must use the whole calendar-year budget, allowing
+  a high-spending month to be offset by lower spending later in the year. Monthly
+  and yearly status are independent. Monthly allowance carry-forward and remaining
+  refund/period rules are still under review; no application changes were made.
 
 ### 2026-11-14 — Owner password-reset test and public information pages
 
