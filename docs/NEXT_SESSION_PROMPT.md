@@ -42,10 +42,14 @@ requirements open.
    development server stays running. Synthetic invalid credentials received the
    expected Firebase rejection. Recovery navigation and empty-email validation
    were verified. A signed-in test session and reset-email delivery still need
-   verification. Owner wants the cloud workspace only, no public deployment yet.
+   verification. Owner now wants the updates published to the existing GitHub
+   Pages app at `https://atashvibe.github.io/DailyBudgetApp/` for phone testing.
+   Keep that existing hosting setup rather than creating a new hosting service.
    Use plain, nontechnical explanations with the owner. GitHub access now works:
    checkpoint `9f910e2` was pushed to `codex/cloud-workspace-password-recovery`.
-   Main has not been changed. The earlier GitHub authentication blocker is resolved.
+   PR #1 contains the recovery and cloud changes. The current session is merging
+   it to publish through the existing Pages workflow; check its deployment result.
+   The earlier GitHub authentication blocker is resolved.
 2. Deferred for now: prevent Apple-only users from being locked out after moving to Android:
    - Let a signed-in Apple user link an Android-compatible login method, such as Google and/or email/password.
    - Preserve the same Firebase UID, family membership, roles, and budget data.

@@ -1,5 +1,10 @@
 # Cloud workspace
 
+For phone testing, use the existing GitHub Pages app at
+`https://atashvibe.github.io/DailyBudgetApp/`. Publishing updates happens through
+the repository's Pages workflow after changes reach main. This is separate from
+the cloud development preview described below.
+
 The app runs on the shared cloud computer and connects to the existing live
 Firebase project, `dailybudget-35c26`. Use dedicated test accounts and families.
 

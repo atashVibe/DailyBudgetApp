@@ -103,6 +103,15 @@ This file records verified milestones, release decisions, and current blockers. 
 
 ## Current Blockers and Next Priorities
 
+### 2026-11-14 — GitHub Pages release preparation
+
+- Owner requested publication to the existing Pages URL for phone testing.
+- Verified TypeScript, lint, whitespace, and a production export with the real
+  `/DailyBudgetApp` base path. Removed an Android app-ID override from the web
+  deployment workflow; Auth and Firestore use the existing public project settings.
+- PR #1 is being merged for the Pages workflow. Confirm the deployment completes
+  and the live recovery screen works before treating publication as verified.
+
 1. Use a dedicated test account to verify authenticated cloud workflows and
    password recovery using `docs/ACCOUNT_RECOVERY_TESTING.md`.
 2. Deferred at the owner's request: provider linking so Apple-only users can

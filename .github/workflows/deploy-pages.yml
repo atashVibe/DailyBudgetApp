@@ -24,7 +24,6 @@ jobs:
       EXPO_PUBLIC_FIREBASE_PROJECT_ID: dailybudget-35c26
       EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET: dailybudget-35c26.firebasestorage.app
       EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: "420817333542"
-      EXPO_PUBLIC_FIREBASE_APP_ID: "1:420817333542:android:376a7baca1ebbbb58625e7"
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
