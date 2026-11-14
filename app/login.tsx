@@ -246,6 +246,17 @@ export default function LoginScreen() {
           onSubmitEditing={handleLogin}
         />
 
+        <TouchableOpacity
+          accessibilityRole="button"
+          disabled={loading}
+          onPress={() => router.push("/forgot-password")}
+          style={{ alignSelf: "flex-end", padding: 12, marginBottom: 12 }}
+        >
+          <Text style={{ color: "#155E50", fontSize: 16 }}>
+            Forgot Password?
+          </Text>
+        </TouchableOpacity>
+
         <View style={{ marginBottom: 12 }}>
           <PrimaryButton
             title="Sign In"

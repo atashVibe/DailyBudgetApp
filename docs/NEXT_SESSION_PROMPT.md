@@ -23,8 +23,30 @@ Start by reading the repository, `docs/ROADMAP.md`, Git status, and recent commi
 
 ## Highest-priority work
 
-1. Implement a safe **Forgot Password** flow for email/password users.
-2. Prevent Apple-only users from being locked out after moving to Android:
+Current owner direction (2026-11-13): skip Apple-specific work for now and follow
+the remaining roadmap. Keep existing Apple sign-in and leave its unverified
+requirements open.
+
+1. Verify the implemented **Forgot Password** request flow with a test account.
+   The login screen now links to `/forgot-password`, which sends Firebase reset
+   emails, uses a generic confirmation for unknown/disabled accounts, and handles
+   validation, network, and rate-limit errors. Firebase's default hosted email
+   action page completes the reset. Verify delivery, reset completion, invalid,
+   expired and reused links, and sign-in with the new password. Ensure Firebase
+   email enumeration protection is enabled. No live auth requests were made in
+   this session.
+   TypeScript, lint, and production web export pass. `firebaseConfig.ts` now
+   defaults to the public Firebase client configuration already tracked in
+   `google-services.json`. A fresh cloud checkout runs without a `.env` file.
+   Expo web is running in cloud Chrome at `http://localhost:8083/login` while the
+   development server stays running. Synthetic invalid credentials received the
+   expected Firebase rejection. Recovery navigation and empty-email validation
+   were verified. A signed-in test session and reset-email delivery still need
+   verification. Owner wants the cloud workspace only, no public deployment yet.
+   Use plain, nontechnical explanations with the owner. Git read access works,
+   but `git push --dry-run origin HEAD` failed because GitHub credentials are
+   absent. A GitHub plugin connection was suggested and is not yet confirmed.
+2. Deferred for now: prevent Apple-only users from being locked out after moving to Android:
    - Let a signed-in Apple user link an Android-compatible login method, such as Google and/or email/password.
    - Preserve the same Firebase UID, family membership, roles, and budget data.
    - Warn Apple-only users to add another method.
