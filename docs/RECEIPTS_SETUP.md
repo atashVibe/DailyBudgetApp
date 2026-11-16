@@ -149,6 +149,8 @@ paste an access token or a service-account key into this chat or the repository.
 Check out the reviewed receipt branch/commit, then run:
 
 ```bash
+nvm install 24
+nvm use 24
 npm ci
 npm ci --prefix functions
 gcloud config set project dailybudget-35c26
@@ -160,7 +162,7 @@ Complete any Google sign-in/consent directly in your browser. If either tool
 reports a permission problem, stop and resolve the correct project/account rather
 than creating a new project or changing access broadly.
 
-The default deployment region is `us-central1`. If a different region was reviewed,
+The verified existing bucket is in `us-west1` and Firestore is in `us-west2`. The default receipt-service deployment region is now `us-west1`, beside the original files. The database remains in its current region; database calls cross regions and their applicable charges are separate from the storage estimate. If a different region is reviewed later,
 set `RECEIPT_REGION=the-reviewed-region` in an ignored
 `functions/.env.dailybudget-35c26` before deployment. Then, after reviewing the
 live rules, deploy only the receipt code and additive rules/indexes:
@@ -348,3 +350,9 @@ account and exercises a file input in place of actual camera hardware.
 - Future billing integration must use trusted server events to update access;
   payment processing is intentionally absent. Review audit/job log retention and
   large-scale admin metrics before onboarding thousands of users.
+
+## Owner Cloud Shell verification — November 16, 2026
+
+The owner confirmed Blaze is already enabled, the bucket exists with an empty visible file list, and its old Storage test rule expired April 30, 2026. Cloud Shell reported bucket `dailybudget-35c26.firebasestorage.app`, location `US-WEST1`, REGIONAL storage, seven-day soft deletion and fine-grained ACLs. The owner successfully ran the public-access-prevention update; retention protections were preserved. Firestore reports `us-west2`. Firebase CLI `projects:list` succeeded in the owner’s own Cloud Shell; this workspace still has no direct Google credentials.
+
+Node 22 installation exposed Firebase Admin transitive database packages requiring Node >=24.12.0. Receipt Functions and their CI now use Node 24 (GA in the pinned Firebase CLI), with a fresh lockfile and emulator verification. Use Node 24 in Cloud Shell before deployment. No production receipt Functions or Firestore rules have been deployed yet.

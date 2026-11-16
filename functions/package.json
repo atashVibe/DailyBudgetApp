@@ -4,7 +4,7 @@
   "type": "module",
   "main": "src/index.mjs",
   "engines": {
-    "node": "22"
+    "node": "24"
   },
   "scripts": {
     "test": "node --test test/policy.test.mjs",

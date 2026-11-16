@@ -59,7 +59,7 @@ All receipt tests used `demo-dailybudget-receipts` emulators. Retention/hold and
 
 ## Activation approval and current access blocker
 
-The owner approved Firebase cloud setup and possible usage charges on November 16, 2026. PR #5 checks passed on GitHub. This workspace has no Firebase/Google authenticated deployment session; its GitHub integration cannot manage Actions variables (HTTP 403), and the shared browser/viewer is unavailable. No production deployment or billing change has occurred. The owner is being guided to their own Firebase Console/Cloud Shell session; no credentials should be pasted into chat.
+The owner approved Firebase cloud setup and possible usage charges on November 16, 2026. PR #5 checks passed on GitHub. The owner has since confirmed Firebase CLI access in their own Cloud Shell, Blaze enabled, bucket US-WEST1 with seven-day soft deletion, successful public-access-prevention enforcement, and Firestore us-west2. The backend runtime/CI now use Node 24 for dependency compatibility and default to us-west1. This workspace still has no Firebase/Google authenticated deployment session; its GitHub integration cannot manage Actions variables (HTTP 403), and the shared browser/viewer is unavailable. No production deployment or billing change has occurred. The owner is being guided to their own Firebase Console/Cloud Shell session; no credentials should be pasted into chat.
 
 ## Still required before activation
 

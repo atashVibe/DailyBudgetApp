@@ -8,7 +8,7 @@ import { createReceiptService } from "./service.mjs";
 import { createReceiptApi } from "./api.mjs";
 
 initializeApp();
-const region = process.env.RECEIPT_REGION || "us-central1";
+const region = process.env.RECEIPT_REGION || "us-west1";
 const service = createReceiptService({
   db: getFirestore(),
   auth: getAuth(),

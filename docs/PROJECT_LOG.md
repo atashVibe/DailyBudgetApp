@@ -1,5 +1,9 @@
 # DailyBudget Project Log
 
+## Latest Cloud Shell checkpoint — November 16, 2026
+
+Owner reports Blaze enabled; Storage exists and its visible file list is empty, US-WEST1/REGIONAL with seven-day soft deletion. Public access prevention update completed successfully. Firestore is us-west2. Owner’s own Cloud Shell can list Firebase projects. Receipt service defaults to us-west1. Backend runtime/CI updated to Node 24 to satisfy locked Firebase Admin transitive dependencies requiring >=24.12.0. Deployment and trusted owner-UID assignment still remain; no production receipt service deployment has been confirmed.
+
 ## 2026-11-16 — Cloud activation approved; Google sign-in required
 
 The owner approved proceeding with the documented Firebase cloud setup and usage-based charges. PR #5 checks passed on GitHub. Read-only access checks found no Firebase CLI session or Google Application Default Credentials in the workspace. GitHub repository Actions secrets/variables operations return HTTP 403; the browser reports `Browser runtime unavailable` and the desktop viewer cannot attach. No production settings were changed. Asked the owner to open their existing Firebase project and identify Spark/Blaze as the first guided setup step. Approval persists; do not request it again.
