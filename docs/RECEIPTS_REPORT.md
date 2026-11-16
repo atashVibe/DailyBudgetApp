@@ -16,6 +16,27 @@ Premium and Archive belong to a family. Every current family member can view, do
 - Account deletion preserves receipts for remaining family members and removes the departing user's visible receipt attribution; sole-member family originals are submitted for deletion after the existing account-deletion confirmation.
 - A receipt administrator overview reports shared plans, deadlines, storage/version totals and a storage-only estimate when verified region/class pricing is configured. There is no payment integration and no automatically assigned production administrator.
 
+## Files and schema
+
+| Area | Created or modified files |
+| --- | --- |
+| Backend | `functions/src/{index,api,service,family-context,files,policy}.mjs`, `functions/scripts/{receipt-admin,emulator-demo}.mjs`, `functions/test/policy.test.mjs`, backend package/lock files |
+| Receipt interface | `components/ReceiptPanel.tsx`, `services/receipts.ts`, `app/(drawer)/receipts.tsx`, drawer layout, `app/components/RecentEntriesList.tsx` |
+| Account/privacy | `services/accountDeletion.ts`, `services/auth.ts` (development-only emulator opt-in), account settings confirmation, `app/privacy.tsx`, `app/delete-account.tsx` |
+| Firebase/build | `storage.rules`, `firestore.rules`, `firestore.indexes.json`, `firebase.json`, `app.json`, root package/lock files, `.gitignore` |
+| Checks/deployment | `.github/workflows/test-receipts.yml`, frontend workflow API URL variable, `tests/receipts.integration.test.mjs`, `tests/receipt-ui.spec.mjs`, `playwright.receipts.config.mjs` |
+| Documentation | `RECEIPTS_REQUIREMENTS.md`, `RECEIPTS_IMPLEMENTATION.md`, `RECEIPTS_SETUP.md`, this report, project log, roadmap and next-session prompt |
+
+The additive Firestore schema introduces `receiptAccess/{uid}` for global roles,
+`receiptFamilyAccess/{familyId}` for shared plans and deadlines, `receipts/{id}`
+for original-file associations, `receiptLocks/{familyId}`, `receiptOperations/{id}`,
+`receiptAudit/{id}`, `receiptConfig/global` and `receiptMaintenance/cursor`. No
+migration of existing budgets or users is required. Originals use
+`receipts/{familyId}/{transactionId}/{receiptId}/{uniqueRevision}`. Clients cannot
+write the new metadata/entitlements directly, and direct Storage access is denied;
+all file operations pass through backend authorization. Actual production rules
+must be inspected before deploying so unrelated existing uses are preserved.
+
 ## Verification
 
 | Check | Result |
@@ -31,6 +52,8 @@ Premium and Archive belong to a family. Every current family member can view, do
 | Backend production dependency audit | Zero known advisories at verification |
 
 The browser flow signs in with a disposable emulator account, saves an expense, uploads image/PDF originals, checks downloaded bytes and image viewing, checks the two-file cap, replaces and confirms deletion, exercises a camera-style file input, exports and verifies ZIP contents, and opens the administrator overview. Camera hardware is not simulated by that test. The backend integration suite additionally verifies sharing across current members, access revocation, other-family isolation, roles, direct-rule denial, malformed files, quotas/concurrency, grace/renewal/Archive, retained-copy/failure retries, interrupted upload recovery, account deletion and missing-file export failure.
+
+Early browser runs exposed test synchronization problems during React hydration and hidden cached login screens; explicit navigation/visible selectors fixed the test, and the final browser run passed. A lint invocation initially failed because the workspace home cache directory was unavailable; the documented writable Expo cache path fixed it. No failing check remains in the local final results.
 
 All receipt tests used `demo-dailybudget-receipts` emulators. Retention/hold and failure branches use simulated adapters over emulator objects; they do not prove actual GCS retention timing. No production user files were uploaded or deleted. No billing, bucket policies, production security rules or Functions were changed.
 
