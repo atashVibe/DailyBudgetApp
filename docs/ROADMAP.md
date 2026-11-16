@@ -1,5 +1,15 @@
 # DailyBudget Roadmap
 
+## Owner-requested family receipts — November 16, 2026
+
+- [x] Prepare family receipt UI, Firebase backend, permissions, retention and export on the review branch.
+- [x] Verify emulator security/lifecycle, browser workflow, accounting regression checks, types, lint and web export.
+- [ ] Obtain approval for documented Firebase usage costs before backend activation.
+- [ ] Inspect live bucket/IAM/retention, deploy reviewed services, assign the existing owner securely and configure the API URL.
+- [ ] Complete live family-sharing, cleanup and real-phone checks; verify independent backup/restore.
+
+Details and remaining limitations: `docs/RECEIPTS_REPORT.md`.
+
 ## Goal
 
 Release DailyBudget quickly without exposing real users or financial data to preventable problems.

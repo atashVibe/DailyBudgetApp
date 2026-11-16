@@ -1,5 +1,9 @@
 # DailyBudget Project Log
 
+## 2026-11-16 — Family receipts prepared for review
+
+Prepared shared family receipts, Firebase gateway/retention, original-file ZIP export and separate global administrator setup on `codex/firebase-receipts`, preserving main `55a9f6f`. Every current member can replace/delete. Verified 30 receipt integration, 11 rules, 6 policy and 14 finance tests, browser workflow, types, lint and web export. No production backend/rules/billing deployment. Cost approval and live/device verification remain pending. See `RECEIPTS_REPORT.md` and `RECEIPTS_SETUP.md`.
+
 This file records verified milestones, release decisions, and current blockers. `ROADMAP.md` remains the authoritative checklist.
 
 ## Documentation Rules

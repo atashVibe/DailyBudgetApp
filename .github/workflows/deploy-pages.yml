@@ -19,6 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       EXPO_PUBLIC_BASE_URL: /DailyBudgetApp
+      EXPO_PUBLIC_RECEIPTS_API_URL: ${{ vars.RECEIPTS_API_URL }}
       EXPO_PUBLIC_FIREBASE_API_KEY: AIzaSyAeqnubsEuMQj-Xb_vup-EspmcPHQloTzU
       EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN: dailybudget-35c26.firebaseapp.com
       EXPO_PUBLIC_FIREBASE_PROJECT_ID: dailybudget-35c26

@@ -23,6 +23,7 @@ import {
 import { Platform } from "react-native";
 import { auth, db } from "./auth";
 import { removePersonalFamilyAttribution } from "./personalData";
+import { deleteAccountReceipts } from "./receipts";
 
 export type AccountReauthenticationMethod = "password" | "google" | "apple";
 
@@ -251,6 +252,8 @@ export async function deleteCurrentAccount(password?: string) {
 
   // Re-check immediately before deleting in case family membership changed.
   const plan = await getDeletionPlan(user.uid);
+  // The existing delete-account confirmation explicitly includes receipt files.
+  await deleteAccountReceipts();
   await removePersonalFirestoreData(user, plan);
   if (appleAccessToken) {
     try {

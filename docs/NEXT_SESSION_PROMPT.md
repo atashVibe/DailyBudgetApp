@@ -1,5 +1,9 @@
 # DailyBudget Next-Session Prompt
 
+## Latest priority — November 16, 2026
+
+Family receipts are prepared on `codex/firebase-receipts` from main `55a9f6f`. Read `docs/RECEIPTS_REPORT.md`, `docs/RECEIPTS_SETUP.md`, branch status and any linked PR first. Premium is per family; every current member can view/download/export/replace/delete. Former members and other families are denied. The latest compact summary/navigation changes are preserved. No production receipt backend/rules deployment or billing change has occurred. Do not activate paid resources until the owner approves the documented costs. Next steps are approval, actual Firebase project inspection, reviewed deployment, trusted existing-UID administrator setup, frontend API configuration and live/phone testing. The older checkpoint descriptions below are historical.
+
 Continue helping me prepare DailyBudget for a safe beta release as quickly as practical.
 
 Repository:

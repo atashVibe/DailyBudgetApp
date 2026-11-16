@@ -20,6 +20,10 @@ export default function DeletionInfoScreen() {
           body: "Account deletion removes your Firebase sign-in, personal profile, and family-membership records. Shared budget history may remain for other family members with account attribution removed from your current families. Free-text notes are not automatically scrubbed of personal information. Tell support about personal information in notes or families you previously left so it can be reviewed for cleanup. Information other members copied, and provider-managed logs or backups, may remain as described in the Privacy Policy.",
         },
         {
+          title: "Shared family receipt files",
+          body: "Deleting your account preserves shared family receipts for remaining members and removes your uploader attribution where applicable. If you are the only family member, the family’s receipt originals are submitted for deletion. Retained copies can take longer to expire and are tracked until cleanup is verified. Deleting an individual budget entry keeps your receipt originals available in Family Receipts, so important records are not erased accidentally. Export your receipts before deleting the account. Account and receipt deletion do not require a paid plan.",
+        },
+        {
           title: "After making a request",
           body: "Sending an email requests assistance; it does not immediately delete your account. Support will respond to arrange verification and explain any remaining steps. We do not advertise a fixed completion time during beta. If an in-app deletion fails, contact support rather than assuming all records were deleted.",
         },
