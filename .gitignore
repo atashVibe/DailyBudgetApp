@@ -49,4 +49,9 @@ app-example
 
 .env
 node_modules
+functions/node_modules/
+functions/.env*
+storage-debug.log
+test-results/
+playwright-report/
 .expo

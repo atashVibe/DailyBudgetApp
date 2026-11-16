@@ -74,6 +74,7 @@ export default function DrawerLayout() {
       }}
     >
       <Drawer.Screen name="dashboard" options={{ title: "Dashboard" }} />
+      <Drawer.Screen name="receipts" options={{ title: "Family Receipts" }} />
 
       <Drawer.Screen
         name="settings"

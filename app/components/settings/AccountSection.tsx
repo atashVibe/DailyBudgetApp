@@ -106,7 +106,10 @@ export default function AccountSection({
             <Text style={styles.modalTitle}>Delete your account?</Text>
             <Text style={styles.warning}>
               This permanently deletes your DailyBudget account and cannot be
-              undone. If you are the family’s only member, its budget data is
+              undone. Shared family receipts stay available to remaining members. If you
+              are the only family member, its receipt originals are submitted
+              for deletion; retained copies may take longer to expire.
+              If you are the family’s only member, its budget data is
               deleted too. If other members depend on you as the only
               administrator, you must add another administrator first.
             </Text>

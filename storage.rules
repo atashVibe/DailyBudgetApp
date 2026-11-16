@@ -1,0 +1,10 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Originals are served only through the authenticated receipt gateway.
+    // No client uploads, public download tokens, or signed bearer URLs.
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}

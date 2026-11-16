@@ -2,6 +2,27 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Family subscription and shared receipt files. Global receipt roles remain
+    // separate from ordinary family administrators.
+    match /receiptAccess/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if false;
+    }
+    match /receipts/{receiptId} {
+      allow read: if isActiveMember(resource.data.familyId)
+        && get(/databases/$(database)/documents/families/$(resource.data.familyId)).data.status != 'deleted';
+      allow write: if false;
+    }
+    match /receiptFamilyAccess/{familyId} {
+      allow read: if isActiveMember(familyId)
+        && get(/databases/$(database)/documents/families/$(familyId)).data.status != 'deleted';
+      allow write: if false;
+    }
+    match /receiptConfig/{id} { allow read, write: if false; }
+    match /receiptLocks/{id} { allow read, write: if false; }
+    match /receiptOperations/{id} { allow read, write: if false; }
+    match /receiptAudit/{id} { allow read, write: if false; }
+    match /receiptMaintenance/{id} { allow read, write: if false; }
     function signedIn() {
       return request.auth != null;
     }

@@ -1,5 +1,23 @@
 # DailyBudget Next-Session Prompt
 
+## Receipt website connection — November 16, 2026
+
+The owner confirmed seven-day build-image cleanup succeeded and the trusted administrator script granted receipt-administrator access to their verified existing account, without assigning Premium. The backend and rules/indexes are deployed in the existing Firebase project. The Pages workflow now defaults to the public receipt API URL (`https://us-west1-dailybudget-35c26.cloudfunctions.net/receiptsApi`), with an optional repository variable override; no manual Actions-variable permission is needed. Next: publish PR #5, verify Pages and have the owner test a signed-in upload/download/export. Authenticated production family operations, actual scheduled cleanup and native rebuilt-device checks remain unverified.
+
+## Deployed backend checkpoint — November 16, 2026
+
+The owner's Cloud Shell deployment output confirms receipt API and hourly maintenance Functions were created successfully in us-west1 with Node 24; Storage/Firestore rules were released and indexes deployed. API URL: `https://us-west1-dailybudget-35c26.cloudfunctions.net/receiptsApi`. A direct unauthenticated GET `/access` from this workspace returned HTTP 401 with the expected sign-in error, confirming the deployed gateway responds and rejects anonymous access. Authenticated family operations and scheduled production cleanup remain unverified.
+
+The CLI ended with an unexpected error at the post-deployment Artifact Registry cleanup-days prompt, after the successful service creation messages. Do not repeat deployment solely for that prompt. Next: set the functions build-image cleanup policy separately for us-west1 (seven days), verify it, assign the owner's verified existing UID through trusted Cloud Shell, configure the GitHub API URL, publish the reviewed frontend and test actual family receipts. Build-image cleanup does not delete receipt originals.
+
+## Latest Cloud Shell checkpoint — November 16, 2026
+
+Owner reports Blaze enabled; Storage exists and its visible file list is empty, US-WEST1/REGIONAL with seven-day soft deletion. Public access prevention update completed successfully. Firestore is us-west2. Owner’s own Cloud Shell can list Firebase projects. Receipt service defaults to us-west1. Backend runtime/CI updated to Node 24 to satisfy locked Firebase Admin transitive dependencies requiring >=24.12.0. Deployment and trusted owner-UID assignment still remain; no production receipt service deployment has been confirmed.
+
+## Latest priority — November 16, 2026
+
+Family receipts are prepared on `codex/firebase-receipts` from main `55a9f6f`. Read `docs/RECEIPTS_REPORT.md`, `docs/RECEIPTS_SETUP.md`, branch status and any linked PR first. Premium is per family; every current member can view/download/export/replace/delete. Former members and other families are denied. The latest compact summary/navigation changes are preserved. No production receipt backend/rules deployment or billing change has occurred. The owner approved the documented Firebase cloud setup and possible usage charges on November 16, 2026; do not ask again. The workspace has no Firebase/Google login, the shared browser is unavailable, and GitHub Actions variables access returns 403. The latest PR #5 GitHub checks passed. Next steps are owner Google sign-in through their trusted Firebase/Cloud Shell session, actual Firebase project inspection, reviewed deployment, trusted existing-UID administrator setup, frontend API configuration and live/phone testing. The older checkpoint descriptions below are historical.
+
 Continue helping me prepare DailyBudget for a safe beta release as quickly as practical.
 
 Repository:
