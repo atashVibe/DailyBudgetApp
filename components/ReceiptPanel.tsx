@@ -174,7 +174,7 @@ export default function ReceiptPanel({
               <Text>
                 JPG, JPEG, PNG or PDF · up to{" "}
                 {access.limits.maxFileBytes / 1024 / 1024} MB each ·{" "}
-                {access.limits.maxReceiptsPerTransaction} receipts per expense.
+                {access.limits.maxReceiptsPerTransaction} receipts per entry.
               </Text>
               <PrimaryButton
                 title="Photograph a receipt"
@@ -195,7 +195,7 @@ export default function ReceiptPanel({
           )}
           {!transactionId && (
             <Text>
-              To attach a receipt, use the paperclip beside a saved expense in
+              To attach a receipt, use the paperclip beside a saved entry in
               this family.
             </Text>
           )}

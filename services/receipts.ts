@@ -6,6 +6,7 @@ const endpoint = process.env.EXPO_PUBLIC_RECEIPTS_API_URL?.replace(/\/$/, "");
 export const receiptsConfigured = Boolean(endpoint);
 export type Receipt = {
   receiptId: string;
+  uploadRequestId?: string;
   userId: string | null;
   familyId: string;
   transactionId: string;
@@ -59,8 +60,11 @@ async function request(path: string, options: RequestInit = {}) {
   });
   if (!response.ok) {
     const details = await response.json().catch(() => ({}));
-    throw new Error(
-      details.message || "Receipt storage is unavailable. Please try again.",
+    throw Object.assign(
+      new Error(
+        details.message || "Receipt storage is unavailable. Please try again.",
+      ),
+      { status: response.status },
     );
   }
   return response;
@@ -285,3 +289,35 @@ export async function exportAllReceipts() {
     false,
   );
 }
+
+export async function startReceiptEntryDraft(
+  familyId: string,
+  draftId: string,
+): Promise<{ draftId: string; committed?: boolean }> {
+  return (
+    await request("/entry-drafts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ familyId, draftId }),
+    })
+  ).json();
+}
+export async function commitReceiptEntryDraft(
+  draftId: string,
+  entry: {
+    amount: number;
+    categoryId: string;
+    budgetAreaId: string;
+    note: string;
+    date: string;
+  },
+): Promise<{ entryId: string }> {
+  return (
+    await request("/entry-drafts/commit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ draftId, entry }),
+    })
+  ).json();
+}
+export const newReceiptEntryId = () => Crypto.randomUUID();

@@ -1,11 +1,7 @@
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { useRouter } from "expo-router";
 import { onAuthStateChanged } from "firebase/auth";
-import {
-  doc,
-  getDoc,
-  updateDoc,
-} from "firebase/firestore";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { Text } from "react-native";
 import { useBudgetAreas } from "../../hooks/useBudgetAreas";
@@ -23,6 +19,7 @@ import {
   getCategories,
   setDefaultCategory,
   updateCategory,
+  setCategoryReceiptRequired,
   type Category,
   type CategoryType,
 } from "../../services/categories";
@@ -64,6 +61,42 @@ export default function SettingsScreen() {
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryType, setNewCategoryType] =
     useState<CategoryType>("expense");
+
+  const [newCategoryRequiresReceipt, setNewCategoryRequiresReceipt] =
+    useState(false);
+  const [categoryMessage, setCategoryMessage] = useState("");
+  const handleReceiptRequiredChange = async (
+    categoryId: string,
+    required: boolean,
+  ) => {
+    if (!isAdmin) return;
+    setCategoryMessage("");
+    const previous =
+      categories.find((category) => category.id === categoryId)
+        ?.requiresReceipt === true;
+    setCategories((current) =>
+      current.map((category) =>
+        category.id === categoryId
+          ? { ...category, requiresReceipt: required }
+          : category,
+      ),
+    );
+    try {
+      await setCategoryReceiptRequired(categoryId, required);
+      setCategoryMessage("Receipt requirement updated.");
+    } catch {
+      setCategories((current) =>
+        current.map((category) =>
+          category.id === categoryId
+            ? { ...category, requiresReceipt: previous }
+            : category,
+        ),
+      );
+      setCategoryMessage(
+        "Could not update the receipt requirement. Please retry.",
+      );
+    }
+  };
 
   const handleSetDefaultBudgetArea = async (budgetAreaId: string) => {
     if (!isAdmin || !familyId) return;
@@ -212,11 +245,7 @@ export default function SettingsScreen() {
 
     setProfileMessage("");
     try {
-      const savedName = await saveUserDisplayName(
-        user,
-        familyId,
-        profileName,
-      );
+      const savedName = await saveUserDisplayName(user, familyId, profileName);
       setProfileName(savedName);
       setAdmins((currentAdmins) =>
         currentAdmins.map((admin) =>
@@ -306,6 +335,7 @@ export default function SettingsScreen() {
       selectedCategoryBudgetAreaId,
       name,
       newCategoryType,
+      newCategoryRequiresReceipt,
     );
 
     setCategories((currentCategories) =>
@@ -316,6 +346,7 @@ export default function SettingsScreen() {
 
     setNewCategoryName("");
     setNewCategoryType("expense");
+    setNewCategoryRequiresReceipt(false);
   };
 
   const handleArchiveCategory = async (categoryId: string) => {
@@ -412,6 +443,9 @@ export default function SettingsScreen() {
         onSetDefaultBudgetArea={handleSetDefaultBudgetArea}
       />
 
+      {categoryMessage ? (
+        <Text accessibilityRole="alert">{categoryMessage}</Text>
+      ) : null}
       <CategoriesSection
         budgetAreas={budgetAreas}
         categories={categories}
@@ -422,6 +456,9 @@ export default function SettingsScreen() {
         onSelectedBudgetAreaIdChange={setSelectedCategoryBudgetAreaId}
         onNewCategoryNameChange={setNewCategoryName}
         onNewCategoryTypeChange={setNewCategoryType}
+        newCategoryRequiresReceipt={newCategoryRequiresReceipt}
+        onNewCategoryRequiresReceiptChange={setNewCategoryRequiresReceipt}
+        onReceiptRequiredChange={handleReceiptRequiredChange}
         onAddCategory={handleAddCategory}
         onArchiveCategory={handleArchiveCategory}
         onEditCategory={handleEditCategory}

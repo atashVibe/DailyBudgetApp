@@ -52,6 +52,18 @@ export function createReceiptApi(service, auth) {
     }),
   );
   app.post(
+    "/entry-drafts",
+    route(async (req, res) =>
+      res.json(await service.startDraft(req.receiptUid, req.body || {})),
+    ),
+  );
+  app.post(
+    "/entry-drafts/commit",
+    route(async (req, res) =>
+      res.json(await service.finalizeDraft(req.receiptUid, req.body || {})),
+    ),
+  );
+  app.post(
     "/upload",
     route(async (req, res) => {
       let name;

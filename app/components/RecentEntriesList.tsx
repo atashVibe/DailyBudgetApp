@@ -38,7 +38,9 @@ export default function RecentEntriesList({
 }: Props) {
   const [categoryMap, setCategoryMap] = useState<Record<string, string>>({});
   const [visibleCount, setVisibleCount] = useState(10);
-  const [receiptTransactionId, setReceiptTransactionId] = useState<string | null>(null);
+  const [receiptTransactionId, setReceiptTransactionId] = useState<
+    string | null
+  >(null);
 
   useEffect(() => {
     if (!familyId) return;
@@ -117,11 +119,27 @@ export default function RecentEntriesList({
       >
         Recent Entries
       </Text>
-      <Modal visible={receiptTransactionId !== null} onRequestClose={() => setReceiptTransactionId(null)} animationType="slide">
+      <Modal
+        visible={receiptTransactionId !== null}
+        onRequestClose={() => setReceiptTransactionId(null)}
+        animationType="slide"
+      >
         <AppScreen>
-          <Text style={{ fontSize: 24, fontWeight: "700", marginBottom: 16 }}>Family Expense Receipts</Text>
-          <View style={{ marginBottom: 20 }}><PrimaryButton title="Close receipts" onPress={() => setReceiptTransactionId(null)} /></View>
-          {receiptTransactionId && <ReceiptPanel key={receiptTransactionId} transactionId={receiptTransactionId} />}
+          <Text style={{ fontSize: 24, fontWeight: "700", marginBottom: 16 }}>
+            Family Entry Receipts
+          </Text>
+          <View style={{ marginBottom: 20 }}>
+            <PrimaryButton
+              title="Close receipts"
+              onPress={() => setReceiptTransactionId(null)}
+            />
+          </View>
+          {receiptTransactionId && (
+            <ReceiptPanel
+              key={receiptTransactionId}
+              transactionId={receiptTransactionId}
+            />
+          )}
         </AppScreen>
       </Modal>
 
@@ -170,16 +188,18 @@ export default function RecentEntriesList({
               <View
                 style={{ flexDirection: "row", alignItems: "center", gap: 12 }}
               >
-                {entry.type === "expense" && <Ionicons
+                <Ionicons
                   name="attach-outline"
                   size={24}
                   color="#155E50"
                   accessibilityRole="button"
                   accessibilityLabel="Manage family receipts for this entry"
                   onPress={() => setReceiptTransactionId(entry.id)}
-                />}
+                />
                 <Ionicons
                   name="create-outline"
+                  accessibilityRole="button"
+                  accessibilityLabel="Edit this entry"
                   size={22}
                   color="#111"
                   onPress={() => onEditEntry?.(entry)}

@@ -3,6 +3,7 @@ import {
   collection,
   doc,
   getDocs,
+  onSnapshot,
   query,
   serverTimestamp,
   updateDoc,
@@ -22,6 +23,7 @@ export type Category = {
   type: CategoryType;
   isDefault: boolean;
   isArchived: boolean;
+  requiresReceipt?: boolean;
 };
 
 export const getCategories = async (
@@ -51,6 +53,7 @@ export const addCategory = async (
   budgetAreaId: string,
   name: string,
   type: CategoryType,
+  requiresReceipt = false,
 ): Promise<Category> => {
   const docRef = await addDoc(collection(db, "categories"), {
     name,
@@ -59,6 +62,7 @@ export const addCategory = async (
     familyId,
     isDefault: false,
     isArchived: false,
+    requiresReceipt,
     createdBy: userId,
     createdAt: serverTimestamp(),
   });
@@ -71,6 +75,7 @@ export const addCategory = async (
     familyId,
     isDefault: false,
     isArchived: false,
+    requiresReceipt,
   };
 };
 
@@ -126,3 +131,33 @@ export const getAllCategoriesForFamily = async (
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
 };
+
+export async function setCategoryReceiptRequired(
+  categoryId: string,
+  requiresReceipt: boolean,
+) {
+  await updateDoc(doc(db, "categories", categoryId), { requiresReceipt });
+}
+
+export function subscribeCategories(
+  familyId: string,
+  budgetAreaId: string,
+  onChange: (categories: Category[]) => void,
+  onError: (error: Error) => void,
+) {
+  return onSnapshot(
+    query(
+      collection(db, "categories"),
+      where("familyId", "==", familyId),
+      where("budgetAreaId", "==", budgetAreaId),
+      where("isArchived", "==", false),
+    ),
+    (snapshot) =>
+      onChange(
+        snapshot.docs
+          .map((item) => ({ id: item.id, ...item.data() }) as Category)
+          .sort((a, b) => a.name.localeCompare(b.name)),
+      ),
+    onError,
+  );
+}
