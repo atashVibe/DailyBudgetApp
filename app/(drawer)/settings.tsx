@@ -1,13 +1,13 @@
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { useRouter } from "expo-router";
-import { onAuthStateChanged, signOut } from "firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
 import {
   doc,
   getDoc,
   updateDoc,
 } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import { Text, View } from "react-native";
+import { Text } from "react-native";
 import { useBudgetAreas } from "../../hooks/useBudgetAreas";
 import { auth, db } from "../../services/auth";
 import {
@@ -33,7 +33,6 @@ import {
 } from "../../services/accountDeletion";
 import AppScreen from "../components/common/AppScreen";
 import LoadingSpinner from "../components/common/LoadingSpinner";
-import PrimaryButton from "../components/common/PrimaryButton";
 import BudgetAreasSection from "../components/settings/BudgetAreasSection";
 import CategoriesSection from "../components/settings/CategoriesSection";
 import FamilyBudgetSection from "../components/settings/FamilyBudgetSection";
@@ -206,18 +205,6 @@ export default function SettingsScreen() {
 
     void loadAdmins();
   }, [familyId]);
-
-  const handleSwitchUser = async () => {
-    try {
-      await GoogleSignin.signOut();
-    } catch (error) {
-      console.log("Google sign-out skipped:", error);
-    }
-
-    await signOut(auth);
-
-    router.replace("/login");
-  };
 
   const handleSaveProfileName = async () => {
     const user = auth.currentUser;
@@ -410,6 +397,10 @@ export default function SettingsScreen() {
 
       <AdminsSection admins={admins} loading={adminsLoading} />
 
+      <Text style={{ color: "#4B5563", marginBottom: 8 }}>
+        A green checkmark identifies the default budget area or category.
+      </Text>
+
       <BudgetAreasSection
         budgetAreas={budgetAreas}
         newBudgetAreaName={newBudgetAreaName}
@@ -436,10 +427,6 @@ export default function SettingsScreen() {
         onEditCategory={handleEditCategory}
         onSetDefaultCategory={handleSetDefaultCategory}
       />
-
-      <View style={{ marginTop: 24 }}>
-        <PrimaryButton title="Switch User" onPress={handleSwitchUser} />
-      </View>
 
       {auth.currentUser ? (
         <AccountSection

@@ -1,4 +1,5 @@
-import { DrawerItemList } from "@react-navigation/drawer";
+import { GoogleSignin } from "@react-native-google-signin/google-signin";
+import { DrawerItem, DrawerItemList } from "@react-navigation/drawer";
 import { useRouter } from "expo-router";
 import { Drawer } from "expo-router/drawer";
 import { signOut } from "firebase/auth";
@@ -35,6 +36,18 @@ export default function DrawerLayout() {
     await signOut(auth);
     router.replace("/login");
   };
+  const handleSwitchUser = async () => {
+    try {
+      await GoogleSignin.signOut();
+    } catch (error) {
+      console.log("Google sign-out skipped:", error);
+    }
+
+    await signOut(auth);
+
+    router.replace("/login");
+  };
+
   if (!isRoleLoaded) {
     return null;
   }
@@ -49,6 +62,7 @@ export default function DrawerLayout() {
             <Text style={styles.menuTitle}>Menu</Text>
 
             <DrawerItemList {...props} />
+            <DrawerItem label="Switch User" onPress={handleSwitchUser} />
 
             <View style={styles.signOutContainer}>
               <Text style={styles.signOutText} onPress={handleSignOut}>
