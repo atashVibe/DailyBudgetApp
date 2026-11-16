@@ -612,6 +612,84 @@ export function createReceiptService({
       return context(familyId);
     });
   }
+  async function setCategoryRequirement(
+    uid,
+    { familyId, categoryId, required, create } = {},
+  ) {
+    identifier(familyId);
+    identifier(categoryId);
+    if (typeof required !== "boolean")
+      throw new ReceiptError(400, "Choose whether a receipt is required.");
+    if (
+      create &&
+      (typeof create.name !== "string" ||
+        !create.name.trim() ||
+        create.name.trim().length > 200 ||
+        !["expense", "income", "refund", "cashback"].includes(create.type))
+    )
+      throw new ReceiptError(400, "Choose a valid category name and type.");
+    if (create) identifier(create.budgetAreaId);
+    return lock(familyId, async (fence) =>
+      db.runTransaction(async (tx) => {
+        await fence(tx);
+        const ref = db.doc(`categories/${categoryId}`);
+        const [category, membership, area] = await Promise.all([
+          tx.get(ref),
+          tx.get(db.doc(`familyMembers/${familyId}_${uid}`)),
+          create
+            ? tx.get(db.doc(`budgetAreas/${create.budgetAreaId}`))
+            : Promise.resolve(null),
+        ]);
+        const access = await context(familyId, uid, tx);
+        if (
+          membership.data()?.status !== "active" ||
+          membership.data()?.role !== "admin"
+        )
+          throw new ReceiptError(
+            403,
+            "Only a family administrator can change category requirements.",
+          );
+        if (required && !access.canUpload)
+          throw new ReceiptError(
+            403,
+            "Your family needs Premium receipt upload access before receipts can be required.",
+          );
+        if (create) {
+          if (category.exists)
+            throw new ReceiptError(
+              409,
+              "This category was already created. Refresh your categories.",
+            );
+          if (
+            !area?.exists ||
+            area.data().familyId !== familyId ||
+            area.data().isArchived === true
+          )
+            throw new ReceiptError(
+              400,
+              "Choose an active budget area in this family.",
+            );
+          const data = {
+            familyId,
+            budgetAreaId: create.budgetAreaId,
+            name: create.name.trim(),
+            type: create.type,
+            isDefault: false,
+            isArchived: false,
+            requiresReceipt: required,
+            createdBy: uid,
+            createdAt: stamp(),
+          };
+          tx.create(ref, data);
+          return { id: categoryId, ...publicRecord(data) };
+        }
+        if (!category.exists || category.data().familyId !== familyId)
+          throw new ReceiptError(404, "Category not found in this family.");
+        tx.update(ref, { requiresReceipt: required });
+        return { id: categoryId, requiresReceipt: required };
+      }),
+    );
+  }
   async function purgeAccount(uid) {
     await entryDrafts.purgeDrafts(uid);
     // Leaving/deleting an account must not erase other members' shared files.
@@ -856,6 +934,7 @@ export function createReceiptService({
     queueDeletion,
   });
   return {
+    setCategoryRequirement,
     startDraft: entryDrafts.startDraft,
     finalizeDraft: entryDrafts.finalizeDraft,
     getAccess,

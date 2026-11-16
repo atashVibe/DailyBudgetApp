@@ -321,3 +321,18 @@ export async function commitReceiptEntryDraft(
   ).json();
 }
 export const newReceiptEntryId = () => Crypto.randomUUID();
+
+export async function saveCategoryReceiptRequirement(data: {
+  familyId: string;
+  categoryId: string;
+  required: boolean;
+  create?: { name: string; type: string; budgetAreaId: string };
+}) {
+  return (
+    await request("/categories/receipt-requirement", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    })
+  ).json();
+}

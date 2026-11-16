@@ -602,12 +602,28 @@ export default function ExpenseEntryForm({
               alignItems: "center",
               justifyContent: "space-between",
               gap: 10,
+              width: "100%",
+              minWidth: 0,
             }}
           >
-            <Text style={{ flex: 1 }}>{file.name} — ready to save</Text>
+            <View style={{ flex: 1, flexShrink: 1, minWidth: 0 }}>
+              <Text
+                numberOfLines={1}
+                ellipsizeMode="middle"
+                accessibilityLabel={file.name}
+              >
+                {file.name}
+              </Text>
+              <Text>Ready to save</Text>
+            </View>
             <TouchableOpacity
               accessibilityRole="button"
               accessibilityLabel={`Remove selected receipt ${file.name}`}
+              style={{
+                flexShrink: 0,
+                paddingVertical: 10,
+                paddingHorizontal: 4,
+              }}
               disabled={saving}
               onPress={() =>
                 setFiles((current) =>

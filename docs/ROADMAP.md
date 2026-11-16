@@ -1,10 +1,20 @@
 # DailyBudget Roadmap
 
+## Receipt settings and navigation follow-up
+
+- [x] Prepare upload-entitlement checks for enabling required categories, with server/rule enforcement.
+- [x] Keep long selected filenames and Remove inside a narrow entry form.
+- [x] Confirm Dashboard Back sign-out; preserve cancelled drafts and normal Back/Forward navigation.
+- [ ] Deploy updated receipt Functions/rules through the owner's Cloud Shell, then publish the frontend.
+- [ ] Owner production/device verification of all three reported fixes.
+
+Details: `docs/RECEIPT_NAVIGATION_FIXES.md`.
+
 ## Required category receipt follow-up — November 16, 2026
 
 - [x] Add family-admin receipt requirements per category and an entry-form attachment button with disabled gray Save when missing.
 - [x] Add safe pre-save uploads, server/rule enforcement, idempotent retries and abandoned-draft cleanup; preserve accounting.
-- [ ] Deploy the follow-up backend, rules and indexes through the owner's Cloud Shell, then publish its frontend.
+- [x] Deploy the required-category backend/rules/indexes and publish PR #6; owner tested and reported follow-up bugs.
 - [ ] Owner verification of required-category selection, upload, save and edit in production.
 
 See `docs/CATEGORY_RECEIPTS.md`.

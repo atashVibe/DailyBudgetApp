@@ -12,6 +12,7 @@ import {
 } from "firebase/firestore";
 
 import { db } from "./auth";
+import { saveCategoryReceiptRequirement } from "./receipts";
 
 export type CategoryType = "expense" | "income" | "refund" | "cashback";
 
@@ -55,6 +56,13 @@ export const addCategory = async (
   type: CategoryType,
   requiresReceipt = false,
 ): Promise<Category> => {
+  if (requiresReceipt)
+    return saveCategoryReceiptRequirement({
+      familyId,
+      categoryId: doc(collection(db, "categories")).id,
+      required: true,
+      create: { name, type, budgetAreaId },
+    });
   const docRef = await addDoc(collection(db, "categories"), {
     name,
     type,
@@ -135,7 +143,14 @@ export const getAllCategoriesForFamily = async (
 export async function setCategoryReceiptRequired(
   categoryId: string,
   requiresReceipt: boolean,
+  familyId: string,
 ) {
+  if (requiresReceipt)
+    return saveCategoryReceiptRequirement({
+      familyId,
+      categoryId,
+      required: true,
+    });
   await updateDoc(doc(db, "categories", categoryId), { requiresReceipt });
 }
 

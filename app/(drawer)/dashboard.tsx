@@ -10,6 +10,7 @@ import {
 } from "firebase/firestore";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
+import { useDashboardBack } from "../../hooks/useDashboardBack";
 import { auth, db } from "../../services/auth";
 import {
   calculateMonthlyTotal,
@@ -35,6 +36,7 @@ type Entry = {
 
 export default function DashboardScreen() {
   const router = useRouter();
+  useDashboardBack();
   const [accountIdentifier, setAccountIdentifier] = useState("Loading...");
   const [usesApplePrivateEmail, setUsesApplePrivateEmail] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -62,6 +64,8 @@ export default function DashboardScreen() {
       let active = true;
 
       const loadDashboardContext = async () => {
+        await auth.authStateReady();
+        if (!active) return;
         const user = auth.currentUser;
         if (!user) {
           router.replace("/login");
@@ -83,15 +87,10 @@ export default function DashboardScreen() {
 
           const [familySnap, memberSnap] = await Promise.all([
             getDoc(doc(db, "families", nextFamilyId)),
-            getDoc(
-              doc(db, "familyMembers", `${nextFamilyId}_${user.uid}`),
-            ),
+            getDoc(doc(db, "familyMembers", `${nextFamilyId}_${user.uid}`)),
           ]);
 
-          if (
-            !familySnap.exists() ||
-            familySnap.data().status === "deleted"
-          ) {
+          if (!familySnap.exists() || familySnap.data().status === "deleted") {
             router.replace("/family-setup");
             return;
           }
@@ -114,9 +113,7 @@ export default function DashboardScreen() {
           setSpentThisYear(0);
           setFamilyId(nextFamilyId);
           setDailyBudget(Number(familySnap.data().dailyBudget || 30));
-          setIsAdmin(
-            memberSnap.exists() && memberSnap.data().role === "admin",
-          );
+          setIsAdmin(memberSnap.exists() && memberSnap.data().role === "admin");
           setRefreshSignal((current) => current + 1);
         } catch (error) {
           console.error("Failed to load dashboard:", error);

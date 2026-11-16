@@ -1,8 +1,9 @@
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { getReceiptAccess } from "../../services/receipts";
 import { Text } from "react-native";
 import { useBudgetAreas } from "../../hooks/useBudgetAreas";
 import { auth, db } from "../../services/auth";
@@ -65,11 +66,41 @@ export default function SettingsScreen() {
   const [newCategoryRequiresReceipt, setNewCategoryRequiresReceipt] =
     useState(false);
   const [categoryMessage, setCategoryMessage] = useState("");
+  const [canRequireReceipts, setCanRequireReceipts] = useState(false);
+  useFocusEffect(
+    useCallback(() => {
+      let current = true;
+      setCanRequireReceipts(false);
+      if (familyId)
+        getReceiptAccess()
+          .then((access) => {
+            if (current)
+              setCanRequireReceipts(
+                access.familyId === familyId && access.canUpload,
+              );
+          })
+          .catch(() => {
+            if (current) setCanRequireReceipts(false);
+          });
+      return () => {
+        current = false;
+      };
+    }, [familyId]),
+  );
+  useEffect(() => {
+    if (!canRequireReceipts) setNewCategoryRequiresReceipt(false);
+  }, [canRequireReceipts]);
   const handleReceiptRequiredChange = async (
     categoryId: string,
     required: boolean,
   ) => {
-    if (!isAdmin) return;
+    if (!isAdmin || !familyId) return;
+    if (required && !canRequireReceipts) {
+      setCategoryMessage(
+        "Your family needs Premium receipt upload access before receipts can be required.",
+      );
+      return;
+    }
     setCategoryMessage("");
     const previous =
       categories.find((category) => category.id === categoryId)
@@ -82,7 +113,7 @@ export default function SettingsScreen() {
       ),
     );
     try {
-      await setCategoryReceiptRequired(categoryId, required);
+      await setCategoryReceiptRequired(categoryId, required, familyId);
       setCategoryMessage("Receipt requirement updated.");
     } catch {
       setCategories((current) =>
@@ -329,14 +360,30 @@ export default function SettingsScreen() {
 
     if (!name || !selectedCategoryBudgetAreaId) return;
 
-    const addedCategory = await addCategory(
-      familyId,
-      auth.currentUser.uid,
-      selectedCategoryBudgetAreaId,
-      name,
-      newCategoryType,
-      newCategoryRequiresReceipt,
-    );
+    if (newCategoryRequiresReceipt && !canRequireReceipts) {
+      setCategoryMessage(
+        "Your family needs Premium receipt upload access before receipts can be required.",
+      );
+      return;
+    }
+    let addedCategory: Category;
+    try {
+      addedCategory = await addCategory(
+        familyId,
+        auth.currentUser.uid,
+        selectedCategoryBudgetAreaId,
+        name,
+        newCategoryType,
+        newCategoryRequiresReceipt,
+      );
+    } catch (error) {
+      setCategoryMessage(
+        error instanceof Error
+          ? error.message
+          : "Could not add the category. Please retry.",
+      );
+      return;
+    }
 
     setCategories((currentCategories) =>
       [...currentCategories, addedCategory].sort((a, b) =>
@@ -453,6 +500,7 @@ export default function SettingsScreen() {
         newCategoryName={newCategoryName}
         newCategoryType={newCategoryType}
         isAdmin={isAdmin}
+        canRequireReceipts={canRequireReceipts}
         onSelectedBudgetAreaIdChange={setSelectedCategoryBudgetAreaId}
         onNewCategoryNameChange={setNewCategoryName}
         onNewCategoryTypeChange={setNewCategoryType}

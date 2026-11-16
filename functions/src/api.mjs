@@ -52,6 +52,12 @@ export function createReceiptApi(service, auth) {
     }),
   );
   app.post(
+    "/categories/receipt-requirement",
+    route(async (req, res) =>
+      res.json(await service.setCategoryRequirement(req.receiptUid, req.body)),
+    ),
+  );
+  app.post(
     "/entry-drafts",
     route(async (req, res) =>
       res.json(await service.startDraft(req.receiptUid, req.body || {})),

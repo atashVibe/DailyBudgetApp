@@ -103,7 +103,7 @@ export default function LoginScreen() {
         password,
       );
       setMessage(`Signed in: ${userCredential.user.email}`);
-      setTimeout(() => router.push("/(drawer)/dashboard"), 1000);
+      setTimeout(() => router.replace("/(drawer)/dashboard"), 1000);
     } catch (error: any) {
       if (error.code === "auth/invalid-credential") {
         setMessage("Incorrect email or password.");
@@ -130,7 +130,7 @@ export default function LoginScreen() {
         setMessage(`Signed in: ${user.email}`);
 
         setTimeout(() => {
-          router.push("/(drawer)/dashboard");
+          router.replace("/(drawer)/dashboard");
         }, 1000);
       } else {
         setMessage("Please finish your family setup.");
@@ -161,7 +161,7 @@ export default function LoginScreen() {
         setMessage(`Signed in: ${user.email}`);
 
         setTimeout(() => {
-          router.push("/(drawer)/dashboard");
+          router.replace("/(drawer)/dashboard");
         }, 1000);
       } else {
         setMessage("Please finish your family setup.");
@@ -281,27 +281,29 @@ export default function LoginScreen() {
             onPress={handleAppleLogin}
           />
         )}
-        {APPLE_SIGN_IN_ENABLED && Platform.OS === "ios" && appleSignInAvailable && (
-          <View
-            pointerEvents={loading ? "none" : "auto"}
-            style={[
-              styles.appleButtonContainer,
-              loading && styles.disabledButton,
-            ]}
-          >
-            <AppleAuthentication.AppleAuthenticationButton
-              buttonType={
-                AppleAuthentication.AppleAuthenticationButtonType.CONTINUE
-              }
-              buttonStyle={
-                AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
-              }
-              cornerRadius={29}
-              onPress={handleAppleLogin}
-              style={styles.appleButton}
-            />
-          </View>
-        )}
+        {APPLE_SIGN_IN_ENABLED &&
+          Platform.OS === "ios" &&
+          appleSignInAvailable && (
+            <View
+              pointerEvents={loading ? "none" : "auto"}
+              style={[
+                styles.appleButtonContainer,
+                loading && styles.disabledButton,
+              ]}
+            >
+              <AppleAuthentication.AppleAuthenticationButton
+                buttonType={
+                  AppleAuthentication.AppleAuthenticationButtonType.CONTINUE
+                }
+                buttonStyle={
+                  AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
+                }
+                cornerRadius={29}
+                onPress={handleAppleLogin}
+                style={styles.appleButton}
+              />
+            </View>
+          )}
 
         {message ? (
           <Text

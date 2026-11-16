@@ -2,40 +2,56 @@ import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { DrawerItem, DrawerItemList } from "@react-navigation/drawer";
 import { useRouter } from "expo-router";
 import { Drawer } from "expo-router/drawer";
-import { signOut } from "firebase/auth";
+import { onAuthStateChanged, signOut } from "firebase/auth";
+import SignOutConfirmation, {
+  useRequestSignOut,
+} from "../../components/SignOutConfirmation";
 import { doc, onSnapshot } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { auth, db } from "../../services/auth";
 
 export default function DrawerLayout() {
+  return (
+    <SignOutConfirmation>
+      <DrawerNavigation />
+    </SignOutConfirmation>
+  );
+}
+
+function DrawerNavigation() {
   const router = useRouter();
+  const requestSignOut = useRequestSignOut();
   const [isAdmin, setIsAdmin] = useState(false);
   const [isRoleLoaded, setIsRoleLoaded] = useState(false);
   useEffect(() => {
-    const user = auth.currentUser;
-    if (!user) {
-      setIsRoleLoaded(true);
-      return;
-    }
-
-    return onSnapshot(
-      doc(db, "users", user.uid),
-      (snapshot) => {
-        setIsAdmin(snapshot.exists() && snapshot.data().role === "admin");
-        setIsRoleLoaded(true);
-      },
-      () => {
+    let unsubscribeRole = () => {};
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+      unsubscribeRole();
+      if (!user) {
         setIsAdmin(false);
         setIsRoleLoaded(true);
-      },
-    );
-  }, []);
+        router.replace("/login");
+        return;
+      }
+      unsubscribeRole = onSnapshot(
+        doc(db, "users", user.uid),
+        (snapshot) => {
+          setIsAdmin(snapshot.exists() && snapshot.data().role === "admin");
+          setIsRoleLoaded(true);
+        },
+        () => {
+          setIsAdmin(false);
+          setIsRoleLoaded(true);
+        },
+      );
+    });
+    return () => {
+      unsubscribeAuth();
+      unsubscribeRole();
+    };
+  }, [router]);
 
-  const handleSignOut = async () => {
-    await signOut(auth);
-    router.replace("/login");
-  };
   const handleSwitchUser = async () => {
     try {
       await GoogleSignin.signOut();
@@ -65,7 +81,7 @@ export default function DrawerLayout() {
             <DrawerItem label="Switch User" onPress={handleSwitchUser} />
 
             <View style={styles.signOutContainer}>
-              <Text style={styles.signOutText} onPress={handleSignOut}>
+              <Text style={styles.signOutText} onPress={requestSignOut}>
                 Sign Out
               </Text>
             </View>
@@ -120,5 +136,3 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
-
-
