@@ -2,7 +2,7 @@
 
 ## Result
 
-Prepared on `codex/firebase-receipts` from main `55a9f6f`. The receipt backend/rules have since been deployed through the owner’s Cloud Shell; frontend connection and authenticated use remain pending. The existing compact budget summary and accounting calculations are preserved.
+Prepared on `codex/firebase-receipts` from main `55a9f6f`. The receipt backend/rules have since been deployed through the owner’s Cloud Shell; the website publishing workflow is now connected to the live service; publishing and authenticated use are the next checks. The existing compact budget summary and accounting calculations are preserved.
 
 Premium and Archive belong to a family. Every current family member can view, download, export, replace and delete shared receipts. Premium permits uploads; Archive and cancellation grace permit reading/export without new uploads. Deletion remains available regardless of payment. Former members and other families are denied. A separate global receipt administrator role can sponsor a current family without assigning a paid plan; family administrators cannot grant themselves that role. Membership is still required for file access.
 
@@ -12,7 +12,7 @@ Premium and Archive belong to a family. Every current family member can view, do
 - An authenticated Firebase Functions gateway validates file contents and enforces family membership, plan permissions, two-receipt and shared storage limits. Direct Storage client access is denied. Production uploads require bucket public access prevention to be enforced.
 - Firestore tracks family plans, separate global roles, receipt metadata, fenced mutation locks, unfinished uploads, cleanup jobs and audit results. Replacement commits the new original before deleting the old one. Unfinished upload candidates count toward quotas and are retried safely.
 - Cancellation disables uploads immediately and grants one non-extending 30-day family grace period. Hourly maintenance rechecks current permissions before queueing expiry cleanup. Renewing or activating Archive before expiry prevents new expiry cleanup. Budget entries are never deleted by receipt retention.
-- Cleanup distinguishes removing a live object from verified permanent deletion, tracks retained versions/soft-deleted copies and retries failures. Actual bucket retention and IAM have not been inspected.
+- Cleanup distinguishes removing a live object from verified permanent deletion, tracks retained versions/soft-deleted copies and retries failures. The owner confirmed seven-day soft deletion; actual retained-copy cleanup and a least-privilege IAM review remain open.
 - Account deletion preserves receipts for remaining family members and removes the departing user's visible receipt attribution; sole-member family originals are submitted for deletion after the existing account-deletion confirmation.
 - A receipt administrator overview reports shared plans, deadlines, storage/version totals and a storage-only estimate when verified region/class pricing is configured. There is no payment integration and no automatically assigned production administrator.
 
@@ -55,25 +55,24 @@ The browser flow signs in with a disposable emulator account, saves an expense, 
 
 Early browser runs exposed test synchronization problems during React hydration and hidden cached login screens; explicit navigation/visible selectors fixed the test, and the final browser run passed. A lint invocation initially failed because the workspace home cache directory was unavailable; the documented writable Expo cache path fixed it. No failing check remains in the local final results.
 
-All receipt tests used `demo-dailybudget-receipts` emulators. Retention/hold and failure branches use simulated adapters over emulator objects; they do not prove actual GCS retention timing. No production user files were uploaded or deleted. No billing, bucket policies, production security rules or Functions were changed.
+All receipt tests used `demo-dailybudget-receipts` emulators. Retention/hold and failure branches use simulated adapters over emulator objects; they do not prove actual GCS retention timing. No production user files were uploaded or deleted by the automated tests. Subsequently, the owner deployed the backend/rules, enforced public access prevention, enabled required Google services and configured build-image cleanup through their own Cloud Shell.
 
-## Activation approval and current access blocker
+## Activation status
 
-The owner approved Firebase cloud setup and possible usage charges on November 16, 2026. PR #5 checks passed on GitHub. The owner has since confirmed Firebase CLI access in their own Cloud Shell, Blaze enabled, bucket US-WEST1 with seven-day soft deletion, successful public-access-prevention enforcement, and Firestore us-west2. The backend runtime/CI now use Node 24 for dependency compatibility and default to us-west1. This workspace still has no Firebase/Google authenticated deployment session; its GitHub integration cannot manage Actions variables (HTTP 403), and the shared browser/viewer is unavailable. No production deployment or billing change has occurred. The owner is being guided to their own Firebase Console/Cloud Shell session; no credentials should be pasted into chat.
+The owner approved the documented Firebase setup and costs on November 16, 2026. Their Cloud Shell output confirms:
 
+- Blaze was already enabled; the existing empty bucket is US-WEST1/REGIONAL with seven-day soft deletion, and public access prevention was enforced.
+- Existing Firestore is us-west2. Both Node 24 receipt Functions were successfully created in us-west1, and rules/indexes were published.
+- The CLI failed only at the post-deployment cleanup prompt. A separate command successfully configured seven-day build-image cleanup for the us-west1 `gcf-artifacts` repository.
+- The trusted administrator script verified the owner's existing Auth UID and granted the global receipt role, without assigning Premium.
 
-## Deployed backend checkpoint — November 16, 2026
+The deployed API is `https://us-west1-dailybudget-35c26.cloudfunctions.net/receiptsApi`. A direct unauthenticated `/access` request returned the expected HTTP 401 sign-in error. That confirms the gateway is live and blocks anonymous access; it does not prove authenticated family storage operations. Pages now defaults to this public API URL, with an optional repository variable override. This workspace has no Google credentials and cannot manage repository Actions variables; the public configuration fallback avoids needing that GitHub permission.
 
-The owner's Cloud Shell deployment output confirms receipt API and hourly maintenance Functions were created successfully in us-west1 with Node 24; Storage/Firestore rules were released and indexes deployed. API URL: `https://us-west1-dailybudget-35c26.cloudfunctions.net/receiptsApi`. A direct unauthenticated GET `/access` from this workspace returned HTTP 401 with the expected sign-in error, confirming the deployed gateway responds and rejects anonymous access. Authenticated family operations and scheduled production cleanup remain unverified.
+## Remaining verification before public release
 
-The CLI ended with an unexpected error at the post-deployment Artifact Registry cleanup-days prompt, after the successful service creation messages. Do not repeat deployment solely for that prompt. Next: set the functions build-image cleanup policy separately for us-west1 (seven days), verify it, assign the owner's verified existing UID through trusted Cloud Shell, configure the GitHub API URL, publish the reviewed frontend and test actual family receipts. Build-image cleanup does not delete receipt originals.
-
-## Still required before activation
-
-1. Establish an authenticated session in the owner’s trusted Firebase/Google environment. Cost approval is already received; free allowances and budget alerts are not a spending cap.
-2. Inspect the actual project, bucket location, existing rules/files, public access prevention, IAM, retention/versioning and billing. Preserve unrelated existing resources.
-3. Deploy reviewed rules/indexes/Functions, explicitly assign the existing owner's Firebase UID as global receipt administrator from a trusted environment, and configure the frontend API URL.
-4. Verify the deployed service with the owner's account and a second family account, membership revocation and production cleanup/monitoring. Rebuild native apps and test real iPhone/Android camera, picker, viewing and sharing.
-5. Complete an independent backup/restore exercise, native downloaded-file cache policy and public-release abuse/IAM review. Export is available; a verified independent backup service is not configured. Cancellation warnings are in-app only.
+1. Publish the reviewed website and test a real signed-in expense attachment, image/PDF viewing, original download, replacement, confirmed deletion and ZIP export.
+2. Test a second current family member, membership revocation, actual runtime IAM, scheduled cleanup, retention/version behavior and monitoring against production infrastructure.
+3. Rebuild native apps and test actual iPhone/Android camera, picker, viewing/sharing and downloaded-file cache policy. Existing installed builds do not gain new native modules automatically.
+4. Verify an independent backup/restore exercise and complete public-release abuse/least-privilege IAM review. Export exists; a verified independent backup service is not configured. Cancellation warnings are in-app only. Free allowances and billing alerts are not a spending cap.
 
 See [setup and cost instructions](RECEIPTS_SETUP.md), [implementation plan](RECEIPTS_IMPLEMENTATION.md), and [original requirements with approved family amendment](RECEIPTS_REQUIREMENTS.md).

@@ -1,6 +1,6 @@
 # Receipt setup — owner instructions
 
-The owner approved the documented setup and costs. **Cloud Shell has now created both Node 24 receipt Functions in us-west1 and published the security rules/indexes.** The CLI failed afterward at the build-image cleanup prompt, so configure that policy separately; do not redeploy merely for that error. The deployed API responds with the expected HTTP 401 to anonymous requests. The frontend API URL, trusted existing-owner administrator assignment, authenticated family tests and production cleanup verification remain pending.
+The owner approved the documented setup and costs. **Cloud Shell has now created both Node 24 receipt Functions in us-west1 and published the security rules/indexes.** The CLI failed afterward at the build-image cleanup prompt, so configure that policy separately; do not redeploy merely for that error. The deployed API responds with the expected HTTP 401 to anonymous requests. The owner confirmed successful seven-day build-image cleanup configuration and trusted receipt-administrator assignment to their verified existing account. The Pages workflow now includes the deployed public API URL; authenticated family tests, actual scheduled cleanup verification and native device checks remain pending.
 
 Your recent compact summary/navigation changes are preserved. This feature does
 not change budget calculations, payment processing, family roles, or existing
@@ -206,10 +206,8 @@ the basis of a client assertion when real billing is integrated later.
 
 ### 5. Enable the web app only after the backend is ready
 
-1. In GitHub, open **DailyBudgetApp → Settings → Secrets and variables → Actions →
-   Variables → New repository variable**.
-2. Name it `RECEIPTS_API_URL` and paste the deployed `receiptsApi` URL as its value.
-   This URL is public configuration, not an admin key. Do not put a credential here.
+1. The Pages workflow now defaults to the deployed public API URL, so no GitHub settings change is required for this project.
+2. Optionally set repository Actions variable `RECEIPTS_API_URL` to override the default for a future reviewed backend move. This URL is public configuration, not an admin key. Never put a credential here.
 3. Merge the reviewed receipt PR and allow the existing Pages workflow to publish.
 4. Open the usual app link, refresh, sign in, and use the paperclip beside a saved
    expense. Open **Family Receipts** for bulk export and the admin overview.

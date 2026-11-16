@@ -5,7 +5,10 @@
 - [x] Prepare family receipt UI, Firebase backend, permissions, retention and export on the review branch.
 - [x] Verify emulator security/lifecycle, browser workflow, accounting regression checks, types, lint and web export.
 - [x] Obtain approval for documented Firebase usage costs before backend activation (owner approved November 16, 2026).
-- [ ] Inspect live bucket/IAM/retention, deploy reviewed services, assign the existing owner securely and configure the API URL.
+- [x] Confirm bucket location/protection, deploy receipt services/rules/indexes, configure build-image cleanup and assign the existing owner securely.
+- [x] Configure the public receipt API URL in the Pages workflow.
+- [ ] Publish the website and verify a real signed-in receipt upload.
+- [ ] Complete least-privilege production IAM review.
 - [ ] Complete live family-sharing, cleanup and real-phone checks; verify independent backup/restore.
 
 Details and remaining limitations: `docs/RECEIPTS_REPORT.md`.
