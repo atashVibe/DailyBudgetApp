@@ -2,8 +2,7 @@
 
 The code is prepared for review. **The new Firebase backend and rules are not
 deployed, billing has not been changed, and your real account has not been given
-receipt-administrator access yet.** Do not run the production steps until you have
-approved the Blaze-dependent setup and its possible charges.
+receipt-administrator access yet.** The owner approved the documented Blaze-dependent setup and possible usage charges on November 16, 2026. That approval remains valid; do not ask for it again. Execution is currently blocked by missing Firebase/Google authentication in this workspace, not by permission from the owner.
 
 Your recent compact summary/navigation changes are preserved. This feature does
 not change budget calculations, payment processing, family roles, or existing
@@ -96,8 +95,7 @@ match the bucket's actual location/storage class.
 - [Scheduled function costs](https://firebase.google.com/docs/functions/schedule-functions)
 - [Soft-delete behavior and charges](https://docs.cloud.google.com/storage/docs/soft-delete)
 
-Do not upgrade billing or deploy resources until the owner has approved this
-specific setup. All work so far uses isolated emulators and a review branch.
+The owner approved this specific setup on November 16, 2026. All work so far still uses isolated emulators and a review branch. Actual billing, bucket settings and deployment have not been changed. The workspace has no Firebase CLI login or Google Application Default Credentials. GitHub checks pass, but the GitHub integration cannot manage repository Actions variables (HTTP 403). The shared browser/viewer is unavailable, so initial Google sign-in/setup must be completed in the owner’s own trusted Firebase/Cloud Shell session. Never request passwords, access tokens or service-account keys in chat.
 
 ## Production setup after approval
 

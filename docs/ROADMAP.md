@@ -4,7 +4,7 @@
 
 - [x] Prepare family receipt UI, Firebase backend, permissions, retention and export on the review branch.
 - [x] Verify emulator security/lifecycle, browser workflow, accounting regression checks, types, lint and web export.
-- [ ] Obtain approval for documented Firebase usage costs before backend activation.
+- [x] Obtain approval for documented Firebase usage costs before backend activation (owner approved November 16, 2026).
 - [ ] Inspect live bucket/IAM/retention, deploy reviewed services, assign the existing owner securely and configure the API URL.
 - [ ] Complete live family-sharing, cleanup and real-phone checks; verify independent backup/restore.
 

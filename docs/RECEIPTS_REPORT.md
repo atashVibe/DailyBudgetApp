@@ -57,9 +57,13 @@ Early browser runs exposed test synchronization problems during React hydration 
 
 All receipt tests used `demo-dailybudget-receipts` emulators. Retention/hold and failure branches use simulated adapters over emulator objects; they do not prove actual GCS retention timing. No production user files were uploaded or deleted. No billing, bucket policies, production security rules or Functions were changed.
 
+## Activation approval and current access blocker
+
+The owner approved Firebase cloud setup and possible usage charges on November 16, 2026. PR #5 checks passed on GitHub. This workspace has no Firebase/Google authenticated deployment session; its GitHub integration cannot manage Actions variables (HTTP 403), and the shared browser/viewer is unavailable. No production deployment or billing change has occurred. The owner is being guided to their own Firebase Console/Cloud Shell session; no credentials should be pasted into chat.
+
 ## Still required before activation
 
-1. Owner approval for Firebase Blaze-dependent Storage and Functions setup, including usage-based charges. Free allowances and budget alerts are not a spending cap.
+1. Establish an authenticated session in the owner’s trusted Firebase/Google environment. Cost approval is already received; free allowances and budget alerts are not a spending cap.
 2. Inspect the actual project, bucket location, existing rules/files, public access prevention, IAM, retention/versioning and billing. Preserve unrelated existing resources.
 3. Deploy reviewed rules/indexes/Functions, explicitly assign the existing owner's Firebase UID as global receipt administrator from a trusted environment, and configure the frontend API URL.
 4. Verify the deployed service with the owner's account and a second family account, membership revocation and production cleanup/monitoring. Rebuild native apps and test real iPhone/Android camera, picker, viewing and sharing.

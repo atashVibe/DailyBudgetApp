@@ -1,8 +1,12 @@
 # DailyBudget Project Log
 
+## 2026-11-16 — Cloud activation approved; Google sign-in required
+
+The owner approved proceeding with the documented Firebase cloud setup and usage-based charges. PR #5 checks passed on GitHub. Read-only access checks found no Firebase CLI session or Google Application Default Credentials in the workspace. GitHub repository Actions secrets/variables operations return HTTP 403; the browser reports `Browser runtime unavailable` and the desktop viewer cannot attach. No production settings were changed. Asked the owner to open their existing Firebase project and identify Spark/Blaze as the first guided setup step. Approval persists; do not request it again.
+
 ## 2026-11-16 — Family receipts prepared for review
 
-Prepared shared family receipts, Firebase gateway/retention, original-file ZIP export and separate global administrator setup on `codex/firebase-receipts`, preserving main `55a9f6f`. Every current member can replace/delete. Verified 30 receipt integration, 11 rules, 6 policy and 14 finance tests, browser workflow, types, lint and web export. No production backend/rules/billing deployment. Cost approval and live/device verification remain pending. See `RECEIPTS_REPORT.md` and `RECEIPTS_SETUP.md`.
+Prepared shared family receipts, Firebase gateway/retention, original-file ZIP export and separate global administrator setup on `codex/firebase-receipts`, preserving main `55a9f6f`. Every current member can replace/delete. Verified 30 receipt integration, 11 rules, 6 policy and 14 finance tests, browser workflow, types, lint and web export. No production backend/rules/billing deployment. Cost approval was subsequently received (see the latest entry); live/device verification remains pending. See `RECEIPTS_REPORT.md` and `RECEIPTS_SETUP.md`.
 
 This file records verified milestones, release decisions, and current blockers. `ROADMAP.md` remains the authoritative checklist.
 
