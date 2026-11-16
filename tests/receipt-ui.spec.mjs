@@ -287,3 +287,82 @@ test("family admins require category receipts and entry-form attachments gate sa
     fullPage: true,
   });
 });
+
+test("free families see Premium information while ordinary Premium-family members see Attach receipt", async ({
+  page,
+  baseURL,
+}) => {
+  expect(baseURL).toMatch(/^http:\/\/localhost:809[134]$/);
+  let premiumFamily = false;
+  await page.route("**/access", async (route) => {
+    const response = await route.fetch();
+    const access = await response.json();
+    await route.fulfill({
+      response,
+      json: {
+        ...access,
+        administrator: false,
+        administratorFamily: false,
+        plan: premiumFamily ? "premium" : "free",
+        tier: premiumFamily ? "premium" : "free",
+        canUpload: premiumFamily,
+        canReplace: premiumFamily,
+      },
+    });
+  });
+  await page.goto("/login");
+  await page.getByText("Forgot Password?", { exact: true }).click();
+  await expect(
+    page.getByText("Reset your password", { exact: true }),
+  ).toBeVisible();
+  await page.getByText("Back to Sign In", { exact: true }).click();
+  await page
+    .locator('input[placeholder="Enter your email"]:visible')
+    .fill("receipts@example.test");
+  await page
+    .locator('input[placeholder="Enter your password"]:visible')
+    .fill("EmulatorOnly123!");
+  await page
+    .getByText("Sign In", { exact: true })
+    .filter({ visible: true })
+    .click();
+  await expect(page.getByText("Budget Summary", { exact: true })).toBeVisible();
+  const info = page.getByRole("button", {
+    name: "About Premium receipt attachments",
+    exact: true,
+  });
+  await expect(info).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Attach receipt", exact: true }),
+  ).toHaveCount(0);
+  await info.click();
+  await expect(
+    page.getByText("To attach a receipt, upgrade your family to Premium.", {
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Save Entry", exact: true }),
+  ).toBeEnabled();
+  await page.screenshot({
+    path: "test-results/free-family-receipt-info.png",
+    fullPage: true,
+  });
+  premiumFamily = true;
+  await page.getByRole("button", { name: "Show navigation menu" }).click();
+  await page
+    .getByRole("button", { name: "Family Settings", exact: true })
+    .click();
+  await expect(page.getByText("Categories", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Show navigation menu" }).click();
+  await page.getByRole("button", { name: "Dashboard", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Attach receipt", exact: true }),
+  ).toBeVisible();
+  await expect(info).toHaveCount(0);
+  await expect(
+    page.getByText("To attach a receipt, upgrade your family to Premium.", {
+      exact: true,
+    }),
+  ).toHaveCount(0);
+});

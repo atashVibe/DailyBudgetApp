@@ -7,6 +7,7 @@ Family administrators can make attachments mandatory per category. The entry for
 ## Behavior
 
 - In Family Settings → Categories, family administrators can toggle Receipt required for existing categories and choose Require a receipt while creating a category. Other members can see the requirement but cannot change it. Existing categories default to optional; no data migration or financial history rewrite is needed.
+- Families with upload access see Attach receipt; free/non-upload plans see an information icon that explains “To attach a receipt, upgrade your family to Premium.” This uses the shared family entitlement, so ordinary members of Premium or administrator-sponsored families keep upload access. Unknown/loading access does not show a misleading upgrade prompt.
 - The entry form provides camera, photo and PDF choices, selected filenames, removal and upload progress. Save is gray until the category is loaded and its required receipt is selected. Removing the last selected receipt disables Save again. A ready receipt already attached to an edited entry satisfies its requirement.
 - On Save, selected originals upload before a new financial entry is created. Failed uploads keep form values and selections for retry; they do not create an incomplete entry or change the allowance. Stable submission/file identifiers prevent duplicate entries on retries. Previously uploaded draft files removed from the selection are reconciled before committing.
 - The backend rechecks current membership, category, budget area, category type and actual ready receipt metadata before committing the financial entry and its associations together. Required-category checks also apply to direct Firestore creates/updates; clients cannot invent receipt metadata, publish draft-backed entries directly or change the setting without family-admin rights.
@@ -27,7 +28,7 @@ Main changed files: category service/hook and settings UI, `ExpenseEntryForm.tsx
 
 - 38 receipt integration tests cover the existing lifecycle and new required receipt flow: incomplete/failed draft saves, idempotent finalization, wrong-owner/family denial, direct-write bypasses, administrator-only flags, invalid categories/dates, all four category types, expiry preserving completed entries, account deletion and finishing an already uploaded draft during grace.
 - 11 existing Firestore rules tests, 14 accounting tests and 6 policy tests pass.
-- Two Chromium mobile-width flows cover original receipt management and the new administrator switch, gray Save, selection/removal, failed upload then retry, exactly one resulting entry, editing with an existing receipt and another-tab category changes.
+- Three Chromium mobile-width flows cover original receipt management and the new administrator switch, gray Save, selection/removal, failed upload then retry, exactly one resulting entry, editing with an existing receipt and another-tab category changes. The third flow uses controlled entitlement responses to verify the free-family information icon and ordinary Premium-family member button; backend subscription enforcement is covered by the emulator integration suite.
 - TypeScript, lint and production web export pass. Browser tests use disposable emulator accounts; real-device camera behavior remains a phone check.
 - Initial browser checks exposed a default-category loading gap and delayed switch feedback. Save now waits for an actual selected category, and the category switch updates immediately with rollback on write failure.
 
@@ -35,10 +36,10 @@ All tests are isolated emulators/development builds. The owner confirmed the pre
 
 ## Deployment order
 
-From the existing Cloud Shell repository (`~/DailyBudgetApp-receipts`), run each command separately. The repository was cloned with `--single-branch`, so explicitly fetch this new branch:
+First run `cd ~/DailyBudgetApp-receipts` in Cloud Shell. The owner’s new session started in their home directory and did not have Node 24 installed, so use `nvm install 24` (which also selects it). Then run each command separately. The repository was cloned with `--single-branch`, so explicitly fetch this new branch:
 
 ```bash
-nvm use 24
+nvm install 24
 ```
 
 ```bash

@@ -90,6 +90,8 @@ export default function ExpenseEntryForm({
   const [existingReceiptId, setExistingReceiptId] = useState("");
   const [receiptsLoading, setReceiptsLoading] = useState(false);
   const [showAttachmentChoices, setShowAttachmentChoices] = useState(false);
+  const [showPremiumInfo, setShowPremiumInfo] = useState(false);
+  const [accessLoading, setAccessLoading] = useState(receiptsConfigured);
   const [saving, setSaving] = useState(false);
   const [choosing, setChoosing] = useState(false);
   const [uploadProgress, setUploadProgress] = useState("");
@@ -106,6 +108,9 @@ export default function ExpenseEntryForm({
     useCallback(() => {
       let current = true;
       setReceiptAccess(null);
+      setShowAttachmentChoices(false);
+      setShowPremiumInfo(false);
+      setAccessLoading(receiptsConfigured);
       if (receiptsConfigured)
         getReceiptAccess()
           .then((access) => {
@@ -114,6 +119,9 @@ export default function ExpenseEntryForm({
           })
           .catch((error) => {
             if (current) setMessage(error.message);
+          })
+          .finally(() => {
+            if (current) setAccessLoading(false);
           });
       return () => {
         current = false;
@@ -507,33 +515,67 @@ export default function ExpenseEntryForm({
             This category requires a receipt before you can save.
           </Text>
         )}
-        <Text>
-          JPG, PNG or PDF · Up to{" "}
-          {receiptAccess?.limits.maxReceiptsPerTransaction || 2} receipts per
-          entry.
-        </Text>
+        {receiptAccess?.canUpload && (
+          <Text>
+            JPG, PNG or PDF · Up to{" "}
+            {receiptAccess.limits.maxReceiptsPerTransaction} receipts per entry.
+          </Text>
+        )}
         {existingReceiptId ? (
           <Text>A receipt is already attached to this entry.</Text>
         ) : null}
         {receiptsLoading ? <Text>Checking existing receipts…</Text> : null}
-        <PrimaryButton
-          title="Attach receipt"
-          onPress={() => setShowAttachmentChoices((shown) => !shown)}
-          disabled={
-            saving ||
-            choosing ||
-            !receiptAccess?.canUpload ||
-            files.length >=
-              (receiptAccess?.limits.maxReceiptsPerTransaction || 2)
-          }
-        />
-        {receiptAccess && !receiptAccess.canUpload && (
+        {receiptAccess?.canUpload ? (
+          <PrimaryButton
+            title="Attach receipt"
+            onPress={() => setShowAttachmentChoices((shown) => !shown)}
+            disabled={
+              saving ||
+              choosing ||
+              files.length >= receiptAccess.limits.maxReceiptsPerTransaction
+            }
+          />
+        ) : receiptAccess ? (
+          <View style={{ alignItems: "flex-start", gap: 8 }}>
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="About Premium receipt attachments"
+              accessibilityHint="Explains how to enable receipt attachments for your family."
+              onPress={() => setShowPremiumInfo((shown) => !shown)}
+              style={{
+                width: 32,
+                height: 32,
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: 16,
+                backgroundColor: "#EFF6FF",
+                borderWidth: 1,
+                borderColor: "#93C5FD",
+              }}
+            >
+              <Text
+                style={{ fontSize: 20, color: "#1D4ED8", fontWeight: "700" }}
+              >
+                i
+              </Text>
+            </TouchableOpacity>
+            {showPremiumInfo && (
+              <Text
+                accessibilityLiveRegion="polite"
+                style={{ color: "#1E40AF", lineHeight: 22 }}
+              >
+                To attach a receipt, upgrade your family to Premium.
+              </Text>
+            )}
+          </View>
+        ) : (
           <Text>
-            Receipt uploads need active family receipt access. Existing attached
-            receipts still count.
+            {accessLoading
+              ? "Checking receipt access…"
+              : "Receipt attachments are unavailable right now."}
           </Text>
         )}
-        {showAttachmentChoices && (
+        {showAttachmentChoices && receiptAccess?.canUpload && (
           <View style={{ gap: 8 }}>
             <PrimaryButton
               title="Take a receipt photo"
