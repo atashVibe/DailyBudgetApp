@@ -1,5 +1,13 @@
-import { Text, View } from "react-native";
+import { useState } from "react";
+import { Pressable, Text, View } from "react-native";
 import { calculateBudgetSummary } from "../../services/financeCalculations";
+
+function getCardBackground(allowance: number) {
+  if (allowance < -200) return "#000000";
+  if (allowance < -20) return "#FDE8E8";
+  if (allowance <= 20) return "#FFF5CC";
+  return "#EAF9F1";
+}
 
 type Props = {
   dailyBudget: number;
@@ -12,58 +20,87 @@ export default function BudgetSummaryCard({
   spentThisMonth = 0,
   spentThisYear = 0,
 }: Props) {
+  const [showSpendingInfo, setShowSpendingInfo] = useState(false);
   const summary = calculateBudgetSummary(
     dailyBudget,
     spentThisMonth,
     spentThisYear,
   );
 
+  const backgroundColor = getCardBackground(summary.remainingToday);
+  const hasDarkBackground = backgroundColor === "#000000";
+  const textColor = hasDarkBackground ? "#FF7B7B" : "#111827";
+  const detailColor = hasDarkBackground ? textColor : "#4B5563";
+
   return (
     <View
       style={{
         width: "100%",
-        backgroundColor: "#EAF9F1",
+        backgroundColor,
         borderRadius: 16,
-        padding: 20,
-        marginBottom: 20,
+        padding: 14,
+        marginBottom: 14,
       }}
     >
-      <Text
-        style={{
-          fontSize: 20,
-          fontWeight: "700",
-          marginBottom: 12,
-        }}
-      >
-        Budget Summary
-      </Text>
+      <View style={{ flexDirection: "row", alignItems: "center" }}>
+        <Text style={{ fontSize: 20, fontWeight: "700", color: textColor }}>
+          Budget Summary
+        </Text>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Spending calculation"
+          accessibilityState={{ expanded: showSpendingInfo }}
+          hitSlop={6}
+          onPress={() => setShowSpendingInfo((visible) => !visible)}
+          style={{
+            minWidth: 36,
+            minHeight: 32,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Text
+            style={{
+              width: 18,
+              borderWidth: 1,
+              borderRadius: 9,
+              borderColor: detailColor,
+              color: detailColor,
+              fontSize: 12,
+              fontWeight: "700",
+              textAlign: "center",
+            }}
+          >
+            i
+          </Text>
+        </Pressable>
+      </View>
+      {showSpendingInfo && (
+        <Text style={{ fontSize: 13, color: detailColor, marginBottom: 6 }}>
+          Expenses minus refunds. Income and cashback do not affect your budget.
+        </Text>
+      )}
 
-      <Text style={{ fontSize: 16, marginBottom: 6 }}>
+      <Text style={{ fontSize: 16, color: textColor, marginBottom: 4 }}>
         Allowance: ${summary.remainingToday.toFixed(2)}
       </Text>
 
-      <Text style={{ fontSize: 16, marginBottom: 6 }}>
+      <Text style={{ fontSize: 14, color: textColor }}>
         Total Expenses: ${spentThisMonth.toFixed(2)}
-      </Text>
-      <Text style={{ fontSize: 13, color: "#4B5563", marginBottom: 10 }}>
-        Expenses minus refunds. Income and cashback do not affect your budget.
-      </Text>
-      <Text
-        style={{
-          fontSize: 16,
-          color: summary.status.color,
-          fontWeight: summary.usedPercent > 100 ? "bold" : "normal",
-        }}
-      >
-        Status: {summary.status.text}
+        <Text style={{ fontSize: 12, fontWeight: "600" }}>
+          {" · "}
+          {summary.status.text === "On The Border! Be careful!"
+            ? "Near limit"
+            : summary.status.text}
+        </Text>
       </Text>
 
       {summary.recoveryDays > 0 && (
         <Text
           style={{
             fontSize: 16,
-            marginBottom: 6,
-            color: "#000",
+            marginTop: 4,
+            color: textColor,
             fontWeight: "700",
           }}
         >
@@ -77,8 +114,8 @@ export default function BudgetSummaryCard({
           backgroundColor: "#E5E7EB",
           borderRadius: 999,
           overflow: "hidden",
-          marginTop: 10,
-          marginBottom: 10,
+          marginTop: 6,
+          marginBottom: 6,
         }}
       >
         <View
@@ -113,14 +150,20 @@ export default function BudgetSummaryCard({
           }}
         />
       </View>
-      <Text style={{ fontSize: 13, color: "#666", marginBottom: 6 }}>
+      <Text style={{ fontSize: 13, color: detailColor }}>
         Month passed: {summary.monthPassedPercent.toFixed(0)}% | Money used:{" "}
         {summary.progressPercent.toFixed(0)}%
       </Text>
 
-      <View style={{ marginTop: 20 }}>
-        <Text style={{ fontSize: 16, marginBottom: 6 }}>
+      <View style={{ marginTop: 8 }}>
+        <Text style={{ fontSize: 14, color: textColor }}>
           Yearly Spending: ${spentThisYear.toFixed(2)}
+          <Text style={{ fontSize: 12, fontWeight: "600" }}>
+            {" · "}
+            {summary.yearlyStatus.text === "On The Border! Be careful!"
+              ? "Near limit"
+              : summary.yearlyStatus.text}
+          </Text>
         </Text>
         <View
           style={{
@@ -129,7 +172,6 @@ export default function BudgetSummaryCard({
             borderRadius: 999,
             overflow: "hidden",
             marginTop: 6,
-            marginBottom: 6,
           }}
         >
           <View
@@ -147,16 +189,6 @@ export default function BudgetSummaryCard({
             }}
           />
         </View>
-
-        <Text
-          style={{
-            fontSize: 16,
-            color: summary.yearlyStatus.color,
-            fontWeight: summary.yearlyUsedPercent > 100 ? "bold" : "normal",
-          }}
-        >
-          Yearly Status: {summary.yearlyStatus.text}
-        </Text>
       </View>
     </View>
   );

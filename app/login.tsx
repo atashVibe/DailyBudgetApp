@@ -19,6 +19,8 @@ import AppScreen from "./components/common/AppScreen";
 import AppTextInput from "./components/common/AppTextInput";
 import PrimaryButton from "./components/common/PrimaryButton";
 
+const APPLE_SIGN_IN_ENABLED = false;
+
 type SocialLoginButtonProps = {
   provider: "google" | "apple";
   title: string;
@@ -65,7 +67,7 @@ export default function LoginScreen() {
   );
 
   useEffect(() => {
-    if (Platform.OS !== "ios") return;
+    if (!APPLE_SIGN_IN_ENABLED || Platform.OS !== "ios") return;
 
     AppleAuthentication.isAvailableAsync()
       .then(setAppleSignInAvailable)
@@ -271,7 +273,7 @@ export default function LoginScreen() {
           disabled={loading}
           onPress={handleGoogleLogin}
         />
-        {Platform.OS === "web" && (
+        {APPLE_SIGN_IN_ENABLED && Platform.OS === "web" && (
           <SocialLoginButton
             provider="apple"
             title="Continue with Apple"
@@ -279,7 +281,7 @@ export default function LoginScreen() {
             onPress={handleAppleLogin}
           />
         )}
-        {Platform.OS === "ios" && appleSignInAvailable && (
+        {APPLE_SIGN_IN_ENABLED && Platform.OS === "ios" && appleSignInAvailable && (
           <View
             pointerEvents={loading ? "none" : "auto"}
             style={[
