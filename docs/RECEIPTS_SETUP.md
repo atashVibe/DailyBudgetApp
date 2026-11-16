@@ -1,8 +1,6 @@
 # Receipt setup — owner instructions
 
-The code is prepared for review. **The new Firebase backend and rules are not
-deployed, billing has not been changed, and your real account has not been given
-receipt-administrator access yet.** The owner approved the documented Blaze-dependent setup and possible usage charges on November 16, 2026. That approval remains valid; do not ask for it again. Execution is currently blocked by missing Firebase/Google authentication in this workspace, not by permission from the owner.
+The owner approved the documented setup and costs. **Cloud Shell has now created both Node 24 receipt Functions in us-west1 and published the security rules/indexes.** The CLI failed afterward at the build-image cleanup prompt, so configure that policy separately; do not redeploy merely for that error. The deployed API responds with the expected HTTP 401 to anonymous requests. The frontend API URL, trusted existing-owner administrator assignment, authenticated family tests and production cleanup verification remain pending.
 
 Your recent compact summary/navigation changes are preserved. This feature does
 not change budget calculations, payment processing, family roles, or existing
@@ -356,3 +354,9 @@ account and exercises a file input in place of actual camera hardware.
 The owner confirmed Blaze is already enabled, the bucket exists with an empty visible file list, and its old Storage test rule expired April 30, 2026. Cloud Shell reported bucket `dailybudget-35c26.firebasestorage.app`, location `US-WEST1`, REGIONAL storage, seven-day soft deletion and fine-grained ACLs. The owner successfully ran the public-access-prevention update; retention protections were preserved. Firestore reports `us-west2`. Firebase CLI `projects:list` succeeded in the owner’s own Cloud Shell; this workspace still has no direct Google credentials.
 
 Node 22 installation exposed Firebase Admin transitive database packages requiring Node >=24.12.0. Receipt Functions and their CI now use Node 24 (GA in the pinned Firebase CLI), with a fresh lockfile and emulator verification. Use Node 24 in Cloud Shell before deployment. No production receipt Functions or Firestore rules have been deployed yet.
+
+## Deployed backend checkpoint — November 16, 2026
+
+The owner's Cloud Shell deployment output confirms receipt API and hourly maintenance Functions were created successfully in us-west1 with Node 24; Storage/Firestore rules were released and indexes deployed. API URL: `https://us-west1-dailybudget-35c26.cloudfunctions.net/receiptsApi`. A direct unauthenticated GET `/access` from this workspace returned HTTP 401 with the expected sign-in error, confirming the deployed gateway responds and rejects anonymous access. Authenticated family operations and scheduled production cleanup remain unverified.
+
+The CLI ended with an unexpected error at the post-deployment Artifact Registry cleanup-days prompt, after the successful service creation messages. Do not repeat deployment solely for that prompt. Next: set the functions build-image cleanup policy separately for us-west1 (seven days), verify it, assign the owner's verified existing UID through trusted Cloud Shell, configure the GitHub API URL, publish the reviewed frontend and test actual family receipts. Build-image cleanup does not delete receipt originals.

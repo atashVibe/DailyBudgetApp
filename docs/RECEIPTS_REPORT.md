@@ -2,7 +2,7 @@
 
 ## Result
 
-Prepared on `codex/firebase-receipts` from main `55a9f6f`. This is a reviewable implementation, not a live Firebase deployment. The existing compact budget summary and accounting calculations are preserved.
+Prepared on `codex/firebase-receipts` from main `55a9f6f`. The receipt backend/rules have since been deployed through the owner’s Cloud Shell; frontend connection and authenticated use remain pending. The existing compact budget summary and accounting calculations are preserved.
 
 Premium and Archive belong to a family. Every current family member can view, download, export, replace and delete shared receipts. Premium permits uploads; Archive and cancellation grace permit reading/export without new uploads. Deletion remains available regardless of payment. Former members and other families are denied. A separate global receipt administrator role can sponsor a current family without assigning a paid plan; family administrators cannot grant themselves that role. Membership is still required for file access.
 
@@ -60,6 +60,13 @@ All receipt tests used `demo-dailybudget-receipts` emulators. Retention/hold and
 ## Activation approval and current access blocker
 
 The owner approved Firebase cloud setup and possible usage charges on November 16, 2026. PR #5 checks passed on GitHub. The owner has since confirmed Firebase CLI access in their own Cloud Shell, Blaze enabled, bucket US-WEST1 with seven-day soft deletion, successful public-access-prevention enforcement, and Firestore us-west2. The backend runtime/CI now use Node 24 for dependency compatibility and default to us-west1. This workspace still has no Firebase/Google authenticated deployment session; its GitHub integration cannot manage Actions variables (HTTP 403), and the shared browser/viewer is unavailable. No production deployment or billing change has occurred. The owner is being guided to their own Firebase Console/Cloud Shell session; no credentials should be pasted into chat.
+
+
+## Deployed backend checkpoint — November 16, 2026
+
+The owner's Cloud Shell deployment output confirms receipt API and hourly maintenance Functions were created successfully in us-west1 with Node 24; Storage/Firestore rules were released and indexes deployed. API URL: `https://us-west1-dailybudget-35c26.cloudfunctions.net/receiptsApi`. A direct unauthenticated GET `/access` from this workspace returned HTTP 401 with the expected sign-in error, confirming the deployed gateway responds and rejects anonymous access. Authenticated family operations and scheduled production cleanup remain unverified.
+
+The CLI ended with an unexpected error at the post-deployment Artifact Registry cleanup-days prompt, after the successful service creation messages. Do not repeat deployment solely for that prompt. Next: set the functions build-image cleanup policy separately for us-west1 (seven days), verify it, assign the owner's verified existing UID through trusted Cloud Shell, configure the GitHub API URL, publish the reviewed frontend and test actual family receipts. Build-image cleanup does not delete receipt originals.
 
 ## Still required before activation
 
