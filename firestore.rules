@@ -19,6 +19,7 @@ service cloud.firestore {
       allow write: if false;
     }
     match /receiptConfig/{id} { allow read, write: if false; }
+    match /receiptEntryDrafts/{id} { allow read, write: if false; }
     match /receiptLocks/{id} { allow read, write: if false; }
     match /receiptOperations/{id} { allow read, write: if false; }
     match /receiptAudit/{id} { allow read, write: if false; }
@@ -235,11 +236,13 @@ service cloud.firestore {
       allow read: if isActiveMember(resource.data.familyId);
 
       allow create: if isAdmin(request.resource.data.familyId)
-        && request.resource.data.createdBy == request.auth.uid;
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.get('requiresReceipt', false) is bool;
 
       allow update: if (
           isAdmin(resource.data.familyId)
           && keepsFamilyId()
+          && request.resource.data.get('requiresReceipt', false) is bool
           && !request.resource.data.diff(resource.data).affectedKeys()
             .hasAny(['createdBy'])
         )
@@ -248,15 +251,31 @@ service cloud.firestore {
       allow delete: if isAdmin(resource.data.familyId);
     }
 
+    // Existing categories remain optional unless an administrator opts in.
+    function hasRequiredReceipt(entry, entryId) {
+      let categoryId = entry.get('categoryId', '');
+      let categoryPath = /databases/$(database)/documents/categories/$(categoryId);
+      return categoryId == '' || !exists(categoryPath)
+        || get(categoryPath).data.get('requiresReceipt', false) != true
+        || (entry.get('receiptId', '') != ''
+          && get(/databases/$(database)/documents/receipts/$(entry.receiptId)).data.status == 'ready'
+          && get(/databases/$(database)/documents/receipts/$(entry.receiptId)).data.get('draft', false) != true
+          && get(/databases/$(database)/documents/receipts/$(entry.receiptId)).data.familyId == entry.familyId
+          && get(/databases/$(database)/documents/receipts/$(entry.receiptId)).data.transactionId == entryId);
+    }
+
     match /entries/{entryId} {
       allow read: if isActiveMember(resource.data.familyId);
 
       allow create: if isActiveMember(request.resource.data.familyId)
-        && request.resource.data.userId == request.auth.uid;
+        && request.resource.data.userId == request.auth.uid
+        && !exists(/databases/$(database)/documents/receiptEntryDrafts/$(entryId))
+        && hasRequiredReceipt(request.resource.data, entryId);
 
       allow update: if (
           isActiveMember(resource.data.familyId)
           && keepsFamilyId()
+          && hasRequiredReceipt(request.resource.data, entryId)
           && !request.resource.data.diff(resource.data).affectedKeys()
             .hasAny(['userId'])
         )

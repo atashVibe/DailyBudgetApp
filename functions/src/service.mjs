@@ -8,6 +8,7 @@ import {
   exportPath,
 } from "./policy.mjs";
 import { validateOriginal } from "./files.mjs";
+import { createEntryDraftService, receiptTarget } from "./entry-drafts.mjs";
 import { createFamilyContext } from "./family-context.mjs";
 const pendingStates = ["prepared", "cleanup_pending", "retained"];
 export function publicRecord(record) {
@@ -115,13 +116,9 @@ export function createReceiptService({
     return record;
   }
   async function expense(uid, transactionId) {
-    const record = (
-      await db.doc(`entries/${identifier(transactionId)}`).get()
-    ).data();
-    if (!record || record.type !== "expense")
-      throw new ReceiptError(403, "Choose a saved expense to attach receipts.");
-    const access = await getAccess(uid, record.familyId);
-    return { entry: record, access };
+    const target = await receiptTarget(db, uid, transactionId, clock());
+    const access = await getAccess(uid, target.entry.familyId);
+    return { ...target, access };
   }
   async function removeOriginal(file) {
     if (deleteObject) return deleteObject(file);
@@ -261,7 +258,7 @@ export function createReceiptService({
     await validateOriginal(bytes, mimeType, initial.access.limits.maxFileBytes);
     const sha256 = createHash("sha256").update(bytes).digest("hex");
     return lock(familyId, async (fence) => {
-      const { access, entry } = await expense(uid, transactionId);
+      const { access, entry, draft } = await expense(uid, transactionId);
       if (!access.canUpload)
         throw new ReceiptError(403, "Family receipt upload access has ended.");
       const opRef = db.doc(`receiptOperations/${familyId}_${requestId}`),
@@ -349,23 +346,23 @@ export function createReceiptService({
       if (previous) await opRef.set(operation);
       else await opRef.create(operation);
       try {
-        await bucket
-          .file(storagePath)
-          .save(bytes, {
-            resumable: false,
-            validation: "crc32c",
-            metadata: {
-              contentType: mimeType,
-              cacheControl: "private, no-store",
-            },
-            preconditionOpts: { ifGenerationMatch: 0 },
-          });
+        await bucket.file(storagePath).save(bytes, {
+          resumable: false,
+          validation: "crc32c",
+          metadata: {
+            contentType: mimeType,
+            cacheControl: "private, no-store",
+          },
+          preconditionOpts: { ifGenerationMatch: 0 },
+        });
         const record = {
           receiptId,
+          uploadRequestId: requestId,
           familyId,
           userId: old ? old.userId : uid,
           updatedBy: uid,
           transactionId,
+          draft,
           originalFilename: safeFilename(originalFilename),
           storagePath,
           mimeType,
@@ -382,17 +379,18 @@ export function createReceiptService({
         };
         await db.runTransaction(async (tx) => {
           await fence(tx);
-          const latestEntry = await tx.get(db.doc(`entries/${transactionId}`));
+          const latestEntry = await receiptTarget(
+            db,
+            uid,
+            transactionId,
+            clock(),
+            tx,
+          );
           const current = await context(familyId, uid, tx);
-          if (
-            !current.canUpload ||
-            !latestEntry.exists ||
-            latestEntry.data().familyId !== familyId ||
-            latestEntry.data().type !== "expense"
-          )
+          if (!current.canUpload || latestEntry.entry.familyId !== familyId)
             throw new ReceiptError(
               403,
-              "Family membership, expense or upload access changed before saving.",
+              "Family membership, entry or upload access changed before saving.",
             );
           tx.set(db.doc(`receipts/${receiptId}`), record);
           tx.set(
@@ -508,7 +506,7 @@ export function createReceiptService({
         "This family's receipt export access has ended.",
       );
     const receipts = (await familyReceipts(access.familyId)).filter(
-        (r) => r.status === "ready",
+        (r) => r.status === "ready" && !r.draft,
       ),
       entries = new Map();
     for (const receipt of receipts) {
@@ -615,6 +613,7 @@ export function createReceiptService({
     });
   }
   async function purgeAccount(uid) {
+    await entryDrafts.purgeDrafts(uid);
     // Leaving/deleting an account must not erase other members' shared files.
     const memberships = await db
       .collection("familyMembers")
@@ -669,6 +668,7 @@ export function createReceiptService({
     };
   }
   async function maintain() {
+    await entryDrafts.cleanDrafts();
     const jobs = await db
       .collection("receiptOperations")
       .where("state", "in", pendingStates)
@@ -848,7 +848,16 @@ export function createReceiptService({
         "Actual family receipt objects, including retained versions. Storage-only estimate before allowances; excludes requests, downloads, compute, database, backups and taxes. Verify regional pricing. Large inventories can take time to scan.",
     };
   }
+  const entryDrafts = createEntryDraftService({
+    db,
+    clock,
+    context,
+    lock,
+    queueDeletion,
+  });
   return {
+    startDraft: entryDrafts.startDraft,
+    finalizeDraft: entryDrafts.finalizeDraft,
     getAccess,
     getUsage,
     upload,
@@ -863,7 +872,11 @@ export function createReceiptService({
     list: async (uid, transactionId) => {
       const { familyId } = await getAccess(uid);
       return (await familyReceipts(familyId))
-        .filter((r) => !transactionId || r.transactionId === transactionId)
+        .filter(
+          (r) =>
+            (!r.draft || transactionId) &&
+            (!transactionId || r.transactionId === transactionId),
+        )
         .map(publicRecord);
     },
   };

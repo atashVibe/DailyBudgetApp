@@ -1,5 +1,13 @@
 # DailyBudget Next-Session Prompt
 
+## Premium attachment visibility and Cloud Shell session — November 16, 2026
+
+The owner added: Premium families see Attach receipt; free families see an information icon explaining that receipt attachments require upgrading the family to Premium. Implemented using server `canUpload`, preserving administrator-sponsored and ordinary Premium-family member access. Three browser flows, types, lint and production export pass. The owner’s fresh Cloud Shell started in `~` without Node 24; `nvm install 24` succeeded, but `git fetch` failed because they were outside the repository. Instructed `cd ~/DailyBudgetApp-receipts` before fetching. PR #6 remains pending backend deployment, then frontend publication. Existing cost approval and administrator grant persist.
+
+## Required category receipts follow-up — November 16, 2026
+
+The owner confirmed the receipt feature from merged PR #5/main `7885ff8` works, then requested family-admin category requirements and attachments on the entry form with gray Save until a required receipt is selected. Prepared on `codex/required-category-receipts`: per-category boolean, form attachment selection/removal/progress, backend-only drafts with atomic final financial entry creation, server/Firestore enforcement and all-category-type attachments. Existing receipts satisfy edits; abandoned 24-hour drafts use the existing cleanup worker. Read `docs/CATEGORY_RECEIPTS.md` for tests and deployment commands. This follow-up is not yet deployed or published. The owner's existing role, active Blaze setup, current bucket and cost approval persist. Deploy backend/rules/indexes through the owner's authenticated Cloud Shell before merging/publishing the follow-up frontend. Do not repeat the original owner-role setup or request cost approval again.
+
 ## Receipt website connection — November 16, 2026
 
 The owner confirmed seven-day build-image cleanup succeeded and the trusted administrator script granted receipt-administrator access to their verified existing account, without assigning Premium. The backend and rules/indexes are deployed in the existing Firebase project. The Pages workflow now defaults to the public receipt API URL (`https://us-west1-dailybudget-35c26.cloudfunctions.net/receiptsApi`), with an optional repository variable override; no manual Actions-variable permission is needed. Next: publish PR #5, verify Pages and have the owner test a signed-in upload/download/export. Authenticated production family operations, actual scheduled cleanup and native rebuilt-device checks remain unverified.

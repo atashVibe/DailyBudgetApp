@@ -1,5 +1,14 @@
 # DailyBudget Roadmap
 
+## Required category receipt follow-up — November 16, 2026
+
+- [x] Add family-admin receipt requirements per category and an entry-form attachment button with disabled gray Save when missing.
+- [x] Add safe pre-save uploads, server/rule enforcement, idempotent retries and abandoned-draft cleanup; preserve accounting.
+- [ ] Deploy the follow-up backend, rules and indexes through the owner's Cloud Shell, then publish its frontend.
+- [ ] Owner verification of required-category selection, upload, save and edit in production.
+
+See `docs/CATEGORY_RECEIPTS.md`.
+
 ## Owner-requested family receipts — November 16, 2026
 
 - [x] Prepare family receipt UI, Firebase backend, permissions, retention and export on the review branch.
@@ -7,7 +16,7 @@
 - [x] Obtain approval for documented Firebase usage costs before backend activation (owner approved November 16, 2026).
 - [x] Confirm bucket location/protection, deploy receipt services/rules/indexes, configure build-image cleanup and assign the existing owner securely.
 - [x] Configure the public receipt API URL in the Pages workflow.
-- [ ] Publish the website and verify a real signed-in receipt upload.
+- [x] Publish the website and verify a real signed-in receipt upload (owner confirmed it works).
 - [ ] Complete least-privilege production IAM review.
 - [ ] Complete live family-sharing, cleanup and real-phone checks; verify independent backup/restore.
 

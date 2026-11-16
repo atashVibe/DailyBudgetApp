@@ -1,5 +1,5 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { Alert, Platform, Text, TextInput, View } from "react-native";
+import { Alert, Platform, Text, TextInput, View, Switch } from "react-native";
 import type { BudgetArea } from "../../../services/budgetAreas";
 import type { Category, CategoryType } from "../../../services/categories";
 import AppPicker from "../common/AppPicker";
@@ -11,6 +11,9 @@ type Props = {
   selectedBudgetAreaId: string;
   newCategoryName: string;
   newCategoryType: CategoryType;
+  newCategoryRequiresReceipt: boolean;
+  onNewCategoryRequiresReceiptChange: (value: boolean) => void;
+  onReceiptRequiredChange: (categoryId: string, value: boolean) => void;
   isAdmin: boolean;
   onSelectedBudgetAreaIdChange: (value: string) => void;
   onNewCategoryNameChange: (value: string) => void;
@@ -38,6 +41,9 @@ export default function CategoriesSection({
   selectedBudgetAreaId,
   newCategoryName,
   newCategoryType,
+  newCategoryRequiresReceipt,
+  onNewCategoryRequiresReceiptChange,
+  onReceiptRequiredChange,
   isAdmin,
   onSelectedBudgetAreaIdChange,
   onNewCategoryNameChange,
@@ -109,6 +115,29 @@ export default function CategoriesSection({
             Type: {category.type}
           </Text>
 
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginVertical: 12,
+            }}
+          >
+            <Text>
+              {category.requiresReceipt
+                ? "Receipt required"
+                : "Receipt optional"}
+            </Text>
+            {isAdmin && (
+              <Switch
+                accessibilityLabel={`Require receipt for ${category.name}`}
+                value={category.requiresReceipt === true}
+                onValueChange={(value) =>
+                  onReceiptRequiredChange(category.id, value)
+                }
+              />
+            )}
+          </View>
           {isAdmin && (
             <View
               style={{ flexDirection: "row", alignItems: "center", gap: 12 }}
@@ -169,6 +198,21 @@ export default function CategoriesSection({
             options={CATEGORY_TYPE_OPTIONS}
           />
 
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 12,
+            }}
+          >
+            <Text>Require a receipt</Text>
+            <Switch
+              accessibilityLabel="Require receipt for new category"
+              value={newCategoryRequiresReceipt}
+              onValueChange={onNewCategoryRequiresReceiptChange}
+            />
+          </View>
           <PrimaryButton title="Add Category" onPress={onAddCategory} />
         </View>
       )}

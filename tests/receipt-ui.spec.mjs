@@ -12,7 +12,7 @@ test("shared family receipts work through the real web interface against isolate
   page,
   baseURL,
 }) => {
-  expect(baseURL).toMatch(/^http:\/\/localhost:809[13]$/); // Never run this against a real account.
+  expect(baseURL).toMatch(/^http:\/\/localhost:809[134]$/); // Never run this against a real account.
   const png = await sharp({
     create: { width: 8, height: 8, channels: 3, background: "blue" },
   })
@@ -131,4 +131,238 @@ test("shared family receipts work through the real web interface against isolate
     path: "test-results/receipt-screen.png",
     fullPage: true,
   });
+});
+
+test("family admins require category receipts and entry-form attachments gate saving with safe upload retries", async ({
+  page,
+  baseURL,
+}) => {
+  expect(baseURL).toMatch(/^http:\/\/localhost:809[134]$/);
+  const png = await sharp({
+    create: { width: 8, height: 8, channels: 3, background: "green" },
+  })
+    .png()
+    .toBuffer();
+  await page.goto("/login");
+  await page.getByText("Forgot Password?", { exact: true }).click();
+  await expect(
+    page.getByText("Reset your password", { exact: true }),
+  ).toBeVisible();
+  await page.getByText("Back to Sign In", { exact: true }).click();
+  await page
+    .locator('input[placeholder="Enter your email"]:visible')
+    .fill("receipts@example.test");
+  await page
+    .locator('input[placeholder="Enter your password"]:visible')
+    .fill("EmulatorOnly123!");
+  await page
+    .getByText("Sign In", { exact: true })
+    .filter({ visible: true })
+    .click();
+  await expect(page.getByText("Budget Summary", { exact: true })).toBeVisible();
+  await page.goto("/settings");
+  const requirement = page.getByRole("switch", {
+    name: "Require receipt for Groceries",
+    exact: true,
+  });
+  await expect(requirement).toBeVisible();
+  if (await requirement.isChecked()) {
+    await requirement.uncheck();
+    await expect(
+      page.getByText("Receipt requirement updated.", { exact: true }),
+    ).toBeVisible();
+  }
+  await requirement.check();
+  await expect(
+    page.getByText("Receipt requirement updated.", { exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Show navigation menu" }).click();
+  await page.getByRole("button", { name: "Dashboard", exact: true }).click();
+  await expect(
+    page.getByText("This category requires a receipt before you can save.", {
+      exact: true,
+    }),
+  ).toBeVisible();
+  const save = page.getByRole("button", { name: "Save Entry", exact: true });
+  await page.getByPlaceholder("0.00").fill("7.25");
+  await expect(save).toBeDisabled();
+  await expect(save).toHaveCSS("background-color", "rgb(156, 163, 175)");
+  await page.screenshot({
+    path: "test-results/required-receipt-disabled.png",
+    fullPage: true,
+  });
+  const attach = async () => {
+    await page
+      .getByRole("button", { name: "Attach receipt", exact: true })
+      .click();
+    const chooser = page.waitForEvent("filechooser");
+    await page
+      .getByRole("button", { name: "Choose a receipt photo", exact: true })
+      .click();
+    await (
+      await chooser
+    ).setFiles({
+      name: "required-groceries.png",
+      mimeType: "image/png",
+      buffer: png,
+    });
+    await expect(
+      page.getByText("required-groceries.png — ready to save", { exact: true }),
+    ).toBeVisible();
+  };
+  await attach();
+  await expect(save).toBeEnabled();
+  await page
+    .getByRole("button", {
+      name: "Remove selected receipt required-groceries.png",
+    })
+    .click();
+  await expect(save).toBeDisabled();
+  await attach();
+  await page.route("**/upload", async (route) =>
+    route.fulfill({
+      status: 503,
+      headers: { "Access-Control-Allow-Origin": baseURL },
+      contentType: "application/json",
+      body: JSON.stringify({ message: "Test upload failure. Please retry." }),
+    }),
+  );
+  await save.click();
+  await expect(
+    page.getByText("Test upload failure. Please retry.", { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText(/\$7\.25 - Groceries/)).toHaveCount(0);
+  await expect(
+    page.getByText("required-groceries.png — ready to save", { exact: true }),
+  ).toBeVisible();
+  await page.unroute("**/upload");
+  await save.click();
+  await expect(page.getByText(/\$7\.25 - Groceries/)).toHaveCount(1);
+  await expect(save).toBeDisabled(); // Next required entry starts with no file.
+  await page
+    .getByLabel("Manage family receipts for this entry")
+    .first()
+    .click();
+  await expect(
+    page.getByText("required-groceries.png", { exact: true }),
+  ).toBeVisible();
+  await page.getByText("Close receipts", { exact: true }).click();
+  const requiredRow = page
+    .getByText(/\$7\.25 - Groceries/)
+    .locator("..")
+    .locator("..");
+  await requiredRow
+    .getByRole("button", { name: "Edit this entry", exact: true })
+    .click();
+  await expect(
+    page.getByText("A receipt is already attached to this entry.", {
+      exact: true,
+    }),
+  ).toBeVisible();
+  const update = page.getByRole("button", {
+    name: "Update Entry",
+    exact: true,
+  });
+  await expect(update).toBeEnabled();
+  await page
+    .getByPlaceholder("Optional note")
+    .fill("Edited with existing receipt");
+  await update.click();
+  await expect(page.getByText(/Edited with existing receipt/)).toBeVisible();
+  // A category change in another tab updates the still-open form without refreshing.
+  const settings = await page.context().newPage();
+  await settings.goto("/settings");
+  await settings
+    .getByRole("switch", { name: "Require receipt for Groceries", exact: true })
+    .uncheck();
+  await expect(
+    page.getByText("This category requires a receipt before you can save.", {
+      exact: true,
+    }),
+  ).toHaveCount(0);
+  await expect(save).toBeEnabled();
+  await settings.close();
+  await page.screenshot({
+    path: "test-results/required-receipt-form.png",
+    fullPage: true,
+  });
+});
+
+test("free families see Premium information while ordinary Premium-family members see Attach receipt", async ({
+  page,
+  baseURL,
+}) => {
+  expect(baseURL).toMatch(/^http:\/\/localhost:809[134]$/);
+  let premiumFamily = false;
+  await page.route("**/access", async (route) => {
+    const response = await route.fetch();
+    const access = await response.json();
+    await route.fulfill({
+      response,
+      json: {
+        ...access,
+        administrator: false,
+        administratorFamily: false,
+        plan: premiumFamily ? "premium" : "free",
+        tier: premiumFamily ? "premium" : "free",
+        canUpload: premiumFamily,
+        canReplace: premiumFamily,
+      },
+    });
+  });
+  await page.goto("/login");
+  await page.getByText("Forgot Password?", { exact: true }).click();
+  await expect(
+    page.getByText("Reset your password", { exact: true }),
+  ).toBeVisible();
+  await page.getByText("Back to Sign In", { exact: true }).click();
+  await page
+    .locator('input[placeholder="Enter your email"]:visible')
+    .fill("receipts@example.test");
+  await page
+    .locator('input[placeholder="Enter your password"]:visible')
+    .fill("EmulatorOnly123!");
+  await page
+    .getByText("Sign In", { exact: true })
+    .filter({ visible: true })
+    .click();
+  await expect(page.getByText("Budget Summary", { exact: true })).toBeVisible();
+  const info = page.getByRole("button", {
+    name: "About Premium receipt attachments",
+    exact: true,
+  });
+  await expect(info).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Attach receipt", exact: true }),
+  ).toHaveCount(0);
+  await info.click();
+  await expect(
+    page.getByText("To attach a receipt, upgrade your family to Premium.", {
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Save Entry", exact: true }),
+  ).toBeEnabled();
+  await page.screenshot({
+    path: "test-results/free-family-receipt-info.png",
+    fullPage: true,
+  });
+  premiumFamily = true;
+  await page.getByRole("button", { name: "Show navigation menu" }).click();
+  await page
+    .getByRole("button", { name: "Family Settings", exact: true })
+    .click();
+  await expect(page.getByText("Categories", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Show navigation menu" }).click();
+  await page.getByRole("button", { name: "Dashboard", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Attach receipt", exact: true }),
+  ).toBeVisible();
+  await expect(info).toHaveCount(0);
+  await expect(
+    page.getByText("To attach a receipt, upgrade your family to Premium.", {
+      exact: true,
+    }),
+  ).toHaveCount(0);
 });

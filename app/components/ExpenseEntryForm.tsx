@@ -1,5 +1,19 @@
+import { useFocusEffect } from "expo-router";
+import {
+  commitReceiptEntryDraft,
+  deleteReceipt,
+  getReceiptAccess,
+  listReceipts,
+  newReceiptEntryId,
+  pickReceipt,
+  receiptsConfigured,
+  startReceiptEntryDraft,
+  uploadReceipt,
+  type ReceiptAccess,
+  type ReceiptFile,
+} from "../../services/receipts";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Platform, Text, TouchableOpacity, View } from "react-native";
 import { useBudgetAreas } from "../../hooks/useBudgetAreas";
 import { useCategories } from "../../hooks/useCategories";
@@ -60,14 +74,108 @@ export default function ExpenseEntryForm({
   const [selectedBudgetAreaId, setSelectedBudgetAreaId] = useState("");
   const { budgetAreas } = useBudgetAreas(familyId);
   const [selectedCategoryId, setSelectedCategoryId] = useState("");
-  const { categories, defaultCategory } = useCategories(
-    familyId,
-    selectedBudgetAreaId,
-  );
+  const {
+    categories,
+    defaultCategory,
+    loading: categoriesLoading,
+  } = useCategories(familyId, selectedBudgetAreaId);
   const [note, setNote] = useState("");
   const [message, setMessage] = useState("");
   const [date, setDate] = useState(formatLocalDate(new Date()));
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [files, setFiles] = useState<ReceiptFile[]>([]);
+  const [receiptAccess, setReceiptAccess] = useState<ReceiptAccess | null>(
+    null,
+  );
+  const [existingReceiptId, setExistingReceiptId] = useState("");
+  const [receiptsLoading, setReceiptsLoading] = useState(false);
+  const [showAttachmentChoices, setShowAttachmentChoices] = useState(false);
+  const [showPremiumInfo, setShowPremiumInfo] = useState(false);
+  const [accessLoading, setAccessLoading] = useState(receiptsConfigured);
+  const [saving, setSaving] = useState(false);
+  const [choosing, setChoosing] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState("");
+  const busy = useRef(false);
+  const draft = useRef<{ id: string; familyId: string } | null>(null);
+  const currentFamily = useRef(familyId);
+  currentFamily.current = familyId;
+  const selectedCategory = categories.find(
+    (category) => category.id === selectedCategoryId,
+  );
+  const requiresReceipt = selectedCategory?.requiresReceipt === true;
+  const missingReceipt = requiresReceipt && !files.length && !existingReceiptId;
+  useFocusEffect(
+    useCallback(() => {
+      let current = true;
+      setReceiptAccess(null);
+      setShowAttachmentChoices(false);
+      setShowPremiumInfo(false);
+      setAccessLoading(receiptsConfigured);
+      if (receiptsConfigured)
+        getReceiptAccess()
+          .then((access) => {
+            if (current && access.familyId === familyId)
+              setReceiptAccess(access);
+          })
+          .catch((error) => {
+            if (current) setMessage(error.message);
+          })
+          .finally(() => {
+            if (current) setAccessLoading(false);
+          });
+      return () => {
+        current = false;
+      };
+    }, [familyId]),
+  );
+  useEffect(() => {
+    let current = true;
+    setFiles([]);
+    setExistingReceiptId("");
+    draft.current = null;
+    setShowAttachmentChoices(false);
+    setMessage("");
+    setReceiptsLoading(Boolean(entryToEdit?.id && receiptsConfigured));
+    if (entryToEdit?.id && receiptsConfigured)
+      listReceipts(entryToEdit.id)
+        .then((receipts) => {
+          if (current)
+            setExistingReceiptId(
+              receipts.find((receipt) => receipt.status === "ready")
+                ?.receiptId || "",
+            );
+        })
+        .catch((error) => {
+          if (current) setMessage(error.message);
+        })
+        .finally(() => {
+          if (current) setReceiptsLoading(false);
+        });
+    return () => {
+      current = false;
+    };
+  }, [familyId, entryToEdit?.id]);
+  const chooseAttachment = async (kind: "camera" | "photo" | "pdf") => {
+    if (saving || choosing) return;
+    setChoosing(true);
+    setMessage("");
+    try {
+      const file = await pickReceipt(kind);
+      if (!file) return;
+      if (file.size > (receiptAccess?.limits.maxFileBytes || 10 * 1024 * 1024))
+        throw new Error(
+          "Choose a receipt within your family's file-size limit.",
+        );
+      setFiles((current) => [...current, file]);
+      setShowAttachmentChoices(false);
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : "Could not select a receipt.",
+      );
+    } finally {
+      setChoosing(false);
+    }
+  };
   useEffect(() => {
     if (budgetAreas.length === 0) return;
 
@@ -117,62 +225,126 @@ export default function ExpenseEntryForm({
   }, [entryToEdit]);
 
   const handleSave = async () => {
-    if (!amount || isNaN(Number(amount))) {
+    if (
+      busy.current ||
+      choosing ||
+      categoriesLoading ||
+      (requiresReceipt && receiptsLoading)
+    )
+      return;
+    if (!amount || !Number.isFinite(Number(amount))) {
       setMessage("Please enter a valid amount");
-      setTimeout(() => setMessage(""), 2000);
       return;
     }
-
+    if (!selectedCategory) {
+      setMessage("Please select a category");
+      return;
+    }
+    if (missingReceipt) {
+      setMessage("Attach a receipt before saving this category.");
+      return;
+    }
+    const user = auth.currentUser;
+    if (!user) {
+      setMessage("Please sign in again.");
+      return;
+    }
+    const entryData = {
+      amount: parseFloat(amount),
+      budgetAreaId: selectedBudgetAreaId,
+      categoryId: selectedCategoryId,
+      type: selectedCategory.type,
+      note,
+      date,
+    };
+    busy.current = true;
+    setSaving(true);
+    setMessage("");
     try {
-      const user = auth.currentUser;
-
-      if (!user) {
-        setMessage("User not logged in");
-        setTimeout(() => setMessage(""), 2000);
-        return;
-      }
-
-      const selectedCategory = categories.find(
-        (item) => item.id === selectedCategoryId,
-      );
-
-      if (!selectedCategory) {
-        setMessage("Please select a category");
-        setTimeout(() => setMessage(""), 2000);
-        return;
-      }
-
-      const entryData = {
-        amount: parseFloat(amount),
-        budgetAreaId: selectedBudgetAreaId,
-        categoryId: selectedCategoryId,
-        type: selectedCategory.type,
-        note,
-        date,
-      };
-
       if (entryToEdit?.id) {
-        await updateEntry(entryToEdit.id, entryData);
-      } else {
-        await addEntry({
-          userId: user.uid,
-          familyId,
+        for (const file of files)
+          await uploadReceipt(file, entryToEdit.id, (percent) =>
+            setUploadProgress(`Uploading ${file.name}: ${percent}%`),
+          );
+        const attached =
+          receiptsConfigured && (requiresReceipt || files.length)
+            ? (await listReceipts(entryToEdit.id)).find(
+                (receipt) => receipt.status === "ready",
+              )
+            : undefined;
+        if (requiresReceipt && !attached)
+          throw new Error(
+            "This category requires a receipt. Attach one before saving.",
+          );
+        if (
+          currentFamily.current !== familyId ||
+          auth.currentUser?.uid !== user.uid
+        )
+          throw new Error(
+            "Your account or family changed. Return to the original family to finish this entry.",
+          );
+        await updateEntry(entryToEdit.id, {
           ...entryData,
+          ...(attached ? { receiptId: attached.receiptId } : {}),
         });
+      } else if (files.length || draft.current) {
+        if (!draft.current || draft.current.familyId !== familyId)
+          draft.current = { id: newReceiptEntryId(), familyId };
+        const draftId = draft.current.id;
+        const started = await startReceiptEntryDraft(familyId, draftId);
+        if (!started.committed) {
+          // Reconcile interrupted attempts so removing a selected file also removes its draft upload.
+          const currentReceipts = await listReceipts(draftId);
+          for (const receipt of currentReceipts) {
+            if (
+              receipt.status === "ready" &&
+              !files.some((file) => file.requestId === receipt.uploadRequestId)
+            )
+              await deleteReceipt(receipt.receiptId);
+          }
+          for (const file of files) {
+            if (
+              currentReceipts.some(
+                (receipt) =>
+                  receipt.status === "ready" &&
+                  receipt.uploadRequestId === file.requestId,
+              )
+            )
+              continue;
+            await uploadReceipt(file, draftId, (percent) =>
+              setUploadProgress(`Uploading ${file.name}: ${percent}%`),
+            );
+          }
+        }
+        if (
+          currentFamily.current !== familyId ||
+          auth.currentUser?.uid !== user.uid
+        )
+          throw new Error(
+            "Your account or family changed. Return to the original family to finish this entry.",
+          );
+        await commitReceiptEntryDraft(draftId, entryData);
+      } else {
+        await addEntry({ userId: user.uid, familyId, ...entryData });
       }
-
       setMessage("Entry saved");
-
-      setTimeout(() => {
-        setMessage("");
-        onEntrySaved?.();
-      }, 1500);
-
       setAmount("");
       setNote("");
-    } catch {
-      setMessage("Error saving entry");
-      setTimeout(() => setMessage(""), 2000);
+      setFiles([]);
+      draft.current = null;
+      onEntrySaved?.();
+    } catch (error) {
+      if (error instanceof Error && "status" in error && error.status === 410)
+        draft.current = null;
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Could not save this entry. Your form is kept so you can retry.",
+      );
+    } finally {
+      busy.current = false;
+      setSaving(false);
+      setUploadProgress("");
     }
   };
 
@@ -202,6 +374,7 @@ export default function ExpenseEntryForm({
         <View style={{ flex: 1, minWidth: 0 }}>
           <FormLabel>Budget Area</FormLabel>
           <AppPicker
+            disabled={saving}
             selectedValue={selectedBudgetAreaId}
             onValueChange={setSelectedBudgetAreaId}
             options={budgetAreas.map((item) => ({
@@ -214,6 +387,7 @@ export default function ExpenseEntryForm({
         <View style={{ flex: 1, minWidth: 0 }}>
           <FormLabel>Category</FormLabel>
           <AppPicker
+            disabled={saving}
             selectedValue={selectedCategoryId}
             onValueChange={setSelectedCategoryId}
             options={categories.map((item) => ({
@@ -236,6 +410,7 @@ export default function ExpenseEntryForm({
           {Platform.OS === "web" ? (
             React.createElement("input", {
               type: "date",
+              disabled: saving,
               value: date,
               onChange: (e: any) => setDate(e.target.value),
               style: {
@@ -265,7 +440,9 @@ export default function ExpenseEntryForm({
               }}
             >
               <Text
-                onPress={() => setShowDatePicker(true)}
+                onPress={() => {
+                  if (!saving) setShowDatePicker(true);
+                }}
                 style={{ padding: 14, fontSize: 16, color: "#111" }}
               >
                 {date}
@@ -290,6 +467,7 @@ export default function ExpenseEntryForm({
               $
             </Text>
             <AppTextInput
+              editable={!saving}
               placeholder="0.00"
               keyboardType="decimal-pad"
               inputMode="decimal"
@@ -322,19 +500,152 @@ export default function ExpenseEntryForm({
 
       <FormLabel>Note</FormLabel>
       <AppTextInput
+        editable={!saving}
         placeholder="Optional note"
         value={note}
         onChangeText={setNote}
       />
 
+      <View style={{ gap: 10, marginBottom: 16 }}>
+        <FormLabel>
+          Receipt {requiresReceipt ? "(required)" : "(optional)"}
+        </FormLabel>
+        {requiresReceipt && (
+          <Text style={{ color: "#92400E" }}>
+            This category requires a receipt before you can save.
+          </Text>
+        )}
+        {receiptAccess?.canUpload && (
+          <Text>
+            JPG, PNG or PDF · Up to{" "}
+            {receiptAccess.limits.maxReceiptsPerTransaction} receipts per entry.
+          </Text>
+        )}
+        {existingReceiptId ? (
+          <Text>A receipt is already attached to this entry.</Text>
+        ) : null}
+        {receiptsLoading ? <Text>Checking existing receipts…</Text> : null}
+        {receiptAccess?.canUpload ? (
+          <PrimaryButton
+            title="Attach receipt"
+            onPress={() => setShowAttachmentChoices((shown) => !shown)}
+            disabled={
+              saving ||
+              choosing ||
+              files.length >= receiptAccess.limits.maxReceiptsPerTransaction
+            }
+          />
+        ) : receiptAccess ? (
+          <View style={{ alignItems: "flex-start", gap: 8 }}>
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="About Premium receipt attachments"
+              accessibilityHint="Explains how to enable receipt attachments for your family."
+              onPress={() => setShowPremiumInfo((shown) => !shown)}
+              style={{
+                width: 32,
+                height: 32,
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: 16,
+                backgroundColor: "#EFF6FF",
+                borderWidth: 1,
+                borderColor: "#93C5FD",
+              }}
+            >
+              <Text
+                style={{ fontSize: 20, color: "#1D4ED8", fontWeight: "700" }}
+              >
+                i
+              </Text>
+            </TouchableOpacity>
+            {showPremiumInfo && (
+              <Text
+                accessibilityLiveRegion="polite"
+                style={{ color: "#1E40AF", lineHeight: 22 }}
+              >
+                To attach a receipt, upgrade your family to Premium.
+              </Text>
+            )}
+          </View>
+        ) : (
+          <Text>
+            {accessLoading
+              ? "Checking receipt access…"
+              : "Receipt attachments are unavailable right now."}
+          </Text>
+        )}
+        {showAttachmentChoices && receiptAccess?.canUpload && (
+          <View style={{ gap: 8 }}>
+            <PrimaryButton
+              title="Take a receipt photo"
+              onPress={() => void chooseAttachment("camera")}
+              disabled={saving || choosing}
+            />
+            <PrimaryButton
+              title="Choose a receipt photo"
+              onPress={() => void chooseAttachment("photo")}
+              disabled={saving || choosing}
+            />
+            <PrimaryButton
+              title="Choose a receipt PDF"
+              onPress={() => void chooseAttachment("pdf")}
+              disabled={saving || choosing}
+            />
+          </View>
+        )}
+        {files.map((file) => (
+          <View
+            key={file.requestId}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 10,
+            }}
+          >
+            <Text style={{ flex: 1 }}>{file.name} — ready to save</Text>
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel={`Remove selected receipt ${file.name}`}
+              disabled={saving}
+              onPress={() =>
+                setFiles((current) =>
+                  current.filter((item) => item.requestId !== file.requestId),
+                )
+              }
+            >
+              <Text style={{ color: "#B91C1C" }}>Remove</Text>
+            </TouchableOpacity>
+          </View>
+        ))}
+        {files.length > 0 && (
+          <Text>
+            Selected receipts will upload when you save. Your entry is added to
+            the budget after the uploads succeed.
+          </Text>
+        )}
+        {uploadProgress ? (
+          <Text accessibilityLiveRegion="polite">{uploadProgress}</Text>
+        ) : null}
+      </View>
+
       <View style={{ gap: 12 }}>
         <PrimaryButton
           title={entryToEdit ? "Update Entry" : "Save Entry"}
           onPress={handleSave}
+          disabled={
+            missingReceipt ||
+            !selectedCategory ||
+            categoriesLoading ||
+            (requiresReceipt && receiptsLoading) ||
+            choosing
+          }
+          loading={saving}
         />
 
         {entryToEdit && (
-          <TouchableOpacity onPress={onCancelEdit}>
+          <TouchableOpacity onPress={onCancelEdit} disabled={saving}>
             <Text
               style={{
                 textAlign: "center",
@@ -353,7 +664,7 @@ export default function ExpenseEntryForm({
         <Text
           style={{
             marginTop: 12,
-            color: "green",
+            color: message === "Entry saved" ? "green" : "#B91C1C",
             fontSize: 14,
             textAlign: "center",
           }}

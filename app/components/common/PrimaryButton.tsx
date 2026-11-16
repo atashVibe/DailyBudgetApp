@@ -24,6 +24,8 @@ export default function PrimaryButton({
     <TouchableOpacity
       onPress={onPress}
       disabled={isDisabled}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: isDisabled, busy: loading }}
       activeOpacity={0.8}
       style={[styles.button, isDisabled && styles.disabledButton]}
     >
@@ -50,7 +52,7 @@ const styles = StyleSheet.create({
   },
 
   disabledButton: {
-    opacity: 0.6,
+    backgroundColor: "#9CA3AF",
   },
 
   text: {
@@ -61,5 +63,3 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 });
-
-

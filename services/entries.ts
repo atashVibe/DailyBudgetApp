@@ -19,6 +19,7 @@ export type EntryData = {
   type: EntryType;
   note: string;
   date: string;
+  receiptId?: string;
 };
 
 // Creates a new financial entry inside the shared "entries" collection.

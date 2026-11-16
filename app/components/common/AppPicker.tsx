@@ -10,12 +10,14 @@ type Props = {
   selectedValue: string;
   onValueChange: (value: string) => void;
   options: PickerOption[];
+  disabled?: boolean;
 };
 
 export default function AppPicker({
   selectedValue,
   onValueChange,
   options,
+  disabled = false,
 }: Props) {
   return (
     <View
@@ -29,6 +31,7 @@ export default function AppPicker({
       }}
     >
       <Picker
+        enabled={!disabled}
         selectedValue={selectedValue}
         onValueChange={onValueChange}
         style={{
@@ -51,5 +54,3 @@ export default function AppPicker({
     </View>
   );
 }
-
-

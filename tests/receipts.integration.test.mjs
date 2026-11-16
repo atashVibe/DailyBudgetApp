@@ -136,30 +136,24 @@ beforeEach(async () => {
     const familyId = i < 2 ? "family-a" : "family-b";
     await db.doc(`receiptAccess/${user.uid}`).set({ administrator: i === 0 });
     await db.doc(`users/${user.uid}`).set({ activeFamilyId: familyId });
-    await db
-      .doc(`families/${familyId}`)
-      .set({
-        name: familyId,
-        status: "active",
-        createdBy: users[i < 2 ? 0 : 2].uid,
-      });
-    await db
-      .doc(`familyMembers/${familyId}_${user.uid}`)
-      .set({
-        familyId,
-        userId: user.uid,
-        role: i % 2 === 0 ? "admin" : "member",
-        status: "active",
-      });
-    await db
-      .doc(`entries/entry-${i}`)
-      .set({
-        familyId,
-        userId: user.uid,
-        type: "expense",
-        amount: 10,
-        date: "2026-11-16",
-      });
+    await db.doc(`families/${familyId}`).set({
+      name: familyId,
+      status: "active",
+      createdBy: users[i < 2 ? 0 : 2].uid,
+    });
+    await db.doc(`familyMembers/${familyId}_${user.uid}`).set({
+      familyId,
+      userId: user.uid,
+      role: i % 2 === 0 ? "admin" : "member",
+      status: "active",
+    });
+    await db.doc(`entries/entry-${i}`).set({
+      familyId,
+      userId: user.uid,
+      type: "expense",
+      amount: 10,
+      date: "2026-11-16",
+    });
   }
   await db
     .doc("receiptFamilyAccess/family-b")
@@ -836,14 +830,12 @@ test("an abandoned family loses admin sponsorship and gets grace instead of imme
   await db
     .doc(`familyMembers/abandoned_${user.uid}`)
     .set({ userId: user.uid, familyId: "abandoned", status: "active" });
-  await db
-    .doc("entries/deleted-owner")
-    .set({
-      userId: user.uid,
-      familyId: "abandoned",
-      type: "expense",
-      date: "2026-11-16",
-    });
+  await db.doc("entries/deleted-owner").set({
+    userId: user.uid,
+    familyId: "abandoned",
+    type: "expense",
+    date: "2026-11-16",
+  });
   const receipt = await successfulUpload({ user, entry: "deleted-owner" });
   await successfulUpload();
   await requireBackend("firebase-admin/auth")
@@ -862,4 +854,334 @@ test("an abandoned family loses admin sponsorship and gets grace instead of imme
   );
   assert.equal((await service.list(users[0].uid)).length, 1);
   assert.equal((await db.doc("entries/deleted-owner").get()).exists, true);
+});
+
+async function receiptCategory({ required = true, type = "expense" } = {}) {
+  await db
+    .doc("budgetAreas/receipt-area")
+    .set({ familyId: "family-a", name: "Daily", isArchived: false });
+  await db.doc("categories/receipt-category").set({
+    familyId: "family-a",
+    budgetAreaId: "receipt-area",
+    name: "Required receipts",
+    type,
+    requiresReceipt: required,
+    isArchived: false,
+    createdBy: users[0].uid,
+  });
+  return {
+    amount: 12.5,
+    categoryId: "receipt-category",
+    budgetAreaId: "receipt-area",
+    date: "2026-11-16",
+    note: "Receipt-first entry",
+  };
+}
+async function postJson(path, body, user = users[0]) {
+  return request(path, user, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+async function beginDraft(user = users[0], familyId = "family-a") {
+  const draftId = randomUUID();
+  const response = await postJson("/entry-drafts", { familyId, draftId }, user);
+  assert.equal(response.status, 200, await response.text());
+  return draftId;
+}
+
+test("required receipt drafts do not affect budgets until verified originals and entry commit together", async () => {
+  const entry = await receiptCategory();
+  const draftId = await beginDraft();
+  assert.equal((await db.doc(`entries/${draftId}`).get()).exists, false);
+  assert.equal(
+    (await postJson("/entry-drafts/commit", { draftId, entry })).status,
+    409,
+  );
+  const receipt = await successfulUpload({ entry: draftId });
+  assert.equal((await db.doc(`entries/${draftId}`).get()).exists, false);
+  assert.equal(
+    (await (await request("/receipts")).json()).some(
+      (r) => r.receiptId === receipt.receiptId,
+    ),
+    false,
+  );
+  const unfinishedExport = unzipSync(
+    new Uint8Array(await (await request("/export")).arrayBuffer()),
+  );
+  assert.equal(
+    JSON.parse(Buffer.from(unfinishedExport["manifest.json"]).toString())
+      .receipts.length,
+    0,
+  );
+  const response = await postJson("/entry-drafts/commit", { draftId, entry });
+  assert.equal(response.status, 200, await response.text());
+  const saved = (await db.doc(`entries/${draftId}`).get()).data();
+  assert.equal(saved.receiptId, receipt.receiptId);
+  assert.equal(saved.amount, 12.5);
+  assert.equal(saved.type, "expense");
+  assert.equal(
+    (await db.doc(`receipts/${receipt.receiptId}`).get()).data().draft,
+    false,
+  );
+  assert.equal(
+    (await db.doc(`receiptEntryDrafts/${draftId}`).get()).exists,
+    false,
+  );
+  assert.equal(
+    (await postJson("/entry-drafts/commit", { draftId, entry })).status,
+    200,
+  );
+  assert.equal((await db.collection("entries").get()).size, 5);
+  assert.equal(
+    (
+      await postJson("/entry-drafts/commit", {
+        draftId,
+        entry: { ...entry, amount: 99 },
+      })
+    ).status,
+    409,
+  );
+});
+
+test("draft attachment failures and category changes cannot create incomplete required entries", async () => {
+  const entry = await receiptCategory({ required: false });
+  const draftId = await beginDraft();
+  await db.doc("categories/receipt-category").update({ requiresReceipt: true });
+  assert.equal(
+    (await upload({ entry: draftId, data: Buffer.from("not an image") }))
+      .status,
+    415,
+  );
+  assert.equal(
+    (await postJson("/entry-drafts/commit", { draftId, entry })).status,
+    409,
+  );
+  assert.equal((await db.doc(`entries/${draftId}`).get()).exists, false);
+  await successfulUpload({ entry: draftId });
+  assert.equal(
+    (await postJson("/entry-drafts/commit", { draftId, entry })).status,
+    200,
+  );
+});
+
+test("only the draft author can upload or commit it, while completed receipts are shared with current members", async () => {
+  const entry = await receiptCategory();
+  const draftId = await beginDraft(users[1]);
+  assert.equal((await upload({ entry: draftId, user: users[0] })).status, 403);
+  assert.equal(
+    (await postJson("/entry-drafts/commit", { draftId, entry }, users[0]))
+      .status,
+    403,
+  );
+  assert.equal(
+    (
+      await postJson(
+        "/entry-drafts",
+        { familyId: "family-a", draftId },
+        users[2],
+      )
+    ).status,
+    403,
+  );
+  const receipt = await successfulUpload({ entry: draftId, user: users[1] });
+  assert.equal(
+    (await postJson("/entry-drafts/commit", { draftId, entry }, users[1]))
+      .status,
+    200,
+  );
+  assert.equal(
+    (await request(`/file/${receipt.receiptId}`, users[0])).status,
+    200,
+  );
+  assert.equal(
+    (await request(`/file/${receipt.receiptId}`, users[2])).status,
+    403,
+  );
+});
+
+test("Firestore enforces category receipt requirements, verified associations, draft reservation, and administrator-only settings", async () => {
+  const entry = await receiptCategory();
+  const member = env.authenticatedContext(users[1].uid).firestore();
+  const administrator = env.authenticatedContext(users[0].uid).firestore();
+  const id = randomUUID();
+  const data = {
+    ...entry,
+    familyId: "family-a",
+    userId: users[1].uid,
+    type: "expense",
+  };
+  await assertFails(setDoc(doc(member, "entries", id), data));
+  await assertFails(
+    setDoc(doc(member, "entries", id), { ...data, receiptId: "invented-file" }),
+  );
+  const wrongReceipt = await successfulUpload();
+  await assertFails(
+    setDoc(doc(member, "entries", id), {
+      ...data,
+      receiptId: wrongReceipt.receiptId,
+    }),
+  );
+  await assertFails(
+    setDoc(
+      doc(member, "categories", "receipt-category"),
+      { requiresReceipt: false },
+      { merge: true },
+    ),
+  );
+  await assertSucceeds(
+    setDoc(
+      doc(administrator, "categories", "receipt-category"),
+      { requiresReceipt: false },
+      { merge: true },
+    ),
+  );
+  await assertSucceeds(setDoc(doc(member, "entries", id), data));
+  const draftId = await beginDraft(users[1]);
+  const pending = await successfulUpload({ entry: draftId, user: users[1] });
+  await assertFails(
+    setDoc(doc(member, "entries", draftId), {
+      ...data,
+      receiptId: pending.receiptId,
+    }),
+  );
+  await assertFails(
+    setDoc(doc(member, "receiptEntryDrafts", "forged-draft"), {
+      familyId: "family-a",
+      userId: users[1].uid,
+    }),
+  );
+  await assertFails(
+    setDoc(
+      doc(administrator, "categories", "receipt-category"),
+      { requiresReceipt: "false" },
+      { merge: true },
+    ),
+  );
+});
+
+test("expired abandoned drafts clean their files without touching completed entries or budget history", async () => {
+  const entry = await receiptCategory();
+  const abandonedId = await beginDraft();
+  const abandoned = await successfulUpload({ entry: abandonedId });
+  const completedId = await beginDraft();
+  const completed = await successfulUpload({ entry: completedId });
+  assert.equal(
+    (await postJson("/entry-drafts/commit", { draftId: completedId, entry }))
+      .status,
+    200,
+  );
+  now += DAY + 1;
+  await service.maintain();
+  assert.equal((await db.doc(`entries/${abandonedId}`).get()).exists, false);
+  assert.equal(
+    (
+      await bucket
+        .file(
+          (await db.doc(`receipts/${completed.receiptId}`).get()).data()
+            .storagePath,
+        )
+        .exists()
+    )[0],
+    true,
+  );
+  assert.equal(
+    (await db.doc(`receipts/${abandoned.receiptId}`).get()).exists,
+    false,
+  );
+  assert.equal((await db.doc(`entries/${completedId}`).get()).exists, true);
+  assert.equal((await db.doc("entries/entry-0").get()).exists, true);
+  assert.equal(
+    (await postJson("/entry-drafts/commit", { draftId: abandonedId, entry }))
+      .status,
+    410,
+  );
+});
+
+test("receipt-first entries preserve each category type and reject invalid or cross-family associations", async () => {
+  for (const type of ["expense", "income", "refund", "cashback"]) {
+    const entry = await receiptCategory({ type });
+    const draftId = await beginDraft();
+    await successfulUpload({ entry: draftId });
+    assert.equal(
+      (
+        await postJson("/entry-drafts/commit", {
+          draftId,
+          entry: { ...entry, date: "2026-02-30" },
+        })
+      ).status,
+      400,
+    );
+    assert.equal(
+      (
+        await postJson("/entry-drafts/commit", {
+          draftId,
+          entry: { ...entry, budgetAreaId: "other-area" },
+        })
+      ).status,
+      400,
+    );
+    assert.equal(
+      (
+        await postJson("/entry-drafts/commit", {
+          draftId,
+          entry: { ...entry, type: "forged", userId: users[2].uid },
+        })
+      ).status,
+      200,
+    );
+    const saved = (await db.doc(`entries/${draftId}`).get()).data();
+    assert.equal(saved.type, type);
+    assert.equal(saved.userId, users[0].uid);
+  }
+});
+
+test("account deletion removes unfinished private drafts while preserving completed shared family receipts", async () => {
+  await receiptCategory();
+  const shared = await successfulUpload({ user: users[1], entry: "entry-1" });
+  const draftId = await beginDraft(users[1]);
+  const draftReceipt = await successfulUpload({
+    user: users[1],
+    entry: draftId,
+  });
+  const response = await request("/delete-account-receipts", users[1], {
+    method: "POST",
+  });
+  assert.equal(response.status, 200);
+  assert.equal(
+    (await db.doc(`receipts/${draftReceipt.receiptId}`).get()).exists,
+    false,
+  );
+  const draft = (await db.doc(`receiptEntryDrafts/${draftId}`).get()).data();
+  assert.equal(draft.status, "expired");
+  assert.equal(draft.userId, null);
+  assert.equal(
+    (await db.doc(`receipts/${shared.receiptId}`).get()).data().status,
+    "ready",
+  );
+  assert.equal((await db.doc("entries/entry-1").get()).exists, true);
+});
+
+test("a previously uploaded draft can finish during grace without permitting new uploads", async () => {
+  const entry = await receiptCategory();
+  const draftId = await beginDraft();
+  await successfulUpload({ entry: draftId });
+  await db
+    .doc(`receiptAccess/${users[0].uid}`)
+    .update({ administrator: false });
+  const retry = await postJson("/entry-drafts", {
+    draftId,
+    familyId: "family-a",
+  });
+  assert.equal(retry.status, 200);
+  assert.equal(
+    (await upload({ entry: draftId, data: jpeg, mime: "image/jpeg" })).status,
+    403,
+  );
+  assert.equal(
+    (await postJson("/entry-drafts/commit", { draftId, entry })).status,
+    200,
+  );
+  assert.equal((await db.doc(`entries/${draftId}`).get()).exists, true);
 });

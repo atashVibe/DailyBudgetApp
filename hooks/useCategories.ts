@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { Category, getCategories } from "../services/categories";
+import {
+  Category,
+  getCategories,
+  subscribeCategories,
+} from "../services/categories";
 
 export function useCategories(familyId: string, budgetAreaId: string) {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -27,8 +31,26 @@ export function useCategories(familyId: string, budgetAreaId: string) {
   }, [familyId, budgetAreaId]);
 
   useEffect(() => {
-    loadCategories();
-  }, [loadCategories]);
+    setCategories([]);
+    if (!familyId || !budgetAreaId) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    return subscribeCategories(
+      familyId,
+      budgetAreaId,
+      (next) => {
+        setCategories(next);
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Error loading categories:", error);
+        setCategories([]);
+        setLoading(false);
+      },
+    );
+  }, [familyId, budgetAreaId]);
 
   const defaultCategory = useMemo(() => {
     return categories.find((category) => category.isDefault === true) ?? null;
