@@ -1,5 +1,14 @@
 # DailyBudget Roadmap
 
+## Reference layout and Android session follow-up
+
+- [x] Prepare reference card layout, current teal, taller controls and admin category icon library.
+- [x] Fix saved-login restoration, persistent session initialization and bounded account loading/retry.
+- [x] Verify browser session return and stalled-request recovery while preserving accounting/receipts.
+- [ ] Publish website and get actual S22 feedback; clarify APK versus browser if needed.
+
+Details: `docs/DASHBOARD_LAYOUT_SESSION_FIXES.md`.
+
 ## Receipt settings and navigation follow-up
 
 - [x] Prepare upload-entitlement checks for enabling required categories, with server/rule enforcement.

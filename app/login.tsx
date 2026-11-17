@@ -58,6 +58,15 @@ function SocialLoginButton({
 
 export default function LoginScreen() {
   const router = useRouter();
+  useEffect(() => {
+    let current = true;
+    void auth.authStateReady().then(() => {
+      if (current && auth.currentUser) router.replace("/");
+    });
+    return () => {
+      current = false;
+    };
+  }, [router]);
   const [message, setMessage] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

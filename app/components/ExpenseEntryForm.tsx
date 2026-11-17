@@ -23,6 +23,7 @@ import { addEntry, updateEntry } from "../../services/entries";
 import AppPicker from "./common/AppPicker";
 import AppTextInput from "./common/AppTextInput";
 import FormLabel from "./common/FormLabel";
+import { dashboardStyles as ui } from "./common/dashboardStyles";
 import PrimaryButton from "./common/PrimaryButton";
 
 type Entry = {
@@ -71,6 +72,7 @@ export default function ExpenseEntryForm({
   onCancelEdit,
   refreshSignal,
 }: Props) {
+  const [collapsed, setCollapsed] = useState(false);
   const [amount, setAmount] = useState("");
   const [selectedBudgetAreaId, setSelectedBudgetAreaId] = useState("");
   const { budgetAreas } = useBudgetAreas(familyId);
@@ -204,6 +206,7 @@ export default function ExpenseEntryForm({
 
   useEffect(() => {
     if (entryToEdit) {
+      setCollapsed(false);
       setAmount(String(entryToEdit.amount ?? ""));
       setSelectedBudgetAreaId(entryToEdit.budgetAreaId ?? "");
       setSelectedCategoryId(entryToEdit.categoryId ?? "");
@@ -346,354 +349,396 @@ export default function ExpenseEntryForm({
   };
 
   return (
-    <View
-      style={{
-        width: "100%",
-        backgroundColor: "#ffffff",
-        borderRadius: 16,
-        padding: 20,
-        marginBottom: 20,
-        borderWidth: 1,
-        borderColor: "#E5E7EB",
-      }}
-    >
-      <Text style={{ fontSize: 20, fontWeight: "700", marginBottom: 16 }}>
-        {entryToEdit ? "Edit Entry" : "Add Entry"}
-      </Text>
-
-      <View
+    <View style={ui.card}>
+      <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel="Toggle entry form"
+        accessibilityState={{ expanded: !collapsed }}
+        onPress={() => setCollapsed(!collapsed)}
         style={{
           flexDirection: "row",
-          gap: 12,
-          alignItems: "flex-start",
+          alignItems: "center",
+          gap: 10,
+          marginBottom: collapsed ? 0 : 16,
         }}
       >
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <FormLabel>Budget Area</FormLabel>
-          <AppPicker
-            disabled={saving}
-            selectedValue={selectedBudgetAreaId}
-            onValueChange={setSelectedBudgetAreaId}
-            options={budgetAreas.map((item) => ({
-              label: item.name,
-              value: item.id,
-            }))}
-          />
-        </View>
-
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <FormLabel>Category</FormLabel>
-          <AppPicker
-            disabled={saving}
-            selectedValue={selectedCategoryId}
-            onValueChange={setSelectedCategoryId}
-            options={categories.map((item) => ({
-              label: item.name,
-              value: item.id,
-            }))}
-          />
-        </View>
-      </View>
-
-      <View
-        style={{
-          flexDirection: "row",
-          gap: 12,
-          alignItems: "flex-start",
-        }}
-      >
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <FormLabel>Date</FormLabel>
-          {Platform.OS === "web" ? (
-            React.createElement("input", {
-              type: "date",
-              disabled: saving,
-              value: date,
-              onChange: (e: any) => setDate(e.target.value),
-              style: {
-                borderWidth: 1,
-                borderColor: "#ccc",
-                borderRadius: 10,
-                padding: 14,
-                fontSize: 16,
-                marginBottom: 16,
-                backgroundColor: "#fff",
-                width: "100%",
-                height: 52,
-                boxSizing: "border-box",
-                border: "1px solid #ccc",
-              },
-            })
-          ) : (
-            <View
-              style={{
-                height: 52,
-                borderWidth: 1,
-                borderColor: "#ccc",
-                borderRadius: 10,
-                marginBottom: 16,
-                backgroundColor: "#fff",
-                justifyContent: "center",
-              }}
-            >
-              <Text
-                onPress={() => {
-                  if (!saving) setShowDatePicker(true);
-                }}
-                style={{ padding: 14, fontSize: 16, color: "#111" }}
-              >
-                {date}
-              </Text>
-            </View>
-          )}
-        </View>
-
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <FormLabel>Amount</FormLabel>
-          <View style={{ position: "relative" }}>
-            <Text
-              style={{
-                position: "absolute",
-                left: 14,
-                top: 15,
-                zIndex: 1,
-                fontSize: 16,
-                color: "#111827",
-              }}
-            >
-              $
-            </Text>
-            <AppTextInput
-              editable={!saving}
-              placeholder="0.00"
-              keyboardType="decimal-pad"
-              inputMode="decimal"
-              value={amount}
-              onChangeText={(value) => setAmount(sanitizeAmountInput(value))}
-              onBlur={() => {
-                if (amount && !Number.isNaN(Number(amount))) {
-                  setAmount(Number(amount).toFixed(2));
-                }
-              }}
-              style={{ paddingLeft: 30 }}
-            />
-          </View>
-        </View>
-      </View>
-
-      {showDatePicker && (
-        <DateTimePicker
-          value={new Date(date)}
-          mode="date"
-          display="default"
-          onChange={(_event: any, selectedDate?: Date) => {
-            setShowDatePicker(false);
-            if (selectedDate) {
-              setDate(formatLocalDate(selectedDate));
-            }
-          }}
-        />
-      )}
-
-      <FormLabel>Note</FormLabel>
-      <AppTextInput
-        editable={!saving}
-        placeholder="Optional note"
-        value={note}
-        onChangeText={setNote}
-      />
-
-      <View style={{ gap: 10, marginBottom: 16 }}>
-        <FormLabel>
-          Receipt {requiresReceipt ? "(required)" : "(optional)"}
-        </FormLabel>
-        {requiresReceipt && (
-          <Text style={{ color: "#92400E" }}>
-            This category requires a receipt before you can save.
-          </Text>
-        )}
-        {receiptAccess?.canUpload && (
-          <Text>
-            JPG, PNG or PDF · Up to{" "}
-            {receiptAccess.limits.maxReceiptsPerTransaction} receipts per entry.
-          </Text>
-        )}
-        {existingReceiptId ? (
-          <Text>A receipt is already attached to this entry.</Text>
-        ) : null}
-        {receiptsLoading ? <Text>Checking existing receipts…</Text> : null}
-        {receiptAccess?.canUpload ? (
-          <TouchableOpacity
-            accessibilityRole="button"
-            accessibilityLabel="Attach receipt"
-            accessibilityHint="Opens your device's receipt photo and PDF picker."
-            onPress={() => void chooseAttachment()}
-            disabled={
-              saving ||
-              choosing ||
-              files.length >= receiptAccess.limits.maxReceiptsPerTransaction
-            }
-            accessibilityState={{
-              disabled:
-                saving ||
-                choosing ||
-                files.length >= receiptAccess.limits.maxReceiptsPerTransaction,
-              busy: choosing,
-            }}
-            style={{
-              alignSelf: "flex-start",
-              width: 44,
-              height: 44,
-              borderRadius: 10,
-              borderWidth: 1,
-              borderColor: "#2BCEA6",
-              backgroundColor: "#ECFDF5",
-              alignItems: "center",
-              justifyContent: "center",
-              opacity:
-                saving ||
-                choosing ||
-                files.length >= receiptAccess.limits.maxReceiptsPerTransaction
-                  ? 0.5
-                  : 1,
-            }}
-          >
-            <Ionicons name="attach-outline" size={24} color="#11735B" />
-          </TouchableOpacity>
-        ) : receiptAccess ? (
-          <View style={{ alignItems: "flex-start", gap: 8 }}>
-            <TouchableOpacity
-              accessibilityRole="button"
-              accessibilityLabel="About Premium receipt attachments"
-              accessibilityHint="Explains how to enable receipt attachments for your family."
-              onPress={() => setShowPremiumInfo((shown) => !shown)}
-              style={{
-                width: 32,
-                height: 32,
-                alignItems: "center",
-                justifyContent: "center",
-                borderRadius: 16,
-                backgroundColor: "#EFF6FF",
-                borderWidth: 1,
-                borderColor: "#93C5FD",
-              }}
-            >
-              <Text
-                style={{ fontSize: 20, color: "#1D4ED8", fontWeight: "700" }}
-              >
-                i
-              </Text>
-            </TouchableOpacity>
-            {showPremiumInfo && (
-              <Text
-                accessibilityLiveRegion="polite"
-                style={{ color: "#1E40AF", lineHeight: 22 }}
-              >
-                To attach a receipt, upgrade your family to Premium.
-              </Text>
-            )}
-          </View>
-        ) : (
-          <Text>
-            {accessLoading
-              ? "Checking receipt access…"
-              : "Receipt attachments are unavailable right now."}
-          </Text>
-        )}
-        {files.map((file) => (
-          <View
-            key={file.requestId}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 10,
-              width: "100%",
-              minWidth: 0,
-            }}
-          >
-            <View style={{ flex: 1, flexShrink: 1, minWidth: 0 }}>
-              <Text
-                numberOfLines={1}
-                ellipsizeMode="middle"
-                accessibilityLabel={file.name}
-              >
-                {file.name}
-              </Text>
-              <Text>Ready to save</Text>
-            </View>
-            <TouchableOpacity
-              accessibilityRole="button"
-              accessibilityLabel={`Remove selected receipt ${file.name}`}
-              style={{
-                flexShrink: 0,
-                paddingVertical: 10,
-                paddingHorizontal: 4,
-              }}
-              disabled={saving}
-              onPress={() =>
-                setFiles((current) =>
-                  current.filter((item) => item.requestId !== file.requestId),
-                )
-              }
-            >
-              <Text style={{ color: "#B91C1C" }}>Remove</Text>
-            </TouchableOpacity>
-          </View>
-        ))}
-        {files.length > 0 && (
-          <Text>
-            Selected receipts will upload when you save. Your entry is added to
-            the budget after the uploads succeed.
-          </Text>
-        )}
-        {uploadProgress ? (
-          <Text accessibilityLiveRegion="polite">{uploadProgress}</Text>
-        ) : null}
-      </View>
-
-      <View style={{ gap: 12 }}>
-        <PrimaryButton
-          title={entryToEdit ? "Update Entry" : "Save Entry"}
-          onPress={handleSave}
-          disabled={
-            missingReceipt ||
-            !selectedCategory ||
-            categoriesLoading ||
-            (requiresReceipt && receiptsLoading) ||
-            choosing
-          }
-          loading={saving}
-        />
-
-        {entryToEdit && (
-          <TouchableOpacity onPress={onCancelEdit} disabled={saving}>
-            <Text
-              style={{
-                textAlign: "center",
-                color: "#666",
-                fontSize: 16,
-                paddingVertical: 8,
-              }}
-            >
-              Cancel Edit
-            </Text>
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {message ? (
-        <Text
+        <View
           style={{
-            marginTop: 12,
-            color: message === "Entry saved" ? "green" : "#B91C1C",
-            fontSize: 14,
-            textAlign: "center",
+            width: 34,
+            height: 34,
+            borderRadius: 17,
+            backgroundColor: "#2BCEA6",
+            alignItems: "center",
+            justifyContent: "center",
           }}
         >
-          {message}
+          <Ionicons name="add" size={26} color="white" />
+        </View>
+        <Text style={[ui.title, { flex: 1 }]}>
+          {entryToEdit ? "Edit Entry" : "Add Expense"}
         </Text>
-      ) : null}
+        <Ionicons
+          name={collapsed ? "chevron-down" : "chevron-up"}
+          size={21}
+          color="#24364E"
+        />
+      </TouchableOpacity>
+      {!collapsed && (
+        <>
+          <View
+            style={{
+              flexDirection: "row",
+              gap: 12,
+              alignItems: "flex-start",
+            }}
+          >
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <FormLabel icon="grid-outline">Budget Area</FormLabel>
+              <AppPicker
+                tall
+                disabled={saving}
+                selectedValue={selectedBudgetAreaId}
+                onValueChange={setSelectedBudgetAreaId}
+                options={budgetAreas.map((item) => ({
+                  label: item.name,
+                  value: item.id,
+                }))}
+              />
+            </View>
+
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <FormLabel icon="pricetag-outline">Category</FormLabel>
+              <AppPicker
+                tall
+                disabled={saving}
+                selectedValue={selectedCategoryId}
+                onValueChange={setSelectedCategoryId}
+                options={categories.map((item) => ({
+                  label: item.name,
+                  value: item.id,
+                }))}
+              />
+            </View>
+          </View>
+
+          <View
+            style={{
+              flexDirection: "row",
+              gap: 12,
+              alignItems: "flex-start",
+            }}
+          >
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <FormLabel icon="calendar-outline">Date</FormLabel>
+              {Platform.OS === "web" ? (
+                React.createElement("input", {
+                  type: "date",
+                  disabled: saving,
+                  value: date,
+                  onChange: (e: any) => setDate(e.target.value),
+                  style: {
+                    borderWidth: 1,
+                    borderColor: "#ccc",
+                    borderRadius: 10,
+                    padding: 14,
+                    fontSize: 16,
+                    marginBottom: 16,
+                    backgroundColor: "#fff",
+                    width: "100%",
+                    height: 60,
+                    boxSizing: "border-box",
+                    border: "1px solid #ccc",
+                  },
+                })
+              ) : (
+                <View
+                  style={{
+                    height: 60,
+                    borderWidth: 1,
+                    borderColor: "#ccc",
+                    borderRadius: 10,
+                    marginBottom: 16,
+                    backgroundColor: "#fff",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Text
+                    onPress={() => {
+                      if (!saving) setShowDatePicker(true);
+                    }}
+                    style={{ padding: 14, fontSize: 16, color: "#111" }}
+                  >
+                    {date}
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <FormLabel icon="cash-outline">Amount</FormLabel>
+              <View style={{ position: "relative" }}>
+                <Text
+                  style={{
+                    position: "absolute",
+                    left: 14,
+                    top: 19,
+                    zIndex: 1,
+                    fontSize: 16,
+                    color: "#111827",
+                  }}
+                >
+                  $
+                </Text>
+                <AppTextInput
+                  editable={!saving}
+                  placeholder="0.00"
+                  keyboardType="decimal-pad"
+                  inputMode="decimal"
+                  value={amount}
+                  onChangeText={(value) =>
+                    setAmount(sanitizeAmountInput(value))
+                  }
+                  onBlur={() => {
+                    if (amount && !Number.isNaN(Number(amount))) {
+                      setAmount(Number(amount).toFixed(2));
+                    }
+                  }}
+                  style={{ height: 60, paddingLeft: 30, marginBottom: 12 }}
+                />
+              </View>
+            </View>
+          </View>
+
+          {showDatePicker && (
+            <DateTimePicker
+              value={new Date(date)}
+              mode="date"
+              display="default"
+              onChange={(_event: any, selectedDate?: Date) => {
+                setShowDatePicker(false);
+                if (selectedDate) {
+                  setDate(formatLocalDate(selectedDate));
+                }
+              }}
+            />
+          )}
+
+          <FormLabel icon="document-text-outline">Note (optional)</FormLabel>
+          <AppTextInput
+            style={{
+              height: 60,
+              borderRadius: 12,
+              backgroundColor: "#FFFFFF",
+              marginBottom: 12,
+            }}
+            editable={!saving}
+            placeholder="Optional note"
+            value={note}
+            onChangeText={setNote}
+          />
+
+          <View style={{ gap: 10, marginBottom: 16 }}>
+            <FormLabel>
+              Receipt {requiresReceipt ? "(required)" : "(optional)"}
+            </FormLabel>
+            {requiresReceipt && (
+              <Text style={{ color: "#92400E" }}>
+                This category requires a receipt before you can save.
+              </Text>
+            )}
+            {receiptAccess?.canUpload && (
+              <Text>
+                JPG, PNG or PDF · Up to{" "}
+                {receiptAccess.limits.maxReceiptsPerTransaction} receipts per
+                entry.
+              </Text>
+            )}
+            {existingReceiptId ? (
+              <Text>A receipt is already attached to this entry.</Text>
+            ) : null}
+            {receiptsLoading ? <Text>Checking existing receipts…</Text> : null}
+            {receiptAccess?.canUpload ? (
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel="Attach receipt"
+                accessibilityHint="Opens your device's receipt photo and PDF picker."
+                onPress={() => void chooseAttachment()}
+                disabled={
+                  saving ||
+                  choosing ||
+                  files.length >= receiptAccess.limits.maxReceiptsPerTransaction
+                }
+                accessibilityState={{
+                  disabled:
+                    saving ||
+                    choosing ||
+                    files.length >=
+                      receiptAccess.limits.maxReceiptsPerTransaction,
+                  busy: choosing,
+                }}
+                style={{
+                  alignSelf: "flex-start",
+                  width: 44,
+                  height: 44,
+                  borderRadius: 10,
+                  borderWidth: 1,
+                  borderColor: "#2BCEA6",
+                  backgroundColor: "#ECFDF5",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  opacity:
+                    saving ||
+                    choosing ||
+                    files.length >=
+                      receiptAccess.limits.maxReceiptsPerTransaction
+                      ? 0.5
+                      : 1,
+                }}
+              >
+                <Ionicons name="attach-outline" size={24} color="#11735B" />
+              </TouchableOpacity>
+            ) : receiptAccess ? (
+              <View style={{ alignItems: "flex-start", gap: 8 }}>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel="About Premium receipt attachments"
+                  accessibilityHint="Explains how to enable receipt attachments for your family."
+                  onPress={() => setShowPremiumInfo((shown) => !shown)}
+                  style={{
+                    width: 32,
+                    height: 32,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    borderRadius: 16,
+                    backgroundColor: "#EFF6FF",
+                    borderWidth: 1,
+                    borderColor: "#93C5FD",
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 20,
+                      color: "#1D4ED8",
+                      fontWeight: "700",
+                    }}
+                  >
+                    i
+                  </Text>
+                </TouchableOpacity>
+                {showPremiumInfo && (
+                  <Text
+                    accessibilityLiveRegion="polite"
+                    style={{ color: "#1E40AF", lineHeight: 22 }}
+                  >
+                    To attach a receipt, upgrade your family to Premium.
+                  </Text>
+                )}
+              </View>
+            ) : (
+              <Text>
+                {accessLoading
+                  ? "Checking receipt access…"
+                  : "Receipt attachments are unavailable right now."}
+              </Text>
+            )}
+            {files.map((file) => (
+              <View
+                key={file.requestId}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 10,
+                  width: "100%",
+                  minWidth: 0,
+                }}
+              >
+                <View style={{ flex: 1, flexShrink: 1, minWidth: 0 }}>
+                  <Text
+                    numberOfLines={1}
+                    ellipsizeMode="middle"
+                    accessibilityLabel={file.name}
+                  >
+                    {file.name}
+                  </Text>
+                  <Text>Ready to save</Text>
+                </View>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel={`Remove selected receipt ${file.name}`}
+                  style={{
+                    flexShrink: 0,
+                    paddingVertical: 10,
+                    paddingHorizontal: 4,
+                  }}
+                  disabled={saving}
+                  onPress={() =>
+                    setFiles((current) =>
+                      current.filter(
+                        (item) => item.requestId !== file.requestId,
+                      ),
+                    )
+                  }
+                >
+                  <Text style={{ color: "#B91C1C" }}>Remove</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+            {files.length > 0 && (
+              <Text>
+                Selected receipts will upload when you save. Your entry is added
+                to the budget after the uploads succeed.
+              </Text>
+            )}
+            {uploadProgress ? (
+              <Text accessibilityLiveRegion="polite">{uploadProgress}</Text>
+            ) : null}
+          </View>
+
+          <View style={{ gap: 12 }}>
+            <PrimaryButton
+              title={entryToEdit ? "Update Entry" : "Save Entry"}
+              onPress={handleSave}
+              disabled={
+                missingReceipt ||
+                !selectedCategory ||
+                categoriesLoading ||
+                (requiresReceipt && receiptsLoading) ||
+                choosing
+              }
+              loading={saving}
+            />
+
+            {entryToEdit && (
+              <TouchableOpacity onPress={onCancelEdit} disabled={saving}>
+                <Text
+                  style={{
+                    textAlign: "center",
+                    color: "#666",
+                    fontSize: 16,
+                    paddingVertical: 8,
+                  }}
+                >
+                  Cancel Edit
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {message ? (
+            <Text
+              style={{
+                marginTop: 12,
+                color: message === "Entry saved" ? "green" : "#B91C1C",
+                fontSize: 14,
+                textAlign: "center",
+              }}
+            >
+              {message}
+            </Text>
+          ) : null}
+        </>
+      )}
     </View>
   );
 }

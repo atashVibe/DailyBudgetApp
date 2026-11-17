@@ -1,3 +1,6 @@
+import { useState } from "react";
+import CategoryIconLibrary from "../../../components/CategoryIconLibrary";
+import { updateCategoryIcon } from "../../../services/categories";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Alert, Platform, Text, TextInput, View, Switch } from "react-native";
 import type { BudgetArea } from "../../../services/budgetAreas";
@@ -55,6 +58,8 @@ export default function CategoriesSection({
   onEditCategory,
   onSetDefaultCategory,
 }: Props) {
+  const [iconCategory, setIconCategory] = useState<string | null>(null);
+  const [chosenIcons, setChosenIcons] = useState<Record<string, string>>({});
   const handleConfirmArchive = (categoryId: string) => {
     if (Platform.OS === "web") {
       const confirmed = window.confirm(
@@ -104,6 +109,15 @@ export default function CategoriesSection({
           Existing requirements can still be turned off.
         </Text>
       )}
+      <CategoryIconLibrary
+        visible={iconCategory !== null}
+        onClose={() => setIconCategory(null)}
+        onChoose={async (name) => {
+          if (!isAdmin || !iconCategory) return;
+          await updateCategoryIcon(iconCategory, name);
+          setChosenIcons((current) => ({ ...current, [iconCategory]: name }));
+        }}
+      />
       {categories.map((category) => (
         <View
           key={category.id}
@@ -115,7 +129,29 @@ export default function CategoriesSection({
             marginBottom: 10,
           }}
         >
-          <Text style={{ fontSize: 16, fontWeight: "600" }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+            <Ionicons
+              name={
+                (chosenIcons[category.id] ||
+                  category.iconName ||
+                  "pricetag-outline") as React.ComponentProps<
+                  typeof Ionicons
+                >["name"]
+              }
+              size={26}
+              color="#149B7C"
+            />
+            {isAdmin && (
+              <Text
+                accessibilityRole="button"
+                onPress={() => setIconCategory(category.id)}
+                style={{ color: "#147F69" }}
+              >
+                Choose icon
+              </Text>
+            )}
+          </View>
+          <Text style={{ fontSize: 16, fontWeight: "600", marginTop: 6 }}>
             {category.name}
           </Text>
 

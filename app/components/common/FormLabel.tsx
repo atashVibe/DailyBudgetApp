@@ -1,21 +1,21 @@
-import { Text } from "react-native";
-
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { Text, View } from "react-native";
 type Props = {
   children: React.ReactNode;
+  icon?: React.ComponentProps<typeof Ionicons>["name"];
 };
-
-export default function FormLabel({ children }: Props) {
+export default function FormLabel({ children, icon }: Props) {
   return (
-    <Text
+    <View
       style={{
-        fontSize: 16,
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 6,
         marginBottom: 8,
-        color: "#111827",
       }}
     >
-      {children}
-    </Text>
+      {icon && <Ionicons name={icon} size={18} color="#263B55" />}
+      <Text style={{ fontSize: 15, color: "#172B44" }}>{children}</Text>
+    </View>
   );
 }
-
-

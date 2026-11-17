@@ -1,5 +1,9 @@
 # DailyBudget Next-Session Prompt
 
+## Reference dashboard and session fixes — November 17, 2026
+
+PR #7/main `e8d884a` is live with compact paperclip, receipt gating/layout and Back confirmation. The owner requested the supplied dashboard layout, fields 20% taller, existing teal, an admin category icon library, and S22 repeat-login/spinner troubleshooting. Prepared on `codex/dashboard-reference-layout`; read `docs/DASHBOARD_LAYOUT_SESSION_FIXES.md`. Six browser flows and accounting checks pass, including saved-login restoration and a deliberately stalled profile request with Retry/recovery. No backend deployment is needed. Browser storage changed from IndexedDB preference to durable local storage, so one fresh sign-in may be needed. Actual S22 browser/APK context was asked asynchronously and remains unanswered; hardware/native APK verification is not claimed. Publish website after checks; APK delivery needs a native rebuild if that is what the owner uses.
+
 ## Backend deployed and compact paperclip prepared — November 16, 2026
 
 The owner deployed `55c40ae` successfully through Cloud Shell (rules and both receipt Functions). They then requested a small icon-only paperclip opening the native/device chooser instead of expanding three similar form buttons. Implemented direct web image/PDF selection and a native camera/files choice; five browser flows, types, lint and production export pass. Backend/rules are unchanged from the deployed commit, so do not request another Cloud Shell deployment. Next: finish PR #7 checks, merge/publish its website and verify the served bundle. User account grants and cost approval persist. Exact phone chooser appearance/camera availability remains a device check.

@@ -1,0 +1,23 @@
+# Dashboard reference layout and session restoration — November 17, 2026
+
+The dashboard now uses the supplied reference structure: a pale-blue background, rounded elevated cards, Budget Overview with a remaining ring and functional Month/Year choice, allowance/spending/remaining rows, month and yearly progress, a collapsible entry card and compact recent-entry rows with View All. Existing teal (#2BCEA6) is retained. Entry inputs, pickers and date fields are 60px tall, approximately 20% taller than the reference's 50px control target. The small direct-picker paperclip is preserved instead of restoring the three confusing receipt buttons.
+
+Accounting calculations remain in the existing unchanged finance helpers. Monthly Allowance is budget earned through today; Remaining is the former available-allowance figure after spending. The ring represents that remaining earned allowance, while monthly spending progress/status still compares against the whole month and yearly status against the whole year. Income/cashback remain excluded. Refunds and negative spending remain signed; spending bars stay clamped to zero when negative. No example-image numbers are hardcoded.
+
+Family Settings → Categories offers Choose icon, opening a searchable Ionicons outline library. Family administrators save an optional iconName on existing categories; recent entries show the stored choice with a default category icon otherwise. Existing category-write rules already authorize these cosmetic admin changes; no backend/rules/index deployment is required.
+
+## S22 investigation and fixes
+
+Confirmed code gaps: a stored /login bookmark did not redirect a restored user; the root account/profile lookup had no error/finally recovery and could spin indefinitely; role loading could block the whole drawer while waiting for a network snapshot. Dashboard profile loading also lacked request deadlines or an in-place retry. Browser background network channels were not explicitly refreshed on resume. Native Firebase initialization did not explicitly configure AsyncStorage persistence.
+
+Web now explicitly uses durable browser local storage rather than depending on IndexedDB startup. Existing sessions stored only in the previous IndexedDB backend may require one fresh sign-in after this deployment. Native initialization explicitly uses Firebase's React Native AsyncStorage adapter. Only session credentials are persisted by this change; no local financial database is introduced.
+
+Login restores an existing session even from a saved login URL. Root/profile requests have bounded loading and human-readable Retry controls; cached missing profiles during a connection failure do not cause signup or discard authentication. Dashboard waits for authentication, bounds account reads and exposes Retry. Role snapshots no longer block initial routing. Retry resets Firestore's network connection without signing out. Online/foreground resume after a prolonged background period reconnects channels without clearing forms or queued writes.
+
+These fixes address observed code paths, not a proven Samsung OS defect. The owner was asked whether S22 opens Chrome, Samsung Internet or an APK; no answer was available during implementation. Earlier context uses the GitHub Pages web app. Actual S22 behavior, browser storage restrictions/private mode, native adapter behavior on hardware and installed-APK delivery remain device checks. An installed APK requires an updated native build; website publication does not update an APK.
+
+## Verification
+
+Six Chromium emulator-backed flows pass, preserving receipt management/requirements, free/Premium gating, Back cancellation and direct PDF chooser behavior. The new flow verifies tall inputs, period switching, form collapse/reopen, admin icon selection/save, returning to the dashboard from the login URL without re-entering credentials, a deliberately interrupted Firestore profile request producing Retry rather than an endless spinner or forced login, and recovery after the connection returns. The reference flow was rerun after the final sizing adjustments. Existing 14 finance tests pass; TypeScript, lint and production web export pass. No production account credentials or financial records were used for browser tests.
+
+Publish through the existing Pages workflow after review/checks. Firebase backend and receipt rules remain those already deployed for PR #7. No additional Cloud Shell deployment or billing/administrator setup is needed. Ask the owner to sign in once if prompted, then close/reopen the S22 app and report whether the session returns automatically. Keep hardware claims separate from browser/emulator verification.

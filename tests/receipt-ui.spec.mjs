@@ -39,10 +39,12 @@ test("shared family receipts work through the real web interface against isolate
     .getByText("Sign In", { exact: true })
     .filter({ visible: true })
     .click();
-  await expect(page.getByText("Budget Summary", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("Budget Overview", { exact: true }),
+  ).toBeVisible();
   await page.getByPlaceholder("0.00").fill("12.50");
   await page.getByText("Save Entry", { exact: true }).click();
-  await expect(page.getByText(/\$12\.50 - Groceries/).first()).toBeVisible();
+  await expect(page.getByLabel(/\$12\.50 - Groceries/).first()).toBeVisible();
   await page
     .getByLabel("Manage family receipts for this entry")
     .first()
@@ -159,7 +161,9 @@ test("family admins require category receipts and entry-form attachments gate sa
     .getByText("Sign In", { exact: true })
     .filter({ visible: true })
     .click();
-  await expect(page.getByText("Budget Summary", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("Budget Overview", { exact: true }),
+  ).toBeVisible();
   await page.goto("/settings");
   const requirement = page.getByRole("switch", {
     name: "Require receipt for Groceries",
@@ -228,13 +232,13 @@ test("family admins require category receipts and entry-form attachments gate sa
   await expect(
     page.getByText("Test upload failure. Please retry.", { exact: true }),
   ).toBeVisible();
-  await expect(page.getByText(/\$7\.25 - Groceries/)).toHaveCount(0);
+  await expect(page.getByLabel(/\$7\.25 - Groceries/)).toHaveCount(0);
   await expect(
     page.getByLabel("required-groceries.png", { exact: true }),
   ).toBeVisible();
   await page.unroute("**/upload");
   await save.click();
-  await expect(page.getByText(/\$7\.25 - Groceries/)).toHaveCount(1);
+  await expect(page.getByLabel(/\$7\.25 - Groceries/)).toHaveCount(1);
   await expect(save).toBeDisabled(); // Next required entry starts with no file.
   await page
     .getByLabel("Manage family receipts for this entry")
@@ -244,10 +248,7 @@ test("family admins require category receipts and entry-form attachments gate sa
     page.getByText("required-groceries.png", { exact: true }),
   ).toBeVisible();
   await page.getByText("Close receipts", { exact: true }).click();
-  const requiredRow = page
-    .getByText(/\$7\.25 - Groceries/)
-    .locator("..")
-    .locator("..");
+  const requiredRow = page.getByLabel(/\$7\.25 - Groceries/);
   await requiredRow
     .getByRole("button", { name: "Edit this entry", exact: true })
     .click();
@@ -323,7 +324,9 @@ test("free families see Premium information while ordinary Premium-family member
     .getByText("Sign In", { exact: true })
     .filter({ visible: true })
     .click();
-  await expect(page.getByText("Budget Summary", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("Budget Overview", { exact: true }),
+  ).toBeVisible();
   const info = page.getByRole("button", {
     name: "About Premium receipt attachments",
     exact: true,
@@ -398,7 +401,9 @@ test("long receipt filenames keep Remove inside a narrow form and dashboard Back
     .getByText("Sign In", { exact: true })
     .filter({ visible: true })
     .click();
-  await expect(page.getByText("Budget Summary", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("Budget Overview", { exact: true }),
+  ).toBeVisible();
   await page.getByPlaceholder("0.00").fill("8.50");
   await page.getByPlaceholder("Optional note").fill("Keep this unsaved entry");
   const name = "17948713060775953945449668494971" + "9".repeat(100) + ".jpg";
@@ -440,7 +445,9 @@ test("long receipt filenames keep Remove inside a narrow form and dashboard Back
   await expect(remove).toBeVisible();
   // Reload also preserves the authenticated session.
   await page.reload();
-  await expect(page.getByText("Budget Summary", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("Budget Overview", { exact: true }),
+  ).toBeVisible();
   // Back from Settings returns normally, without signing out or showing this dialog.
   await page.getByRole("button", { name: "Show navigation menu" }).click();
   await page
@@ -448,14 +455,18 @@ test("long receipt filenames keep Remove inside a narrow form and dashboard Back
     .click();
   await expect(page.getByText("Categories", { exact: true })).toBeVisible();
   await page.goBack();
-  await expect(page.getByText("Budget Summary", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("Budget Overview", { exact: true }),
+  ).toBeVisible();
   await expect(
     page.getByText("Sign out of DailyBudget?", { exact: true }),
   ).toHaveCount(0);
   await page.goForward();
   await expect(page.getByText("Categories", { exact: true })).toBeVisible();
   await page.goBack();
-  await expect(page.getByText("Budget Summary", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("Budget Overview", { exact: true }),
+  ).toBeVisible();
   await expect(
     page.getByText("Sign out of DailyBudget?", { exact: true }),
   ).toHaveCount(0);
@@ -491,7 +502,9 @@ test("compact paperclip opens one system picker for photos and PDFs, cancels saf
     .getByText("Sign In", { exact: true })
     .filter({ visible: true })
     .click();
-  await expect(page.getByText("Budget Summary", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("Budget Overview", { exact: true }),
+  ).toBeVisible();
   await page.getByPlaceholder("0.00").fill("6.00");
   const clip = page.getByRole("button", {
     name: "Attach receipt",
@@ -538,7 +551,7 @@ test("compact paperclip opens one system picker for photos and PDFs, cancels saf
     fullPage: true,
   });
   await page.getByRole("button", { name: "Save Entry", exact: true }).click();
-  await expect(page.getByText(/\$6\.00 - Groceries/)).toHaveCount(1);
+  await expect(page.getByLabel(/\$6\.00 - Groceries/)).toHaveCount(1);
   await page
     .getByLabel("Manage family receipts for this entry")
     .first()
@@ -549,4 +562,79 @@ test("compact paperclip opens one system picker for photos and PDFs, cancels saf
   const download = page.waitForEvent("download");
   await card.getByText("Download original", { exact: true }).click();
   expect(await readFile(await (await download).path())).toEqual(pdf);
+});
+
+test("reference dashboard has tall fields, editable category icons and restores an existing session from the login link", async ({
+  page,
+  baseURL,
+}) => {
+  expect(baseURL).toMatch(/^http:\/\/localhost:809[134]$/);
+  await page.goto("/login");
+  await page.getByText("Forgot Password?", { exact: true }).click();
+  await page.getByText("Back to Sign In", { exact: true }).click();
+  await page
+    .locator('input[placeholder="Enter your email"]:visible')
+    .fill("receipts@example.test");
+  await page
+    .locator('input[placeholder="Enter your password"]:visible')
+    .fill("EmulatorOnly123!");
+  await page.getByRole("button", { name: "Sign In", exact: true }).click();
+  await expect(
+    page.getByText("Budget Overview", { exact: true }),
+  ).toBeVisible();
+  expect(
+    (await page.getByPlaceholder("0.00").boundingBox()).height,
+  ).toBeGreaterThanOrEqual(60);
+  await page.getByRole("button", { name: "Budget period" }).click();
+  await page.getByRole("button", { name: "This Year", exact: true }).click();
+  await expect(
+    page.getByText("Whole year budget", { exact: false }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Budget period" }).click();
+  await page.getByRole("button", { name: "This Month", exact: true }).click();
+  await page.getByRole("button", { name: "Toggle entry form" }).click();
+  await expect(page.getByPlaceholder("0.00")).toHaveCount(0);
+  await page.getByRole("button", { name: "Toggle entry form" }).click();
+  await expect(page.getByPlaceholder("0.00")).toBeVisible();
+  await page.getByRole("button", { name: "Show navigation menu" }).click();
+  await page
+    .getByRole("button", { name: "Family Settings", exact: true })
+    .click();
+  await page.getByText("Choose icon", { exact: true }).first().click();
+  await page.getByLabel("Search category icons").fill("cart");
+  await page
+    .getByRole("button", { name: "Choose cart-outline", exact: true })
+    .click();
+  await expect(
+    page.getByText("Choose a category icon", { exact: true }),
+  ).toHaveCount(0);
+  await page.goto("/login"); // A saved Android home-screen link must restore, not demand another password.
+  await expect(page.getByText("Budget Overview", { exact: true })).toBeVisible({
+    timeout: 20000,
+  });
+  await expect(
+    page.locator('input[placeholder="Enter your email"]:visible'),
+  ).toHaveCount(0);
+  await page.screenshot({
+    path: "test-results/reference-dashboard.png",
+    fullPage: true,
+  });
+  // A stalled profile request must offer recovery instead of spinning forever.
+  await page.route("**/google.firestore.v1.Firestore/**", (route) =>
+    route.abort(),
+  );
+  await page.goto("/");
+  await expect(
+    page.getByRole("button", { name: "Retry loading account", exact: true }),
+  ).toBeVisible({ timeout: 22000 });
+  await expect(
+    page.locator('input[placeholder="Enter your email"]:visible'),
+  ).toHaveCount(0);
+  await page.unroute("**/google.firestore.v1.Firestore/**");
+  await page
+    .getByRole("button", { name: "Retry loading account", exact: true })
+    .click();
+  await expect(page.getByText("Budget Overview", { exact: true })).toBeVisible({
+    timeout: 22000,
+  });
 });
