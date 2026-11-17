@@ -26,7 +26,9 @@ function DrawerNavigation() {
   const [isRoleLoaded, setIsRoleLoaded] = useState(false);
   useEffect(() => {
     let unsubscribeRole = () => {};
+    const watchdog = setTimeout(() => setIsRoleLoaded(true), 15000);
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+      clearTimeout(watchdog);
       unsubscribeRole();
       if (!user) {
         setIsAdmin(false);
@@ -34,6 +36,7 @@ function DrawerNavigation() {
         router.replace("/login");
         return;
       }
+      setIsRoleLoaded(true);
       unsubscribeRole = onSnapshot(
         doc(db, "users", user.uid),
         (snapshot) => {
@@ -47,6 +50,7 @@ function DrawerNavigation() {
       );
     });
     return () => {
+      clearTimeout(watchdog);
       unsubscribeAuth();
       unsubscribeRole();
     };

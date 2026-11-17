@@ -11,6 +11,7 @@ type Props = {
   onValueChange: (value: string) => void;
   options: PickerOption[];
   disabled?: boolean;
+  tall?: boolean;
 };
 
 export default function AppPicker({
@@ -18,6 +19,7 @@ export default function AppPicker({
   onValueChange,
   options,
   disabled = false,
+  tall = false,
 }: Props) {
   return (
     <View
@@ -25,7 +27,7 @@ export default function AppPicker({
         borderWidth: 1,
         borderColor: "#D1D5DB",
         borderRadius: 12,
-        marginBottom: 16,
+        marginBottom: tall ? 12 : 16,
         overflow: "hidden",
         backgroundColor: "#ffffff",
       }}
@@ -37,7 +39,7 @@ export default function AppPicker({
         style={{
           color: "#111827",
           backgroundColor: "#ffffff",
-          height: Platform.OS === "web" ? 52 : undefined,
+          height: tall ? 60 : Platform.OS === "web" ? 52 : undefined,
           paddingHorizontal: Platform.OS === "web" ? 12 : undefined,
           borderWidth: Platform.OS === "web" ? 0 : undefined,
         }}

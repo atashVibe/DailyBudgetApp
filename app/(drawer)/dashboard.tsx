@@ -11,6 +11,8 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { useDashboardBack } from "../../hooks/useDashboardBack";
+import { withTimeout, restartCloudConnection } from "../../services/loading";
+import PrimaryButton from "../components/common/PrimaryButton";
 import { auth, db } from "../../services/auth";
 import {
   calculateMonthlyTotal,
@@ -39,6 +41,7 @@ export default function DashboardScreen() {
   useDashboardBack();
   const [accountIdentifier, setAccountIdentifier] = useState("Loading...");
   const [usesApplePrivateEmail, setUsesApplePrivateEmail] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [refreshSignal, setRefreshSignal] = useState(0);
@@ -64,7 +67,17 @@ export default function DashboardScreen() {
       let active = true;
 
       const loadDashboardContext = async () => {
-        await auth.authStateReady();
+        try {
+          await withTimeout(auth.authStateReady());
+        } catch {
+          if (active) {
+            setLoadError(
+              "Could not restore sign-in. Check your connection and retry.",
+            );
+            setLoading(false);
+          }
+          return;
+        }
         if (!active) return;
         const user = auth.currentUser;
         if (!user) {
@@ -75,7 +88,9 @@ export default function DashboardScreen() {
         setLoading(true);
         setLoadError("");
         try {
-          const userSnap = await getDoc(doc(db, "users", user.uid));
+          const userSnap = await withTimeout(
+            getDoc(doc(db, "users", user.uid)),
+          );
           const nextFamilyId = userSnap.data()?.activeFamilyId as
             | string
             | undefined;
@@ -85,10 +100,12 @@ export default function DashboardScreen() {
             return;
           }
 
-          const [familySnap, memberSnap] = await Promise.all([
-            getDoc(doc(db, "families", nextFamilyId)),
-            getDoc(doc(db, "familyMembers", `${nextFamilyId}_${user.uid}`)),
-          ]);
+          const [familySnap, memberSnap] = await withTimeout(
+            Promise.all([
+              getDoc(doc(db, "families", nextFamilyId)),
+              getDoc(doc(db, "familyMembers", `${nextFamilyId}_${user.uid}`)),
+            ]),
+          );
 
           if (!familySnap.exists() || familySnap.data().status === "deleted") {
             router.replace("/family-setup");
@@ -131,7 +148,9 @@ export default function DashboardScreen() {
       return () => {
         active = false;
       };
-    }, [router]),
+      // Retrying must restart the focused loader even when the route is unchanged.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [router, loadAttempt]),
   );
 
   useEffect(() => {
@@ -197,6 +216,14 @@ export default function DashboardScreen() {
         <Text style={{ color: "#B91C1C", textAlign: "center" }}>
           {loadError}
         </Text>
+        <PrimaryButton
+          title="Retry dashboard"
+          onPress={() => {
+            void restartCloudConnection().finally(() =>
+              setLoadAttempt((value) => value + 1),
+            );
+          }}
+        />
       </AppScreen>
     );
   }
@@ -204,23 +231,13 @@ export default function DashboardScreen() {
   return (
     <AppScreen
       style={{
-        padding: 24,
-        paddingTop: 24,
+        padding: 14,
+        paddingTop: 18,
+        backgroundColor: "#EAF2FE",
         justifyContent: "flex-start",
         alignItems: "stretch",
       }}
     >
-      <Text
-        style={{
-          fontSize: 28,
-          fontWeight: "700",
-          marginBottom: 12,
-          textAlign: "center",
-        }}
-      >
-        DailyBudget
-      </Text>
-
       <BudgetSummaryCard
         dailyBudget={dailyBudget}
         spentThisMonth={spentThisMonth}

@@ -25,6 +25,7 @@ export type Category = {
   isDefault: boolean;
   isArchived: boolean;
   requiresReceipt?: boolean;
+  iconName?: string;
 };
 
 export const getCategories = async (
@@ -175,4 +176,8 @@ export function subscribeCategories(
       ),
     onError,
   );
+}
+
+export async function updateCategoryIcon(categoryId: string, iconName: string) {
+  await updateDoc(doc(db, "categories", categoryId), { iconName });
 }
