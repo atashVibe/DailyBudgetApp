@@ -1,3 +1,4 @@
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useFocusEffect } from "expo-router";
 import {
   commitReceiptEntryDraft,
@@ -89,7 +90,6 @@ export default function ExpenseEntryForm({
   );
   const [existingReceiptId, setExistingReceiptId] = useState("");
   const [receiptsLoading, setReceiptsLoading] = useState(false);
-  const [showAttachmentChoices, setShowAttachmentChoices] = useState(false);
   const [showPremiumInfo, setShowPremiumInfo] = useState(false);
   const [accessLoading, setAccessLoading] = useState(receiptsConfigured);
   const [saving, setSaving] = useState(false);
@@ -108,7 +108,6 @@ export default function ExpenseEntryForm({
     useCallback(() => {
       let current = true;
       setReceiptAccess(null);
-      setShowAttachmentChoices(false);
       setShowPremiumInfo(false);
       setAccessLoading(receiptsConfigured);
       if (receiptsConfigured)
@@ -133,7 +132,6 @@ export default function ExpenseEntryForm({
     setFiles([]);
     setExistingReceiptId("");
     draft.current = null;
-    setShowAttachmentChoices(false);
     setMessage("");
     setReceiptsLoading(Boolean(entryToEdit?.id && receiptsConfigured));
     if (entryToEdit?.id && receiptsConfigured)
@@ -155,19 +153,18 @@ export default function ExpenseEntryForm({
       current = false;
     };
   }, [familyId, entryToEdit?.id]);
-  const chooseAttachment = async (kind: "camera" | "photo" | "pdf") => {
+  const chooseAttachment = async () => {
     if (saving || choosing) return;
     setChoosing(true);
     setMessage("");
     try {
-      const file = await pickReceipt(kind);
+      const file = await pickReceipt("attachment");
       if (!file) return;
       if (file.size > (receiptAccess?.limits.maxFileBytes || 10 * 1024 * 1024))
         throw new Error(
           "Choose a receipt within your family's file-size limit.",
         );
       setFiles((current) => [...current, file]);
-      setShowAttachmentChoices(false);
     } catch (error) {
       setMessage(
         error instanceof Error ? error.message : "Could not select a receipt.",
@@ -526,15 +523,43 @@ export default function ExpenseEntryForm({
         ) : null}
         {receiptsLoading ? <Text>Checking existing receipts…</Text> : null}
         {receiptAccess?.canUpload ? (
-          <PrimaryButton
-            title="Attach receipt"
-            onPress={() => setShowAttachmentChoices((shown) => !shown)}
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Attach receipt"
+            accessibilityHint="Opens your device's receipt photo and PDF picker."
+            onPress={() => void chooseAttachment()}
             disabled={
               saving ||
               choosing ||
               files.length >= receiptAccess.limits.maxReceiptsPerTransaction
             }
-          />
+            accessibilityState={{
+              disabled:
+                saving ||
+                choosing ||
+                files.length >= receiptAccess.limits.maxReceiptsPerTransaction,
+              busy: choosing,
+            }}
+            style={{
+              alignSelf: "flex-start",
+              width: 44,
+              height: 44,
+              borderRadius: 10,
+              borderWidth: 1,
+              borderColor: "#2BCEA6",
+              backgroundColor: "#ECFDF5",
+              alignItems: "center",
+              justifyContent: "center",
+              opacity:
+                saving ||
+                choosing ||
+                files.length >= receiptAccess.limits.maxReceiptsPerTransaction
+                  ? 0.5
+                  : 1,
+            }}
+          >
+            <Ionicons name="attach-outline" size={24} color="#11735B" />
+          </TouchableOpacity>
         ) : receiptAccess ? (
           <View style={{ alignItems: "flex-start", gap: 8 }}>
             <TouchableOpacity
@@ -575,25 +600,6 @@ export default function ExpenseEntryForm({
               : "Receipt attachments are unavailable right now."}
           </Text>
         )}
-        {showAttachmentChoices && receiptAccess?.canUpload && (
-          <View style={{ gap: 8 }}>
-            <PrimaryButton
-              title="Take a receipt photo"
-              onPress={() => void chooseAttachment("camera")}
-              disabled={saving || choosing}
-            />
-            <PrimaryButton
-              title="Choose a receipt photo"
-              onPress={() => void chooseAttachment("photo")}
-              disabled={saving || choosing}
-            />
-            <PrimaryButton
-              title="Choose a receipt PDF"
-              onPress={() => void chooseAttachment("pdf")}
-              disabled={saving || choosing}
-            />
-          </View>
-        )}
         {files.map((file) => (
           <View
             key={file.requestId}
@@ -602,12 +608,28 @@ export default function ExpenseEntryForm({
               alignItems: "center",
               justifyContent: "space-between",
               gap: 10,
+              width: "100%",
+              minWidth: 0,
             }}
           >
-            <Text style={{ flex: 1 }}>{file.name} — ready to save</Text>
+            <View style={{ flex: 1, flexShrink: 1, minWidth: 0 }}>
+              <Text
+                numberOfLines={1}
+                ellipsizeMode="middle"
+                accessibilityLabel={file.name}
+              >
+                {file.name}
+              </Text>
+              <Text>Ready to save</Text>
+            </View>
             <TouchableOpacity
               accessibilityRole="button"
               accessibilityLabel={`Remove selected receipt ${file.name}`}
+              style={{
+                flexShrink: 0,
+                paddingVertical: 10,
+                paddingHorizontal: 4,
+              }}
               disabled={saving}
               onPress={() =>
                 setFiles((current) =>

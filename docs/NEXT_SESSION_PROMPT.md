@@ -1,5 +1,13 @@
 # DailyBudget Next-Session Prompt
 
+## Backend deployed and compact paperclip prepared — November 16, 2026
+
+The owner deployed `55c40ae` successfully through Cloud Shell (rules and both receipt Functions). They then requested a small icon-only paperclip opening the native/device chooser instead of expanding three similar form buttons. Implemented direct web image/PDF selection and a native camera/files choice; five browser flows, types, lint and production export pass. Backend/rules are unchanged from the deployed commit, so do not request another Cloud Shell deployment. Next: finish PR #7 checks, merge/publish its website and verify the served bundle. User account grants and cost approval persist. Exact phone chooser appearance/camera availability remains a device check.
+
+## Receipt settings and navigation fixes — November 16, 2026
+
+PR #6/main `fba9a89` is deployed and the owner tested it. New reported bugs: free-family admins can enable required receipts, long filenames push Remove outside the form, and Dashboard Back looks like sign-out. Prepared fixes on `codex/receipt-settings-navigation-fixes`: entitlement-checked category API/rules, disabled enable switches without upload access (clearing stays available), bounded filename/Remove layout and explicit Back sign-out confirmation preserving cancelled drafts. Cold authentication startup and login history are corrected. Read `docs/RECEIPT_NAVIGATION_FIXES.md` for tests and Cloud Shell commands. This follow-up requires backend/rules deployment before frontend publication; no new billing setup, owner-role assignment or cost approval is needed.
+
 ## Premium attachment visibility and Cloud Shell session — November 16, 2026
 
 The owner added: Premium families see Attach receipt; free families see an information icon explaining that receipt attachments require upgrading the family to Premium. Implemented using server `canUpload`, preserving administrator-sponsored and ordinary Premium-family member access. Three browser flows, types, lint and production export pass. The owner’s fresh Cloud Shell started in `~` without Node 24; `nvm install 24` succeeded, but `git fetch` failed because they were outside the repository. Instructed `cd ~/DailyBudgetApp-receipts` before fetching. PR #6 remains pending backend deployment, then frontend publication. Existing cost approval and administrator grant persist.

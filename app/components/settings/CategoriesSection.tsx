@@ -15,6 +15,7 @@ type Props = {
   onNewCategoryRequiresReceiptChange: (value: boolean) => void;
   onReceiptRequiredChange: (categoryId: string, value: boolean) => void;
   isAdmin: boolean;
+  canRequireReceipts: boolean;
   onSelectedBudgetAreaIdChange: (value: string) => void;
   onNewCategoryNameChange: (value: string) => void;
   onNewCategoryTypeChange: (value: CategoryType) => void;
@@ -45,6 +46,7 @@ export default function CategoriesSection({
   onNewCategoryRequiresReceiptChange,
   onReceiptRequiredChange,
   isAdmin,
+  canRequireReceipts,
   onSelectedBudgetAreaIdChange,
   onNewCategoryNameChange,
   onNewCategoryTypeChange,
@@ -96,6 +98,12 @@ export default function CategoriesSection({
         }))}
       />
 
+      {isAdmin && !canRequireReceipts && (
+        <Text style={{ color: "#6B7280", marginBottom: 12 }}>
+          Your family needs Premium receipt upload access to require receipts.
+          Existing requirements can still be turned off.
+        </Text>
+      )}
       {categories.map((category) => (
         <View
           key={category.id}
@@ -131,6 +139,9 @@ export default function CategoriesSection({
             {isAdmin && (
               <Switch
                 accessibilityLabel={`Require receipt for ${category.name}`}
+                disabled={
+                  !canRequireReceipts && category.requiresReceipt !== true
+                }
                 value={category.requiresReceipt === true}
                 onValueChange={(value) =>
                   onReceiptRequiredChange(category.id, value)
@@ -208,6 +219,7 @@ export default function CategoriesSection({
           >
             <Text>Require a receipt</Text>
             <Switch
+              disabled={!canRequireReceipts}
               accessibilityLabel="Require receipt for new category"
               value={newCategoryRequiresReceipt}
               onValueChange={onNewCategoryRequiresReceiptChange}

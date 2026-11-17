@@ -1185,3 +1185,116 @@ test("a previously uploaded draft can finish during grace without permitting new
   );
   assert.equal((await db.doc(`entries/${draftId}`).get()).exists, true);
 });
+
+test("category requirements need family-admin rights and current family upload access, including required category creation", async () => {
+  await receiptCategory({ required: false });
+  const payload = {
+    familyId: "family-a",
+    categoryId: "receipt-category",
+    required: true,
+  };
+  assert.equal(
+    (await postJson("/categories/receipt-requirement", payload, users[1]))
+      .status,
+    403,
+  );
+  assert.equal(
+    (await postJson("/categories/receipt-requirement", payload)).status,
+    200,
+  ); // Administrator-sponsored access.
+  await db
+    .doc(`receiptAccess/${users[0].uid}`)
+    .update({ administrator: false });
+  assert.equal(
+    (await postJson("/categories/receipt-requirement", payload)).status,
+    403,
+  );
+  assert.equal(
+    (
+      await postJson("/categories/receipt-requirement", {
+        ...payload,
+        required: false,
+      })
+    ).status,
+    200,
+  );
+  const create = {
+    name: "New required category",
+    type: "expense",
+    budgetAreaId: "receipt-area",
+  };
+  assert.equal(
+    (
+      await postJson("/categories/receipt-requirement", {
+        ...payload,
+        categoryId: "no-partial-category",
+        create,
+      })
+    ).status,
+    403,
+  );
+  assert.equal(
+    (await db.doc("categories/no-partial-category").get()).exists,
+    false,
+  );
+  await db
+    .doc("receiptFamilyAccess/family-a")
+    .set({ plan: "premium", subscriptionStatus: "active" }, { merge: true });
+  assert.equal(
+    (await postJson("/categories/receipt-requirement", payload)).status,
+    200,
+  );
+  const created = await postJson("/categories/receipt-requirement", {
+    ...payload,
+    categoryId: "new-receipt-category",
+    create,
+  });
+  assert.equal(created.status, 200);
+  assert.equal((await created.json()).requiresReceipt, true);
+  assert.equal(
+    (await db.doc("categories/new-receipt-category").get()).data().createdBy,
+    users[0].uid,
+  );
+  await db.doc("receiptFamilyAccess/family-a").update({ plan: "archive" });
+  assert.equal(
+    (await postJson("/categories/receipt-requirement", payload)).status,
+    403,
+  );
+});
+
+test("client category writes cannot bypass required-receipt entitlements, but admins can clear old requirements without Premium", async () => {
+  await receiptCategory({ required: false });
+  const administrator = env.authenticatedContext(users[0].uid).firestore();
+  await assertFails(
+    setDoc(
+      doc(administrator, "categories", "receipt-category"),
+      { requiresReceipt: true },
+      { merge: true },
+    ),
+  );
+  await assertFails(
+    setDoc(doc(administrator, "categories", "forged-required"), {
+      familyId: "family-a",
+      createdBy: users[0].uid,
+      requiresReceipt: true,
+    }),
+  );
+  await db.doc("categories/receipt-category").update({ requiresReceipt: true });
+  await db
+    .doc(`receiptAccess/${users[0].uid}`)
+    .update({ administrator: false });
+  await assertSucceeds(
+    setDoc(
+      doc(administrator, "categories", "receipt-category"),
+      { requiresReceipt: false },
+      { merge: true },
+    ),
+  );
+  await assertSucceeds(
+    setDoc(doc(administrator, "categories", "optional-free-category"), {
+      familyId: "family-a",
+      createdBy: users[0].uid,
+      requiresReceipt: false,
+    }),
+  );
+});
