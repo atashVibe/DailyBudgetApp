@@ -192,12 +192,9 @@ test("family admins require category receipts and entry-form attachments gate sa
     fullPage: true,
   });
   const attach = async () => {
-    await page
-      .getByRole("button", { name: "Attach receipt", exact: true })
-      .click();
     const chooser = page.waitForEvent("filechooser");
     await page
-      .getByRole("button", { name: "Choose a receipt photo", exact: true })
+      .getByRole("button", { name: "Attach receipt", exact: true })
       .click();
     await (
       await chooser
@@ -410,12 +407,9 @@ test("long receipt filenames keep Remove inside a narrow form and dashboard Back
   })
     .jpeg()
     .toBuffer();
-  await page
-    .getByRole("button", { name: "Attach receipt", exact: true })
-    .click();
   const chooser = page.waitForEvent("filechooser");
   await page
-    .getByRole("button", { name: "Choose a receipt photo", exact: true })
+    .getByRole("button", { name: "Attach receipt", exact: true })
     .click();
   await (
     await chooser
@@ -474,4 +468,85 @@ test("long receipt filenames keep Remove inside a narrow form and dashboard Back
   await expect(
     page.locator('input[placeholder="Enter your email"]:visible'),
   ).toBeVisible();
+});
+
+test("compact paperclip opens one system picker for photos and PDFs, cancels safely and saves an original PDF", async ({
+  page,
+  baseURL,
+}) => {
+  expect(baseURL).toMatch(/^http:\/\/localhost:809[134]$/);
+  await page.goto("/login");
+  await page.getByText("Forgot Password?", { exact: true }).click();
+  await expect(
+    page.getByText("Reset your password", { exact: true }),
+  ).toBeVisible();
+  await page.getByText("Back to Sign In", { exact: true }).click();
+  await page
+    .locator('input[placeholder="Enter your email"]:visible')
+    .fill("receipts@example.test");
+  await page
+    .locator('input[placeholder="Enter your password"]:visible')
+    .fill("EmulatorOnly123!");
+  await page
+    .getByText("Sign In", { exact: true })
+    .filter({ visible: true })
+    .click();
+  await expect(page.getByText("Budget Summary", { exact: true })).toBeVisible();
+  await page.getByPlaceholder("0.00").fill("6.00");
+  const clip = page.getByRole("button", {
+    name: "Attach receipt",
+    exact: true,
+  });
+  await expect(clip).toBeEnabled();
+  const bounds = await clip.boundingBox();
+  expect(bounds.width).toBeLessThanOrEqual(48);
+  expect(bounds.height).toBeLessThanOrEqual(48);
+  await expect(
+    page.getByRole("button", { name: "Choose a receipt photo", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Choose a receipt PDF", exact: true }),
+  ).toHaveCount(0);
+  const cancelled = page.waitForEvent("filechooser");
+  await clip.click();
+  const firstPicker = await cancelled;
+  const accept = await firstPicker.element().getAttribute("accept");
+  expect(accept).toContain("image/jpeg");
+  expect(accept).toContain("image/png");
+  expect(accept).toContain("application/pdf");
+  expect(await firstPicker.element().getAttribute("capture")).toBeNull();
+  await firstPicker.setFiles([]);
+  await expect(clip).toBeEnabled();
+  await expect(page.getByText("Ready to save", { exact: true })).toHaveCount(0);
+  const document = await PDFDocument.create();
+  document.addPage();
+  const pdf = Buffer.from(await document.save());
+  const picked = page.waitForEvent("filechooser");
+  await clip.click();
+  await (
+    await picked
+  ).setFiles({
+    name: "paperclip-original.pdf",
+    mimeType: "application/pdf",
+    buffer: pdf,
+  });
+  await expect(
+    page.getByLabel("paperclip-original.pdf", { exact: true }),
+  ).toBeVisible();
+  await page.screenshot({
+    path: "test-results/compact-paperclip.png",
+    fullPage: true,
+  });
+  await page.getByRole("button", { name: "Save Entry", exact: true }).click();
+  await expect(page.getByText(/\$6\.00 - Groceries/)).toHaveCount(1);
+  await page
+    .getByLabel("Manage family receipts for this entry")
+    .first()
+    .click();
+  const card = page
+    .getByText("paperclip-original.pdf", { exact: true })
+    .locator("..");
+  const download = page.waitForEvent("download");
+  await card.getByText("Download original", { exact: true }).click();
+  expect(await readFile(await (await download).path())).toEqual(pdf);
 });

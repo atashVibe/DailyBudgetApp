@@ -5,7 +5,8 @@
 - [x] Prepare upload-entitlement checks for enabling required categories, with server/rule enforcement.
 - [x] Keep long selected filenames and Remove inside a narrow entry form.
 - [x] Confirm Dashboard Back sign-out; preserve cancelled drafts and normal Back/Forward navigation.
-- [ ] Deploy updated receipt Functions/rules through the owner's Cloud Shell, then publish the frontend.
+- [x] Deploy updated receipt Functions/rules through the owner's Cloud Shell (`55c40ae`).
+- [ ] Publish the frontend including compact system-picker paperclip.
 - [ ] Owner production/device verification of all three reported fixes.
 
 Details: `docs/RECEIPT_NAVIGATION_FIXES.md`.

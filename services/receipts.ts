@@ -1,5 +1,5 @@
 import * as Crypto from "expo-crypto";
-import { Platform } from "react-native";
+import { Alert, Platform } from "react-native";
 import { auth } from "./auth";
 
 const endpoint = process.env.EXPO_PUBLIC_RECEIPTS_API_URL?.replace(/\/$/, "");
@@ -110,14 +110,18 @@ function inferredMime(name: string) {
   return "application/octet-stream";
 }
 export async function pickReceipt(
-  kind: "camera" | "photo" | "pdf",
+  kind: "camera" | "photo" | "pdf" | "attachment",
 ): Promise<ReceiptFile | null> {
   if (Platform.OS === "web") {
     const file = await new Promise<File | null>((resolve) => {
       const input = document.createElement("input");
       input.type = "file";
       input.accept =
-        kind === "pdf" ? "application/pdf" : "image/jpeg,image/png";
+        kind === "attachment"
+          ? "image/jpeg,image/png,application/pdf"
+          : kind === "pdf"
+            ? "application/pdf"
+            : "image/jpeg,image/png";
       if (kind === "camera") input.setAttribute("capture", "environment");
       input.addEventListener(
         "change",
@@ -135,6 +139,22 @@ export async function pickReceipt(
       size: file.size,
       requestId: Crypto.randomUUID(),
     };
+  }
+  if (kind === "attachment") {
+    const source = await new Promise<"camera" | "files" | null>((resolve) => {
+      Alert.alert(
+        "Attach receipt",
+        "Choose a source",
+        [
+          { text: "Camera", onPress: () => resolve("camera") },
+          { text: "Photos or PDF", onPress: () => resolve("files") },
+          { text: "Cancel", style: "cancel", onPress: () => resolve(null) },
+        ],
+        { cancelable: true, onDismiss: () => resolve(null) },
+      );
+    });
+    if (!source) return null;
+    if (source === "camera") return pickReceipt("camera");
   }
   if (kind === "camera") {
     const camera = await import("expo-image-picker");
@@ -160,7 +180,12 @@ export async function pickReceipt(
   }
   const picker = await import("expo-document-picker");
   const result = await picker.getDocumentAsync({
-    type: kind === "pdf" ? "application/pdf" : ["image/jpeg", "image/png"],
+    type:
+      kind === "attachment"
+        ? ["image/jpeg", "image/png", "application/pdf"]
+        : kind === "pdf"
+          ? "application/pdf"
+          : ["image/jpeg", "image/png"],
     multiple: false,
     copyToCacheDirectory: true,
   });

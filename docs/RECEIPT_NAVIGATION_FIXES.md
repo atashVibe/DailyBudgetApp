@@ -22,7 +22,7 @@ No financial calculations, stored transaction history, original receipt files, b
 
 - 40 receipt integration tests pass, including family-admin/upload entitlement requirements, Premium/Archive/sponsored cases, atomic category creation and direct-write denial with clearing still permitted.
 - 11 existing rules tests, 14 finance tests and 6 policy tests pass.
-- Four Chromium mobile-width flows pass: original receipt management; required receipt form and retries; free/Premium information and disabled requirement switches; a 320-pixel long filename with Remove inside the viewport plus Back cancellation, preserved fields/files, authenticated reload, ordinary Back/Forward and confirmed logout.
+- Five Chromium mobile-width flows pass: original receipt management; required receipt form and retries; free/Premium information and disabled requirement switches; a 320-pixel long filename with Remove inside the viewport plus Back cancellation, preserved fields/files, authenticated reload, ordinary Back/Forward and confirmed logout. The fifth verifies the compact paperclip opens one image/PDF chooser, cancellation is safe, and an uploaded PDF downloads byte-for-byte unchanged.
 - TypeScript, lint and production web export pass. These use disposable emulator accounts, not the owner's live account. Native hardware Back, real Google/Apple login and phone-specific browser gestures remain manual checks.
 - Early browser checks caught unwanted confirmation when navigating back to Dashboard and loss of Forward navigation. The final implementation distinguishes only the guarded dashboard exit and retains its marker through the router's own history updates.
 
@@ -57,3 +57,9 @@ npx --yes firebase-tools@15.36.0 deploy --project dailybudget-35c26 --only fires
 ```
 
 After the owner reports Deploy complete, merge/publish the follow-up PR. Refresh the website and check: a free family cannot enable required receipts; long names keep Remove inside the frame; Back → Stay signed in preserves an unsaved entry; Back → Sign out opens Login. Verify required-category creation/toggling still works for a family with upload access. No Storage rule, bucket setting or index update is needed for this follow-up.
+
+## Backend deployed; compact picker follow-up
+
+The owner's Cloud Shell output confirms commit `55c40ae` deployed successfully: Firestore rules released, both receipt Functions updated and Deploy complete. The additional picker change modifies only the entry form/client picker and tests; no backend or rules differ from that deployed commit. Do not ask for another Cloud Shell deployment for this picker change.
+
+The entry form now uses a 44-pixel icon-only paperclip that immediately opens the browser/phone file chooser accepting JPEG, PNG and PDF. There are no three expanded in-form action buttons. The web chooser is not forced into camera-only capture; camera availability and the chooser's exact labels/layout are controlled by the browser/OS and remain a phone check. Native builds use a native camera/files choice, with photos and PDFs accepted by the document picker. Existing saved-receipt management controls are unchanged.
