@@ -151,7 +151,28 @@ export default function LoginScreen() {
     } catch (error: any) {
       console.log(error);
 
-      setMessage("Google sign-in failed.");
+      if (
+        error?.code === "auth/popup-closed-by-user" ||
+        error?.code === "auth/cancelled-popup-request"
+      ) {
+        setMessage("");
+      } else if (error?.code === "auth/popup-blocked") {
+        setMessage("Please allow pop-ups to continue with Google.");
+      } else if (error?.code === "auth/network-request-failed") {
+        setMessage("Check your connection, then try Google sign-in again.");
+      } else if (error?.code === "auth/unauthorized-domain") {
+        setMessage("Google sign-in is not allowed on this website yet.");
+      } else if (error?.code === "auth/operation-not-allowed") {
+        setMessage("Google sign-in is not enabled yet.");
+      } else if (
+        error?.code === "auth/account-exists-with-different-credential"
+      ) {
+        setMessage(
+          "An account already exists with this email. Use its original sign-in method.",
+        );
+      } else {
+        setMessage("Google sign-in failed. Please try again.");
+      }
     } finally {
       setLoading(false);
     }

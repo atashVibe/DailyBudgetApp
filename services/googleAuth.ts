@@ -2,6 +2,7 @@ import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import * as AppleAuthentication from "expo-apple-authentication";
 import * as Crypto from "expo-crypto";
 import {
+  browserPopupRedirectResolver,
   GoogleAuthProvider,
   OAuthProvider,
   signInWithCredential,
@@ -23,7 +24,13 @@ export const signInWithGoogle = async () => {
   if (Platform.OS === "web") {
     const provider = new GoogleAuthProvider();
 
-    const result = await signInWithPopup(auth, provider);
+    // Auth initialization deliberately restores local sessions without starting
+    // an OAuth iframe. Supply the resolver here, only when the user signs in.
+    const result = await signInWithPopup(
+      auth,
+      provider,
+      browserPopupRedirectResolver,
+    );
 
     return result.user;
   }
@@ -57,7 +64,11 @@ export const signInWithApple = async () => {
     provider.addScope("email");
     provider.addScope("name");
 
-    const result = await signInWithPopup(auth, provider);
+    const result = await signInWithPopup(
+      auth,
+      provider,
+      browserPopupRedirectResolver,
+    );
 
     return result.user;
   }

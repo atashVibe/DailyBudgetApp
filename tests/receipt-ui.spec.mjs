@@ -8,6 +8,50 @@ const sharp = backend("sharp");
 const { PDFDocument } = backend("pdf-lib");
 const { unzipSync } = backend("fflate");
 
+test("Google popup sign-in can be cancelled, retried and restored without entering credentials again", async ({
+  page,
+  baseURL,
+}) => {
+  expect(baseURL).toMatch(/^http:\/\/localhost:809[134]$/);
+  await page.goto("/login");
+  // Navigate once so React has hydrated before invoking the click handler.
+  await page.getByText("Forgot Password?", { exact: true }).click();
+  await page.getByText("Back to Sign In", { exact: true }).click();
+  const google = page.getByRole("button", {
+    name: "Continue with Google",
+    exact: true,
+  });
+  const openGoogle = async () => {
+    const opened = page.waitForEvent("popup");
+    await google.click();
+    const popup = await opened;
+    // Never supply credentials to a real Google service from this test.
+    await expect(popup).toHaveURL(
+      /^http:\/\/localhost:9099\/emulator\/auth\/handler\?.*providerId=google\.com/,
+    );
+    return popup;
+  };
+
+  const cancelled = await openGoogle();
+  await cancelled.close();
+  await expect(google).toBeEnabled({ timeout: 15000 });
+  await expect(page.getByText(/Google sign-in failed/)).toHaveCount(0);
+
+  const popup = await openGoogle();
+  await popup.getByText("Add new account", { exact: true }).click();
+  await popup.locator("#email-input").fill("receipts@example.test");
+  await popup.locator("#display-name-input").fill("Demo Google User");
+  await popup.getByRole("button", { name: "Sign in with Google.com" }).click();
+  await expect(
+    page.getByText("Budget Overview", { exact: true }),
+  ).toBeVisible();
+  await page.goto("/login");
+  await expect(
+    page.getByText("Budget Overview", { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByPlaceholder("Enter your email")).toHaveCount(0);
+});
+
 test("shared family receipts work through the real web interface against isolated emulators", async ({
   page,
   baseURL,

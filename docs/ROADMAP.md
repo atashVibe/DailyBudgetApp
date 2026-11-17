@@ -1,11 +1,19 @@
 # DailyBudget Roadmap
 
+## Google popup sign-in regression
+
+- [x] Reproduce live `auth/argument-error` and restore the web popup resolver on demand.
+- [x] Add browser coverage for Google popup cancellation/retry, fake sign-in and session restoration.
+- [ ] Complete checks and publish the hotfix; confirm the live popup opens.
+- [ ] Owner verifies Google sign-in and reopening on S22.
+
 ## Reference layout and Android session follow-up
 
 - [x] Prepare reference card layout, current teal, taller controls and admin category icon library.
 - [x] Fix saved-login restoration, persistent session initialization and bounded account loading/retry.
 - [x] Verify browser session return and stalled-request recovery while preserving accounting/receipts.
-- [ ] Publish website and get actual S22 feedback; clarify APK versus browser if needed.
+- [x] Publish the reference website (PR #8, `7b5a127`).
+- [ ] Get actual S22 feedback; clarify APK versus browser if needed.
 
 Details: `docs/DASHBOARD_LAYOUT_SESSION_FIXES.md`.
 
@@ -15,7 +23,7 @@ Details: `docs/DASHBOARD_LAYOUT_SESSION_FIXES.md`.
 - [x] Keep long selected filenames and Remove inside a narrow entry form.
 - [x] Confirm Dashboard Back sign-out; preserve cancelled drafts and normal Back/Forward navigation.
 - [x] Deploy updated receipt Functions/rules through the owner's Cloud Shell (`55c40ae`).
-- [ ] Publish the frontend including compact system-picker paperclip.
+- [x] Publish the frontend including compact system-picker paperclip (PR #7).
 - [ ] Owner production/device verification of all three reported fixes.
 
 Details: `docs/RECEIPT_NAVIGATION_FIXES.md`.
