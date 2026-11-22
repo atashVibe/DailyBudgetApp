@@ -1,5 +1,13 @@
 # DailyBudget Changelog
 
+## After Milestone 2 — roadmap execution
+
+- Fix Google confirmation for DailyBudget account deletion using prepared, same-user reauthentication and current server ownership checks.
+- Add cancellation/wrong-user protection, account-bound cleanup and a retryable, scrollable confirmation dialog.
+- Add emulator-only browser regression checks to CI and a read-only Cloud Shell readiness report.
+- Record family-admin Premium purchasing as an explicit roadmap feature; checkout/pricing/payment verification remain pending.
+- Keep live phone/cloud verification and former-family attribution cleanup open; no production deletion or payment was performed for these tests.
+
 ## Milestone 2 — v0.2 — November 21, 2026
 
 Web/source checkpoint, building on Milestone 1 (`v0.1`).

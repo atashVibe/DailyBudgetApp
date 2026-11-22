@@ -12,7 +12,8 @@
     "test:finance": "node --experimental-strip-types --test tests/finance.test.mjs",
     "test:receipts": "npm --prefix functions test",
     "test:receipts:emulator": "npx --yes firebase-tools@15.36.0 emulators:exec --project demo-dailybudget-receipts --only auth,firestore,storage \"node --test tests/firestore.rules.test.mjs && npm --prefix functions run test:integration\"",
-    "test:rules": "npx --yes firebase-tools@latest emulators:exec --only firestore \"node --test tests/firestore.rules.test.mjs\""
+    "test:rules": "npx --yes firebase-tools@latest emulators:exec --only firestore \"node --test tests/firestore.rules.test.mjs\"",
+    "test:accounts:browser": "npx --yes firebase-tools@15.36.0 emulators:exec --project demo-dailybudget-receipts --only auth,firestore,storage \"node tests/run-account-ui.mjs\""
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",

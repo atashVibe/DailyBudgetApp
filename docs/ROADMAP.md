@@ -8,11 +8,53 @@
 
 ## Recommended next work after Milestone 2
 
-1. **Fix and verify Google account-deletion confirmation.** Code review found that `services/accountDeletion.ts` still calls `reauthenticateWithPopup` without a resolver, while the main Auth instance intentionally has no default popup resolver. Google sign-in was updated separately; deletion confirmation was not. This web path needs a targeted fix and isolated tests for the same-user confirmation and wrong-user rejection before a wider beta. Then finish email/Google deletion, reset-link/unknown-email checks, sole-admin handling and attribution cleanup in families the user previously left. Apple/provider-linking work remains deferred.
+1. **Finish account recovery/deletion verification.** The Google confirmation bug is now fixed and passes isolated tests for same-user deletion, wrong-user rejection, cancellation, sole-admin protection and ownership changes during confirmation. Remaining work: actual iPhone/Android confirmation on spare accounts, live reset-link/unknown-email protection checks, and trusted backend attribution cleanup in families the user previously left. Apple/provider-linking work remains deferred.
 2. **Two-person real-device family rehearsal.** On iPhone and Android, verify Google/email login and reopen, invitations/joining, synchronized entries, and shared receipt view/download/replace/delete. Verify that removing/leaving a family stops access and that an unrelated family cannot see its data. Existing emulator tests are evidence for the code, not proof of the live two-person/device path.
 3. **Cloud operations before a wider beta.** Verify billing/usage alerts, choose an independent backup and demonstrate a restore, and check actual shared-storage permissions and scheduled receipt cleanup/retention. Storage soft deletion and receipt export alone are not a tested independent recovery plan.
 
-After those checks, follow the existing private-beta/device distribution plan. Keep reports/charts, payment integration and other major features later; do not start them as part of this release. The owner reviews the next task before expanding scope.
+The owner has authorized progressing through this roadmap. Complete independent code/tests and record device or production checks only when verified. After readiness checks, follow the private-beta/device distribution plan. Family Premium purchase is now an explicit requested feature below; implementing checkout still needs pricing/payment decisions. Keep reports/charts and Apple-specific work deferred.
+
+## Roadmap execution after Milestone 2
+
+- [x] Prepare Google confirmation before the user's tap and reauthenticate the existing user without switching the main app account.
+- [x] Bind deletion to the intended UID, get current server ownership before cleanup, and preserve sole-admin protection.
+- [x] Verify cancellation/wrong-account/password errors, shared-history/original preservation, sole-family removal and new sign-in losing old-family access in isolated browser tests.
+- [x] Add repeatable emulator-only browser checks to GitHub CI alongside existing receipt/sign-in regressions.
+- [x] Prepare a read-only owner report for backup schedules/copies, storage protection/IAM, billing alerts, receipt jobs and Auth email privacy. Unit tests verify GET-only access, fixed Google hosts, secret filtering and blocked-permission reporting.
+- [ ] Verify the deletion confirmation on actual iPhone/Android hardware using spare DailyBudget accounts.
+- [ ] Run the owner report against the live project. This workspace has no Firebase owner CLI login and the shared browser reports `Browser runtime unavailable`.
+- [ ] Configure/verify any missing production safeguards only after inspecting the report; choose alert thresholds and backup retention with the owner.
+
+The current browser tests prove a second identity retains shared entries and original receipt bytes after the first user's deletion. They do not complete the following live-device rehearsal:
+
+- [ ] Use two spare DailyBudget accounts/devices and a test family with existing receipt-upload access; no real payment is required for this rehearsal.
+- [ ] Invite the second account as a member, join using the valid code, and confirm an unrelated account cannot reuse that invitation.
+- [ ] Add/edit entries from each device and verify both see the same records and correct totals after refreshing/reopening.
+- [ ] Upload an original from one device; view/download/replace/delete it from the other as allowed by current family access.
+- [ ] Verify a normal member cannot change administrator-only settings.
+- [ ] Leave/remove the member and confirm refreshed app/receipt requests no longer grant family access. Existing downloaded copies are a separate matter from server access.
+- [ ] Close/reopen each phone browser and verify Google/email sessions and the Edit form behavior.
+
+### Read-only live cloud report
+
+In the owner's Google Cloud Shell, update/read the script from this repository and run `functions/scripts/cloud-readiness-audit.mjs` with Node. It requires no npm installation and does not change settings or read budget entries/receipt contents. It obtains the owner's gcloud token in memory, sends GET requests only to fixed Google APIs, and never prints the token, function environment variables or unrelated project budgets. Share only the JSON report, not credentials.
+
+A result marked `checked` means the configuration was read, not that recovery or notification delivery was proven. An empty schedule/budget list, a blocked API and an unperformed restore remain open checks. A real restore into a separate destination, original-file recovery, inherited IAM review, alert delivery and retained-copy cleanup still need evidence before the production gates are closed.
+
+## Family Premium purchase — requested
+
+A family administrator must be able to purchase Premium in the app to enable receipt uploads for the family. This is a requested feature, not just a possible paid idea. Checkout implementation follows the current readiness work and the owner's pricing/payment decisions.
+
+- [ ] Decide the family price, billing period and payment provider/store approach with the owner.
+- [ ] Add an Upgrade Family to Premium action for active family admins; other members see how to ask their admin.
+- [ ] Create checkout on the trusted backend, bound to the authorized admin and the correct family. Prevent duplicate purchases/charges.
+- [ ] Activate Premium only after server verification of a real payment/store purchase; never trust a browser success screen or allow client writes to paid access.
+- [ ] One active family subscription enables receipt uploads for **all current members**, under the existing shared limits. It does not grant access to other families or former members.
+- [ ] Support subscription management, cancellation, renewal, refunds/failures, restored purchases and idempotent payment notifications; preserve the existing receipt read/export/deletion and grace-period rules.
+- [ ] Define what happens when the payer leaves, loses admin status or switches families; keep billing ownership separate from file permissions.
+- [ ] Review Apple/Google payment rules for native distribution and test the full purchase lifecycle in a payment sandbox before taking real payments.
+
+No checkout or price is enabled by adding this roadmap item. Existing manually granted/sponsored receipt access is not proof that payments work.
 
 ## iPhone field sizing, Edit and sign-in recovery
 
@@ -457,6 +499,8 @@ Do not delay the first safe beta for this work. Use beta feedback to decide whic
 - [ ] Consider CSV/PDF export after the on-screen reports are validated
 
 ## Monetization
+
+The requested **family-admin Premium purchase flow** is specified near the top of this roadmap. It must grant family-wide receipt upload access through verified backend payments, not a per-person entitlement.
 
 Do not add payment complexity before users repeatedly use the app.
 

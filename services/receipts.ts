@@ -45,18 +45,37 @@ export type ReceiptFile = {
   requestId: string;
 };
 
-async function token() {
+async function token(expectedUserId?: string) {
   if (!endpoint)
     throw new Error(
       "Receipt storage is not set up yet. Your budget entries are available as usual.",
     );
-  if (!auth.currentUser) throw new Error("Please sign in to use receipts.");
-  return auth.currentUser.getIdToken();
+  const user = auth.currentUser;
+  if (!user) throw new Error("Please sign in to use receipts.");
+  const changed = () =>
+    Object.assign(
+      new Error(
+        "Your signed-in account changed. Return to the original account before retrying.",
+      ),
+      { code: "ACCOUNT_CHANGED" },
+    );
+  if (expectedUserId && user.uid !== expectedUserId) throw changed();
+  const value = await user.getIdToken();
+  if (expectedUserId && auth.currentUser?.uid !== expectedUserId)
+    throw changed();
+  return value;
 }
-async function request(path: string, options: RequestInit = {}) {
+async function request(
+  path: string,
+  options: RequestInit = {},
+  expectedUserId?: string,
+) {
   const response = await fetch(`${endpoint}${path}`, {
     ...options,
-    headers: { ...options.headers, Authorization: `Bearer ${await token()}` },
+    headers: {
+      ...options.headers,
+      Authorization: `Bearer ${await token(expectedUserId)}`,
+    },
   });
   if (!response.ok) {
     const details = await response.json().catch(() => ({}));
@@ -97,10 +116,14 @@ export const updateReceiptAccess = async (targetId: string, action: string) =>
     })
   ).json();
 
-export async function deleteAccountReceipts() {
+export async function deleteAccountReceipts(expectedUserId: string) {
   // Existing accounts without a configured receipt deployment remain usable.
   if (receiptsConfigured)
-    await request("/delete-account-receipts", { method: "POST" });
+    await request(
+      "/delete-account-receipts",
+      { method: "POST" },
+      expectedUserId,
+    );
 }
 
 function inferredMime(name: string) {

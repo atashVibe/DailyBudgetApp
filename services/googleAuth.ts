@@ -9,11 +9,15 @@ import {
   initializeAuth,
   inMemoryPersistence,
   OAuthProvider,
+  reauthenticateWithCredential,
+  reauthenticateWithPopup,
   signInWithCredential,
   signInWithPopup,
   signOut,
   updateProfile,
+  updateCurrentUser,
   type Auth,
+  type User,
 } from "firebase/auth";
 import { Platform } from "react-native";
 import { auth } from "./auth";
@@ -50,6 +54,60 @@ export async function prepareGoogleSignIn() {
     await withTimeout(getGooglePopupAuth().authStateReady(), 20000);
 }
 
+export async function prepareGoogleReauthentication(user: User) {
+  if (Platform.OS !== "web") return;
+  await prepareGoogleSignIn();
+  // Clone this existing Firebase user into the temporary, in-memory instance.
+  // Real reauthentication verifies the same UID without replacing the main
+  // application session when someone chooses a different Google account.
+  await withTimeout(updateCurrentUser(getGooglePopupAuth(), user));
+}
+
+export async function reauthenticateWithGoogle(user: User) {
+  if (Platform.OS !== "web") {
+    await reauthenticateWithCredential(
+      user,
+      await requestGoogleCredential(user.email),
+    );
+    return;
+  }
+  const popupAuth = getGooglePopupAuth();
+  const confirmationUser = popupAuth.currentUser;
+  if (!confirmationUser || confirmationUser.uid !== user.uid)
+    throw Object.assign(
+      new Error(
+        "Google confirmation needs to be prepared again. Please retry.",
+      ),
+      { code: "CONFIRMATION_NOT_READY" },
+    );
+  const provider = new GoogleAuthProvider();
+  if (user.email)
+    provider.setCustomParameters({
+      login_hint: user.email,
+      prompt: "select_account",
+    });
+  try {
+    const result = await reauthenticateWithPopup(
+      confirmationUser,
+      provider,
+      browserPopupRedirectResolver,
+    );
+    const credential = GoogleAuthProvider.credentialFromResult(result);
+    if (!credential)
+      throw new Error("Google did not return a confirmation credential.");
+    if (auth.currentUser?.uid !== user.uid)
+      throw Object.assign(
+        new Error(
+          "Your signed-in account changed. Return to the original account before retrying.",
+        ),
+        { code: "ACCOUNT_CHANGED" },
+      );
+    await reauthenticateWithCredential(user, credential);
+  } finally {
+    await signOut(popupAuth);
+  }
+}
+
 if (Platform.OS !== "web") {
   GoogleSignin.configure({
     webClientId:
@@ -57,10 +115,16 @@ if (Platform.OS !== "web") {
   });
 }
 
-export const signInWithGoogle = async () => {
-  // WEB LOGIN
+// Request an OAuth credential without changing the durable application session.
+// Reauthentication must use this instead of signing another Google user in.
+export const requestGoogleCredential = async (email?: string | null) => {
   if (Platform.OS === "web") {
     const provider = new GoogleAuthProvider();
+    if (email)
+      provider.setCustomParameters({
+        login_hint: email,
+        prompt: "select_account",
+      });
 
     const popupAuth = getGooglePopupAuth();
     const result = await signInWithPopup(
@@ -72,8 +136,7 @@ export const signInWithGoogle = async () => {
       const credential = GoogleAuthProvider.credentialFromResult(result);
       if (!credential)
         throw new Error("Google did not return a sign-in credential.");
-      // The actual app session uses the existing durable Auth instance.
-      return (await signInWithCredential(auth, credential)).user;
+      return credential;
     } finally {
       await signOut(popupAuth);
     }
@@ -90,11 +153,12 @@ export const signInWithGoogle = async () => {
     throw new Error("No Google ID token found.");
   }
 
-  const googleCredential = GoogleAuthProvider.credential(idToken);
+  return GoogleAuthProvider.credential(idToken);
+};
 
-  const userCredential = await signInWithCredential(auth, googleCredential);
-
-  return userCredential.user;
+export const signInWithGoogle = async () => {
+  const credential = await requestGoogleCredential();
+  return (await signInWithCredential(auth, credential)).user;
 };
 export const signInWithApple = async () => {
   // Apple Login does not work on Android.

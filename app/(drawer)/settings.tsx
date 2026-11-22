@@ -27,6 +27,7 @@ import {
 import { getFamilyAdmins, type FamilyAdmin } from "../../services/families";
 import {
   deleteCurrentAccount,
+  prepareAccountDeletion,
   getAccountReauthenticationMethod,
 } from "../../services/accountDeletion";
 import AppScreen from "../components/common/AppScreen";
@@ -290,8 +291,11 @@ export default function SettingsScreen() {
     }
   };
 
-  const handleDeleteAccount = async (password?: string) => {
-    await deleteCurrentAccount(password);
+  const handleDeleteAccount = async (
+    password: string | undefined,
+    expectedUserId: string,
+  ) => {
+    await deleteCurrentAccount(password, expectedUserId);
 
     try {
       await GoogleSignin.signOut();
@@ -515,10 +519,13 @@ export default function SettingsScreen() {
 
       {auth.currentUser ? (
         <AccountSection
+          key={auth.currentUser.uid}
+          accountId={auth.currentUser.uid}
           reauthenticationMethod={getAccountReauthenticationMethod(
             auth.currentUser,
           )}
           onDeleteAccount={handleDeleteAccount}
+          onPrepareAccount={prepareAccountDeletion}
         />
       ) : null}
       <PolicyLinks />
