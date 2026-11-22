@@ -25,15 +25,15 @@ export const dashboardStyles = StyleSheet.create({
   },
   progressRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
     alignItems: "center",
-    gap: 8,
+    justifyContent: "space-between",
+    gap: 6,
   },
   progressLabel: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    width: 150,
+    flexShrink: 1,
   },
   progressTitle: { fontSize: 13, fontWeight: "700", color: "#14213A" },
 });

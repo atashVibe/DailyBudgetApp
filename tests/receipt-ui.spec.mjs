@@ -8,6 +8,14 @@ const sharp = backend("sharp");
 const { PDFDocument } = backend("pdf-lib");
 const { unzipSync } = backend("fflate");
 
+async function waitForLoginHandlers(page) {
+  // Google is enabled by a client effect, so it also proves SSR hydration has
+  // attached the navigation handlers before a fast automated tap.
+  await expect(
+    page.getByRole("button", { name: "Continue with Google", exact: true }),
+  ).toBeEnabled({ timeout: 30000 });
+}
+
 test("Google popup sign-in can be cancelled, retried and restored without entering credentials again", async ({
   page,
   baseURL,
@@ -15,6 +23,7 @@ test("Google popup sign-in can be cancelled, retried and restored without enteri
   expect(baseURL).toMatch(/^http:\/\/localhost:809[134]$/);
   await page.goto("/login");
   // Navigate once so React has hydrated before invoking the click handler.
+  await waitForLoginHandlers(page);
   await page.getByText("Forgot Password?", { exact: true }).click();
   await page.getByText("Back to Sign In", { exact: true }).click();
   const google = page.getByRole("button", {
@@ -22,7 +31,7 @@ test("Google popup sign-in can be cancelled, retried and restored without enteri
     exact: true,
   });
   const openGoogle = async () => {
-    const opened = page.waitForEvent("popup");
+    const opened = page.waitForEvent("popup", { timeout: 25000 });
     await google.click();
     const popup = await opened;
     // Never supply credentials to a real Google service from this test.
@@ -68,6 +77,7 @@ test("shared family receipts work through the real web interface against isolate
   const pdf = Buffer.from(await doc.save());
   await page.goto("/login");
   // Confirm client-side navigation is hydrated before filling controlled fields.
+  await waitForLoginHandlers(page);
   await page.getByText("Forgot Password?", { exact: true }).click();
   await expect(
     page.getByText("Reset your password", { exact: true }),
@@ -190,6 +200,7 @@ test("family admins require category receipts and entry-form attachments gate sa
     .png()
     .toBuffer();
   await page.goto("/login");
+  await waitForLoginHandlers(page);
   await page.getByText("Forgot Password?", { exact: true }).click();
   await expect(
     page.getByText("Reset your password", { exact: true }),
@@ -353,6 +364,7 @@ test("free families see Premium information while ordinary Premium-family member
     });
   });
   await page.goto("/login");
+  await waitForLoginHandlers(page);
   await page.getByText("Forgot Password?", { exact: true }).click();
   await expect(
     page.getByText("Reset your password", { exact: true }),
@@ -430,6 +442,7 @@ test("long receipt filenames keep Remove inside a narrow form and dashboard Back
   expect(baseURL).toMatch(/^http:\/\/localhost:809[134]$/);
   await page.setViewportSize({ width: 320, height: 850 });
   await page.goto("/login");
+  await waitForLoginHandlers(page);
   await page.getByText("Forgot Password?", { exact: true }).click();
   await expect(
     page.getByText("Reset your password", { exact: true }),
@@ -531,6 +544,7 @@ test("compact paperclip opens one system picker for photos and PDFs, cancels saf
 }) => {
   expect(baseURL).toMatch(/^http:\/\/localhost:809[134]$/);
   await page.goto("/login");
+  await waitForLoginHandlers(page);
   await page.getByText("Forgot Password?", { exact: true }).click();
   await expect(
     page.getByText("Reset your password", { exact: true }),
@@ -614,6 +628,7 @@ test("reference dashboard has tall fields, editable category icons and restores 
 }) => {
   expect(baseURL).toMatch(/^http:\/\/localhost:809[134]$/);
   await page.goto("/login");
+  await waitForLoginHandlers(page);
   await page.getByText("Forgot Password?", { exact: true }).click();
   await page.getByText("Back to Sign In", { exact: true }).click();
   await page
@@ -670,7 +685,7 @@ test("reference dashboard has tall fields, editable category icons and restores 
   await page.goto("/");
   await expect(
     page.getByRole("button", { name: "Retry loading account", exact: true }),
-  ).toBeVisible({ timeout: 22000 });
+  ).toBeVisible({ timeout: 40000 });
   await expect(
     page.locator('input[placeholder="Enter your email"]:visible'),
   ).toHaveCount(0);
@@ -681,4 +696,177 @@ test("reference dashboard has tall fields, editable category icons and restores 
   await expect(page.getByText("Budget Overview", { exact: true })).toBeVisible({
     timeout: 22000,
   });
+});
+
+test("phone controls stay aligned and Edit reveals the expanded form", async ({
+  page,
+  baseURL,
+}) => {
+  expect(baseURL).toMatch(/^http:\/\/localhost:809[134]$/);
+  await page.setViewportSize({ width: 393, height: 852 });
+  let premium = false;
+  await page.route("**/access", async (route) => {
+    const response = await route.fetch();
+    const access = await response.json();
+    await route.fulfill({
+      response,
+      json: {
+        ...access,
+        canUpload: premium,
+        plan: premium ? "premium" : "free",
+      },
+    });
+  });
+  await page.goto("/login");
+  await waitForLoginHandlers(page);
+  await page.getByText("Forgot Password?", { exact: true }).click();
+  await page.getByText("Back to Sign In", { exact: true }).click();
+  await page
+    .locator('input[placeholder="Enter your email"]:visible')
+    .fill("receipts@example.test");
+  await page
+    .locator('input[placeholder="Enter your password"]:visible')
+    .fill("EmulatorOnly123!");
+  await page.getByRole("button", { name: "Sign In", exact: true }).click();
+  await expect(
+    page.getByText("Budget Overview", { exact: true }),
+  ).toBeVisible();
+  const date = page.getByLabel("Entry date", { exact: true });
+  const amount = page.getByPlaceholder("0.00");
+  await expect(date).toBeVisible();
+  const dateBox = await date.boundingBox(),
+    amountBox = await amount.boundingBox();
+  expect(Math.abs(dateBox.height - 60)).toBeLessThanOrEqual(1);
+  expect(Math.abs(dateBox.height - amountBox.height)).toBeLessThanOrEqual(1);
+  expect(Math.abs(dateBox.y - amountBox.y)).toBeLessThanOrEqual(1);
+  const assertSameLine = async (left, right) => {
+    const a = await left.boundingBox(),
+      b = await right.boundingBox();
+    expect(
+      Math.abs(a.y + a.height / 2 - (b.y + b.height / 2)),
+    ).toBeLessThanOrEqual(3);
+  };
+  const info = page.getByRole("button", {
+    name: "About Premium receipt attachments",
+  });
+  await expect(info).toBeVisible();
+  await assertSameLine(
+    page.getByText("Receipt (optional)", { exact: true }),
+    info,
+  );
+  await info.click();
+  await expect(
+    page.getByText("To attach a receipt, upgrade your family to Premium.", {
+      exact: true,
+    }),
+  ).toBeVisible();
+  await info.click();
+  const monthRow = page.getByTestId("month-progress-row");
+  await assertSameLine(
+    monthRow.getByText("Month Progress", { exact: true }),
+    monthRow.getByText(/\d+ of \d+ days/),
+  );
+  const yearRow = page.getByTestId("yearly-spending-row");
+  await assertSameLine(
+    yearRow.getByText("Yearly Spending", { exact: true }),
+    yearRow.getByText(/\$/),
+  );
+  const view = await page.evaluate(() => ({
+    width: document.documentElement.clientWidth,
+    content: document.documentElement.scrollWidth,
+    overflowing: [
+      ...document.querySelectorAll("input[type=date], select"),
+    ].some((el) => el.getBoundingClientRect().right > innerWidth),
+  }));
+  expect(view.content).toBeLessThanOrEqual(view.width);
+  expect(view.overflowing).toBe(false);
+  await amount.fill("7.45");
+  await page.getByPlaceholder("Optional note").fill("Phone edit regression");
+  await page.getByRole("button", { name: "Save Entry", exact: true }).click();
+  // Collapse first: Edit must both expand the card and scroll the actual page.
+  await page.getByRole("button", { name: "Toggle entry form" }).click();
+  const entry = page.getByLabel(/\$7\.45 -/).first();
+  await entry.scrollIntoViewIfNeeded();
+  await entry
+    .getByRole("button", { name: "Edit this entry", exact: true })
+    .click();
+  await expect(page.getByText("Edit Entry", { exact: true })).toBeVisible();
+  await expect(amount).toHaveValue("7.45");
+  await expect
+    .poll(
+      async () =>
+        (await page.getByText("Edit Entry", { exact: true }).boundingBox()).y,
+    )
+    .toBeLessThan(160);
+  await page.getByText("Cancel Edit", { exact: true }).click();
+  premium = true;
+  await page.reload();
+  const attach = page.getByRole("button", {
+    name: "Attach receipt",
+    exact: true,
+  });
+  await expect(attach).toBeVisible();
+  await assertSameLine(
+    page.getByText("Receipt (optional)", { exact: true }),
+    attach,
+  );
+  await page.screenshot({
+    path: "test-results/phone-entry-layout.png",
+    fullPage: true,
+  });
+});
+
+test("a brief mobile cloud interruption recovers without reporting a sign-in failure", async ({
+  page,
+  baseURL,
+}) => {
+  expect(baseURL).toMatch(/^http:\/\/localhost:809[134]$/);
+  await page.goto("/login");
+  await waitForLoginHandlers(page);
+  await page.getByText("Forgot Password?", { exact: true }).click();
+  await page.getByText("Back to Sign In", { exact: true }).click();
+  await page
+    .locator('input[placeholder="Enter your email"]:visible')
+    .fill("receipts@example.test");
+  await page
+    .locator('input[placeholder="Enter your password"]:visible')
+    .fill("EmulatorOnly123!");
+  await page.getByRole("button", { name: "Sign In", exact: true }).click();
+  await expect(
+    page.getByText("Budget Overview", { exact: true }),
+  ).toBeVisible();
+  await page.route("**/google.firestore.v1.Firestore/**", (route) =>
+    route.abort(),
+  );
+  await page.goto("/");
+  await page.evaluate(() => {
+    window.connectionErrorShown = false;
+    const check = () => {
+      if (
+        /Retry loading account|Retry dashboard|Google sign-in failed/.test(
+          document.body.innerText,
+        )
+      )
+        window.connectionErrorShown = true;
+    };
+    new MutationObserver(check).observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
+    check();
+  });
+  const reconnect = setTimeout(() => {
+    void page.unroute("**/google.firestore.v1.Firestore/**");
+  }, 12000);
+  try {
+    await expect(
+      page.getByText("Budget Overview", { exact: true }),
+    ).toBeVisible({ timeout: 40000 });
+    expect(await page.evaluate(() => window.connectionErrorShown)).toBe(false);
+    await expect(
+      page.locator('input[placeholder="Enter your email"]:visible'),
+    ).toHaveCount(0);
+  } finally {
+    clearTimeout(reconnect);
+  }
 });

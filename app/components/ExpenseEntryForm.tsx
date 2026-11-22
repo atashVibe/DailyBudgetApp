@@ -40,6 +40,7 @@ type Props = {
   onEntrySaved?: () => void;
   entryToEdit?: Entry | null;
   onCancelEdit?: () => void;
+  onEditReady?: () => void;
   refreshSignal?: number;
 };
 
@@ -70,9 +71,15 @@ export default function ExpenseEntryForm({
   onEntrySaved,
   entryToEdit,
   onCancelEdit,
+  onEditReady,
   refreshSignal,
 }: Props) {
   const [collapsed, setCollapsed] = useState(false);
+  useEffect(() => {
+    if (!entryToEdit || collapsed || !onEditReady) return;
+    const frame = requestAnimationFrame(onEditReady);
+    return () => cancelAnimationFrame(frame);
+  }, [entryToEdit, collapsed, onEditReady]);
   const [amount, setAmount] = useState("");
   const [selectedBudgetAreaId, setSelectedBudgetAreaId] = useState("");
   const { budgetAreas } = useBudgetAreas(familyId);
@@ -433,6 +440,7 @@ export default function ExpenseEntryForm({
               {Platform.OS === "web" ? (
                 React.createElement("input", {
                   type: "date",
+                  "aria-label": "Entry date",
                   disabled: saving,
                   value: date,
                   onChange: (e: any) => setDate(e.target.value),
@@ -440,12 +448,20 @@ export default function ExpenseEntryForm({
                     borderWidth: 1,
                     borderColor: "#ccc",
                     borderRadius: 10,
-                    padding: 14,
+                    padding: "0 10px",
                     fontSize: 16,
-                    marginBottom: 16,
+                    marginBottom: 12,
                     backgroundColor: "#fff",
                     width: "100%",
                     height: 60,
+                    minHeight: 60,
+                    maxHeight: 60,
+                    minWidth: 0,
+                    maxWidth: "100%",
+                    display: "block",
+                    appearance: "none",
+                    WebkitAppearance: "none",
+                    color: "#111827",
                     boxSizing: "border-box",
                     border: "1px solid #ccc",
                   },
@@ -537,79 +553,67 @@ export default function ExpenseEntryForm({
             onChangeText={setNote}
           />
 
-          <View style={{ gap: 10, marginBottom: 16 }}>
-            <FormLabel>
-              Receipt {requiresReceipt ? "(required)" : "(optional)"}
-            </FormLabel>
-            {requiresReceipt && (
-              <Text style={{ color: "#92400E" }}>
-                This category requires a receipt before you can save.
+          <View style={{ gap: 8, marginBottom: 12 }}>
+            <View
+              testID="receipt-heading-row"
+              style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
+            >
+              <Text style={{ fontSize: 15, color: "#172B44" }}>
+                Receipt {requiresReceipt ? "(required)" : "(optional)"}
               </Text>
-            )}
-            {receiptAccess?.canUpload && (
-              <Text>
-                JPG, PNG or PDF · Up to{" "}
-                {receiptAccess.limits.maxReceiptsPerTransaction} receipts per
-                entry.
-              </Text>
-            )}
-            {existingReceiptId ? (
-              <Text>A receipt is already attached to this entry.</Text>
-            ) : null}
-            {receiptsLoading ? <Text>Checking existing receipts…</Text> : null}
-            {receiptAccess?.canUpload ? (
-              <TouchableOpacity
-                accessibilityRole="button"
-                accessibilityLabel="Attach receipt"
-                accessibilityHint="Opens your device's receipt photo and PDF picker."
-                onPress={() => void chooseAttachment()}
-                disabled={
-                  saving ||
-                  choosing ||
-                  files.length >= receiptAccess.limits.maxReceiptsPerTransaction
-                }
-                accessibilityState={{
-                  disabled:
-                    saving ||
-                    choosing ||
-                    files.length >=
-                      receiptAccess.limits.maxReceiptsPerTransaction,
-                  busy: choosing,
-                }}
-                style={{
-                  alignSelf: "flex-start",
-                  width: 44,
-                  height: 44,
-                  borderRadius: 10,
-                  borderWidth: 1,
-                  borderColor: "#2BCEA6",
-                  backgroundColor: "#ECFDF5",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  opacity:
+              {receiptAccess?.canUpload ? (
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel="Attach receipt"
+                  accessibilityHint={`Opens your device's photo and PDF picker. Up to ${receiptAccess.limits.maxReceiptsPerTransaction} receipts per entry.`}
+                  onPress={() => void chooseAttachment()}
+                  disabled={
                     saving ||
                     choosing ||
                     files.length >=
                       receiptAccess.limits.maxReceiptsPerTransaction
-                      ? 0.5
-                      : 1,
-                }}
-              >
-                <Ionicons name="attach-outline" size={24} color="#11735B" />
-              </TouchableOpacity>
-            ) : receiptAccess ? (
-              <View style={{ alignItems: "flex-start", gap: 8 }}>
+                  }
+                  accessibilityState={{
+                    disabled:
+                      saving ||
+                      choosing ||
+                      files.length >=
+                        receiptAccess.limits.maxReceiptsPerTransaction,
+                    busy: choosing,
+                  }}
+                  style={{
+                    alignSelf: "flex-start",
+                    width: 44,
+                    height: 44,
+                    borderRadius: 10,
+                    borderWidth: 1,
+                    borderColor: "#2BCEA6",
+                    backgroundColor: "#ECFDF5",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    opacity:
+                      saving ||
+                      choosing ||
+                      files.length >=
+                        receiptAccess.limits.maxReceiptsPerTransaction
+                        ? 0.5
+                        : 1,
+                  }}
+                >
+                  <Ionicons name="attach-outline" size={24} color="#11735B" />
+                </TouchableOpacity>
+              ) : receiptAccess ? (
                 <TouchableOpacity
                   accessibilityRole="button"
                   accessibilityLabel="About Premium receipt attachments"
                   accessibilityHint="Explains how to enable receipt attachments for your family."
                   onPress={() => setShowPremiumInfo((shown) => !shown)}
                   style={{
-                    width: 32,
-                    height: 32,
+                    width: 40,
+                    height: 40,
                     alignItems: "center",
                     justifyContent: "center",
-                    borderRadius: 16,
+                    borderRadius: 20,
                     backgroundColor: "#EFF6FF",
                     borderWidth: 1,
                     borderColor: "#93C5FD",
@@ -625,16 +629,26 @@ export default function ExpenseEntryForm({
                     i
                   </Text>
                 </TouchableOpacity>
-                {showPremiumInfo && (
-                  <Text
-                    accessibilityLiveRegion="polite"
-                    style={{ color: "#1E40AF", lineHeight: 22 }}
-                  >
-                    To attach a receipt, upgrade your family to Premium.
-                  </Text>
-                )}
-              </View>
-            ) : (
+              ) : null}
+            </View>
+            {requiresReceipt && (
+              <Text style={{ color: "#92400E" }}>
+                This category requires a receipt before you can save.
+              </Text>
+            )}
+            {existingReceiptId ? (
+              <Text>A receipt is already attached to this entry.</Text>
+            ) : null}
+            {receiptsLoading ? <Text>Checking existing receipts…</Text> : null}
+            {showPremiumInfo && receiptAccess && !receiptAccess.canUpload && (
+              <Text
+                accessibilityLiveRegion="polite"
+                style={{ color: "#1E40AF", lineHeight: 22 }}
+              >
+                To attach a receipt, upgrade your family to Premium.
+              </Text>
+            )}
+            {!receiptAccess && (
               <Text>
                 {accessLoading
                   ? "Checking receipt access…"

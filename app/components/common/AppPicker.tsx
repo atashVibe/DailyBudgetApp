@@ -39,7 +39,11 @@ export default function AppPicker({
         style={{
           color: "#111827",
           backgroundColor: "#ffffff",
+          width: "100%",
+          minWidth: 0,
+          fontSize: 16,
           height: tall ? 60 : Platform.OS === "web" ? 52 : undefined,
+          paddingVertical: Platform.OS === "web" ? 0 : undefined,
           paddingHorizontal: Platform.OS === "web" ? 12 : undefined,
           borderWidth: Platform.OS === "web" ? 0 : undefined,
         }}

@@ -10,6 +10,13 @@ type Props = {
   spentThisYear?: number;
 };
 const money = (value: number) => `$${value.toFixed(2)}`;
+const compactMoney = (value: number) =>
+  new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(value);
 function Progress({
   value,
   label,
@@ -277,44 +284,47 @@ export default function BudgetSummaryCard({
           gap: 13,
         }}
       >
-        <View style={ui.progressRow}>
-          <View style={ui.progressLabel}>
-            <Ionicons name="calendar-outline" size={21} color="#009F62" />
-            <Text style={ui.progressTitle}>Month Progress</Text>
-          </View>
-          <View style={{ flex: 1, minWidth: 140 }}>
-            <Text style={ui.detail}>
+        <View testID="month-progress-row">
+          <View style={ui.progressRow}>
+            <View style={ui.progressLabel}>
+              <Ionicons name="calendar-outline" size={19} color="#009F62" />
+              <Text style={ui.progressTitle}>Month Progress</Text>
+            </View>
+            <Text style={[ui.detail, { flexShrink: 1, textAlign: "right" }]}>
               {now.getDate()} of {days} days (
               {summary.monthPassedPercent.toFixed(0)}%)
             </Text>
-            <Progress
-              value={summary.monthPassedPercent}
-              label="Month progress"
-              color="#2BCEA6"
-            />
           </View>
+          <Progress
+            value={summary.monthPassedPercent}
+            label="Month progress"
+            color="#2BCEA6"
+          />
         </View>
-        <View style={ui.progressRow}>
-          <View style={ui.progressLabel}>
-            <Ionicons
-              name="calendar-number-outline"
-              size={21}
-              color="#009F62"
-            />
-            <Text style={ui.progressTitle}>Yearly Spending</Text>
-          </View>
-          <View style={{ flex: 1, minWidth: 140 }}>
-            <Text style={ui.detail}>
-              {money(spentThisYear)} of{" "}
-              {money((Math.round(dailyBudget * 100) * yearDays) / 100)} (
+        <View testID="yearly-spending-row">
+          <View style={ui.progressRow}>
+            <View style={ui.progressLabel}>
+              <Ionicons
+                name="calendar-number-outline"
+                size={19}
+                color="#009F62"
+              />
+              <Text style={ui.progressTitle}>Yearly Spending</Text>
+            </View>
+            <Text
+              accessibilityLabel={`${money(spentThisYear)} of ${money((Math.round(dailyBudget * 100) * yearDays) / 100)} (${summary.yearlyUsedPercent.toFixed(0)}%)`}
+              style={[ui.detail, { flexShrink: 1, textAlign: "right" }]}
+            >
+              {compactMoney(spentThisYear)} /{" "}
+              {compactMoney((Math.round(dailyBudget * 100) * yearDays) / 100)} (
               {summary.yearlyUsedPercent.toFixed(0)}%)
             </Text>
-            <Progress
-              value={summary.yearlyProgressPercent}
-              label="Yearly budget used"
-              color="#0589DD"
-            />
           </View>
+          <Progress
+            value={summary.yearlyProgressPercent}
+            label="Yearly budget used"
+            color="#0589DD"
+          />
         </View>
       </View>
     </View>

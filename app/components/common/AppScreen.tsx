@@ -12,7 +12,10 @@ type Props = {
   style?: ViewStyle;
 };
 
-export default function AppScreen({ children, style }: Props) {
+const AppScreen = React.forwardRef<ScrollView, Props>(function AppScreen(
+  { children, style },
+  ref,
+) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#ffffff" }}>
       <KeyboardAvoidingView
@@ -21,6 +24,7 @@ export default function AppScreen({ children, style }: Props) {
         style={{ flex: 1 }}
       >
         <ScrollView
+          ref={ref}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
           contentContainerStyle={[
@@ -37,4 +41,6 @@ export default function AppScreen({ children, style }: Props) {
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
-}
+});
+
+export default AppScreen;

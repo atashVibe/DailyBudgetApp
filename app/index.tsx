@@ -4,11 +4,11 @@ import { doc, getDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
 import { auth, db } from "../services/auth";
-import { withTimeout, restartCloudConnection } from "../services/loading";
+import { withCloudRetry, restartCloudConnection } from "../services/loading";
 import PrimaryButton from "./components/common/PrimaryButton";
 export default function Index() {
   const [state, setState] = useState<
-    "loading" | "login" | "dashboard" | "signup"
+    "loading" | "login" | "dashboard" | "setup"
   >("loading");
   const [error, setError] = useState("");
   const [attempt, setAttempt] = useState(0);
@@ -23,6 +23,7 @@ export default function Index() {
         );
     }, 16000);
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      clearTimeout(timer);
       try {
         if (!user) {
           if (active) {
@@ -31,14 +32,20 @@ export default function Index() {
           }
           return;
         }
-        const profile = await withTimeout(getDoc(doc(db, "users", user.uid)));
-        if (!profile.exists() && profile.metadata.fromCache)
-          throw new Error(
-            "Reconnect to verify your account. Your sign-in has been kept.",
-          );
+        const profile = await withCloudRetry(async () => {
+          const snapshot = await getDoc(doc(db, "users", user.uid));
+          if (!snapshot.exists() && snapshot.metadata.fromCache)
+            throw Object.assign(
+              new Error(
+                "Reconnect to verify your account. Your sign-in has been kept.",
+              ),
+              { code: "unavailable" },
+            );
+          return snapshot;
+        });
         if (active) {
           setError("");
-          setState(profile.exists() ? "dashboard" : "signup");
+          setState(profile.exists() ? "dashboard" : "setup");
         }
       } catch (failure) {
         if (active)
@@ -83,8 +90,8 @@ export default function Index() {
       href={
         state === "dashboard"
           ? "/(drawer)/dashboard"
-          : state === "signup"
-            ? "/signup"
+          : state === "setup"
+            ? "/family-setup"
             : "/login"
       }
     />
