@@ -11,7 +11,7 @@ Web/source checkpoint, building on Milestone 1 (`v0.1`).
 - Saved sessions, browser Google sign-in preparation, bounded cloud-read recovery, Back confirmation and Edit form reveal.
 - One shared 20px information-button style, matching Budget Overview everywhere.
 
-The release page records publication and the exact tag. Physical-device/family-sharing verification, recovery/deletion follow-ups and cloud backup/alert checks remain on the roadmap. Apple sign-in remains deferred. This checkpoint does not publish a new APK, TestFlight or store build.
+The release page records publication and the exact tag. Google web account-deletion confirmation still needs its popup setup updated and verified. Physical-device/family-sharing verification, other recovery/deletion follow-ups and cloud backup/alert checks remain on the roadmap. Apple sign-in remains deferred. This checkpoint does not publish a new APK, TestFlight or store build.
 
 ## 2026-05-24
 
