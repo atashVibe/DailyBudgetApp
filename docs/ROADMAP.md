@@ -46,6 +46,8 @@ A result marked `checked` means the configuration was read, not that recovery or
 
 The owner supplied the first live report and successful creation of the 14-day daily database backup schedule on November 22, 2026. Findings, the exact schedule ID and read-only verification commands are recorded in `docs/CLOUD_READINESS.md`. A completed backup copy and restore remain unverified. The report now includes safe reason codes for blocked checks instead of assuming every 403 is an IAM problem.
 
+The `19:21:00Z` follow-up independently confirms the daily/14-day schedule; backup copies are still absent. Both blocked checks report `SERVICE_DISABLED`, but the consumer project was unknown. The corrected report explicitly selects DailyBudget using Google's quota-project header and exposes only a boolean consumer-project match in safe diagnostics. Rerun it before changing APIs or roles; alert existence and email-privacy configuration remain unverified.
+
 ## Family Premium purchase — requested
 
 A family administrator must be able to purchase Premium in the app to enable receipt uploads for the family. This is a requested feature, not just a possible paid idea. Checkout implementation follows the current readiness work and the owner's pricing/payment decisions.

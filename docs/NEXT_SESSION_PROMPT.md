@@ -1,5 +1,13 @@
 # DailyBudget Next-Session Prompt
 
+## Explicit project for cloud inspection — November 22, 2026
+
+The owner's report from `df9b3c2`, timestamped `2026-11-22T19:21:00.402Z`, independently confirms the daily backup schedule with `1209600s` retention. No backup copy is listed yet (about ten minutes after schedule creation). The latest receipt maintenance invocation reports status 0 at `19:07:02.385108Z`; actual retained-copy expiry remains untested. Billing-budget and Auth-privacy checks return `SERVICE_DISABLED` for `billingbudgets.googleapis.com` and `identitytoolkit.googleapis.com`; the earlier script did not capture which consumer project Google used.
+
+Found and corrected a missing inspection-request setting: raw gcloud user-token GETs did not send `x-goog-user-project`. Google's official print-access-token reference documents that these requests can otherwise produce disabled-service errors for the Cloud SDK project. This may explain the owner's errors but is not confirmed without a live rerun. The report now explicitly selects `dailybudget-35c26` on every read and emits only a boolean consumer-project match for recognized error metadata. It never prints another project identifier, credentials or raw error metadata. Tests verify the fixed header on every request and matching/mismatching/invalid consumer diagnostics. No API enablement, IAM grant, Authentication upgrade, backup change or payment action was performed.
+
+Next owner action: rerun the corrected read-only report after publication. Do not infer that the APIs are disabled in DailyBudget from the previous errors alone. Keep billing alerts, email-privacy configuration, actual backup-copy/restore, original-file recovery and effective-IAM gates open. The workspace still has no Google owner credentials. Apple remains deferred; family Premium purchasing is still planned.
+
 ## Daily backup schedule created — November 22, 2026
 
 The owner's Cloud Shell output confirms creation of the default database's daily backup schedule at `2026-11-22T19:11:07.568019Z`, ID `2030ce62-395e-45bc-8e87-9e3b672ca515`, retention `1209600s` (14 days), with `dailyRecurrence: {}`. A repeated create returned `ALREADY_EXISTS` for the same frequency. The first creation succeeded; leave this schedule in place and do not delete/recreate it to address the second response.
