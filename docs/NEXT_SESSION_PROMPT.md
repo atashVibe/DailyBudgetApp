@@ -1,5 +1,15 @@
 # DailyBudget Next-Session Prompt
 
+## Live cloud findings and selected backup policy — November 22, 2026
+
+The owner ran the published read-only report from `f706d86` in Cloud Shell and supplied the output timestamped `2026-11-22T19:02:41.864Z`. Firestore `(default)` is in `us-west2`, PITR is disabled, and both backup schedules and backup-copy lists are empty. Receipt storage has public-access prevention enforced, seven-day soft deletion, no public principals in the returned bucket policy, fine-grained access and no versioning/retention lock. This does not complete inherited/object-ACL review. The API is active using the default Compute service account; hourly maintenance is enabled and reports status 0 for its last invocation, which does not prove actual retained-copy expiry. Budget-alert and Auth-privacy checks returned 403; their configuration remains unknown.
+
+The owner selected daily database backups kept for 14 days after disclosure of size-based Google backup-storage charges. `docs/CLOUD_READINESS.md` contains the reviewed setup/list commands and the separate cloud-original/restore gates. This workspace still has no owner Google credentials; the next owner action is running the schedule-creation command in Cloud Shell and returning its output. Do not mark the schedule, a READY copy or a restore complete yet. Database snapshots exclude receipt originals and Authentication identities, and same-project snapshots alone do not complete independent app recovery.
+
+Improve the GET-only report with allowlisted Google denial reason/service diagnostics, never raw error messages or arbitrary metadata. A 403 may come from permissions, disabled APIs, token scope or quota-project requirements; do not grant broad IAM roles or enable APIs without evidence. No cloud settings, backup jobs, billing alerts, IAM roles, authentication policies or receipt data were changed in this workspace. No app UI/backend/rules change or owner redeployment is needed for this report update.
+
+Prior roadmap implementation was merged as PR #12, deployed to Pages at `f706d86`, and verified with a live login/popup-opening smoke check. Milestone 2 remains `v0.2` at `d56ff46`. Family Premium purchasing is still planned, with pricing/provider/checkout pending; Apple remains deferred. Next: verify the selected backup schedule/copy, diagnose the two denied checks, then plan an isolated restore and independently protected cloud receipt backup alongside the two-phone family rehearsal.
+
 ## Roadmap execution and family Premium purchase request — November 21, 2026
 
 The owner authorized the next roadmap work after Milestone 2 (`v0.2`, exact source tag `d56ff46`) and explicitly requested a future family-admin Premium purchase flow. The roadmap now specifies one verified purchase for one family, upload access for all current members, backend-only payment verification, admin-only checkout, cancellation/restore/refund handling, payer-role changes and sandbox/store-rule checks. Pricing/provider decisions and checkout implementation remain pending; no payment UI, charge or paid entitlement was created.
