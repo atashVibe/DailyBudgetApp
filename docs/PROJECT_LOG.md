@@ -1,5 +1,13 @@
 # DailyBudget Project Log
 
+## Milestone 2 release preparation — November 21, 2026
+
+The owner approved releasing the current web/source checkpoint as Milestone 2 after shrinking the receipt information button to match Budget Overview. Both now use `components/InfoButton.tsx`: a fixed 20px outline glyph in the approved muted color, with a larger invisible tap area and accessible expanded state. The component deliberately has no size/color override props; the shared standard is documented at the top of the roadmap for future screens. Targeted Chromium and iPhone-configured WebKit checks pass: both controls have the same 20px bounds/glyph/color, explanations toggle with accessible expanded state, and inline layout/Edit behavior is preserved. TypeScript, lint and production web export pass.
+
+Follow the existing Milestone 1 `v0.1` GitHub release convention with `v0.2`, titled "Milestone 2 - Family Receipts and Mobile Stability". Publish only after checks and Pages succeed, and tag the exact deployed main commit. This is a website/source checkpoint; no new native binary, payment integration or Apple sign-in is introduced. No Firebase/Cloud Shell deployment is needed. Record the actual published tag/URL in the PR/release notes after creation.
+
+Roadmap review found a concrete follow-up: `services/accountDeletion.ts` calls web `reauthenticateWithPopup` without a resolver, but the main Auth initialization has no default resolver. Google sign-in was updated separately; deletion confirmation was not. Recommend fixing/testing same-user Google deletion confirmation and wrong-user rejection first, then remaining recovery/deletion checks, a two-person iPhone/Android family rehearsal and verified alerts/backup-restore/storage cleanup before a wider beta. This is a code-review finding, not a production deletion attempt; no account was deleted or modified during this review. Existing emulator evidence does not complete the live-device checks. Apple remains deferred; reports and payment integration remain later. Do not begin the next task until the owner chooses it.
+
 ## iPhone sign-in, Edit and compact layout — November 21, 2026
 
 The owner tested the live website on iPhone 17 and supplied screenshots of a Google popup-blocked warning, a dashboard connection error, an oversized date control, Edit failing to reveal the form, and avoidable receipt/progress lines. Prepared on `codex/iphone-entry-and-session-fixes` from published PR #9/main `54ed8b6`.

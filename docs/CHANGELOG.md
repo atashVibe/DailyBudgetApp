@@ -1,5 +1,18 @@
 # DailyBudget Changelog
 
+## Milestone 2 — v0.2 — November 21, 2026
+
+Web/source checkpoint, building on Milestone 1 (`v0.1`).
+
+- Family-wide Premium receipt access, original image/PDF handling, shared file management and ZIP export through the Firebase gateway.
+- Per-category required receipts, Premium-aware controls, direct paperclip selection and safe attachment-before-entry saving.
+- Reference dashboard layout, current teal, taller controls, family-admin category icon library and compact monthly/yearly progress.
+- Correct whole-month/year status rules, with income/cashback excluded and negative spending bars empty.
+- Saved sessions, browser Google sign-in preparation, bounded cloud-read recovery, Back confirmation and Edit form reveal.
+- One shared 20px information-button style, matching Budget Overview everywhere.
+
+The release page records publication and the exact tag. Google web account-deletion confirmation still needs its popup setup updated and verified. Physical-device/family-sharing verification, other recovery/deletion follow-ups and cloud backup/alert checks remain on the roadmap. Apple sign-in remains deferred. This checkpoint does not publish a new APK, TestFlight or store build.
+
 ## 2026-05-24
 
 ### Major Finance Architecture Migration
