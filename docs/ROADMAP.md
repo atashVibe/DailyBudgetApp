@@ -292,7 +292,8 @@ Because DailyBudget stores personal financial information:
 - [x] Add Firestore rules to the repository
 - [x] Test rules with two unrelated test families
 - [x] Store the current Firestore indexes in the repository
-- [ ] Configure Firebase usage/billing alerts
+- [x] Verify the existing applicable USD 10 cloud budget with USD 5/9/10 warning thresholds.
+- [ ] Verify budget period/project scope, actual notification recipients and delivered alerts
 - [ ] Decide how backups and recovery will work
 - [ ] Consider Firebase App Check before public launch
 
