@@ -35,6 +35,7 @@ const env = {
   EXPO_PUBLIC_FIREBASE_API_KEY: "demo-only-key",
   EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET: `${projectId}.appspot.com`,
   EXPO_PUBLIC_RECEIPTS_API_URL: "http://localhost:8791",
+  EXPO_PUBLIC_INVITATIONS_API_URL: "http://localhost:8791/invitations",
 };
 delete env.EXPO_PUBLIC_BASE_URL;
 const children = [];
@@ -102,6 +103,8 @@ try {
     ? requested
     : [
         process.env.RECEIPTS_UI_CONFIG || "playwright.receipts.config.mjs",
+        process.env.INVITATIONS_UI_CONFIG ||
+          "playwright.invitations.config.mjs",
         process.env.ACCOUNTS_UI_CONFIG || "playwright.accounts.config.mjs",
       ];
   for (const config of configs) {

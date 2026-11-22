@@ -22,6 +22,8 @@ service cloud.firestore {
     match /receiptEntryDrafts/{id} { allow read, write: if false; }
     match /receiptLocks/{id} { allow read, write: if false; }
     match /receiptOperations/{id} { allow read, write: if false; }
+    match /invitationDeliveries/{id} { allow read, write: if false; }
+    match /invitationMailLimits/{id} { allow read, write: if false; }
     match /receiptAudit/{id} { allow read, write: if false; }
     match /receiptMaintenance/{id} { allow read, write: if false; }
     function signedIn() {
@@ -124,7 +126,9 @@ service cloud.firestore {
     match /families/{familyId} {
       allow create: if signedIn()
         && request.resource.data.createdBy == request.auth.uid
-        && request.resource.data.status == 'active';
+        && request.resource.data.status == 'active'
+        && isActiveMemberAfter(familyId)
+        && getAfter(membershipPath(familyId, request.auth.uid)).data.role == 'admin';
 
       allow read: if isActiveMember(familyId);
 
@@ -135,8 +139,7 @@ service cloud.firestore {
         )
         || removesOwnFamilyIdentity();
 
-      allow delete: if isAdmin(familyId)
-        || (signedIn() && resource.data.createdBy == request.auth.uid);
+      allow delete: if isAdmin(familyId);
     }
 
     match /familyMembers/{memberId} {
@@ -154,14 +157,20 @@ service cloud.firestore {
       }
 
       function isCreatorMembership() {
-        return get(
+        return !exists(
+          /databases/$(database)/documents/families/$(request.resource.data.familyId)
+        ) && getAfter(
           /databases/$(database)/documents/families/$(request.resource.data.familyId)
         ).data.createdBy == request.auth.uid
           && request.resource.data.role == 'admin';
       }
 
       function isInvitedMembership() {
-        return request.resource.data.keys().hasAll(['inviteId'])
+        return request.auth.token.email_verified == true
+          && request.resource.data.keys().hasAll(['inviteId'])
+          && get(/databases/$(database)/documents/invites/$(request.resource.data.inviteId)).data.status == 'pending'
+          && get(/databases/$(database)/documents/invites/$(request.resource.data.inviteId)).data.expiresAt > request.time
+          && get(/databases/$(database)/documents/families/$(request.resource.data.familyId)).data.status != 'deleted'
           && getAfter(
             /databases/$(database)/documents/invites/$(request.resource.data.inviteId)
           ).data.familyId == request.resource.data.familyId
@@ -289,7 +298,8 @@ service cloud.firestore {
 
     match /invites/{inviteId} {
       function isInviteRecipient() {
-        return hasAuthenticatedEmail(resource.data);
+        return hasAuthenticatedEmail(resource.data)
+          && request.auth.token.email_verified == true;
       }
 
       allow read: if isActiveMember(resource.data.familyId)
@@ -309,6 +319,7 @@ service cloud.firestore {
           isAdmin(resource.data.familyId)
           || (
             isInviteRecipient()
+            && resource.data.expiresAt > request.time
             && resource.data.status == 'pending'
             && request.resource.data.status == 'accepted'
             && request.resource.data.acceptedBy == request.auth.uid

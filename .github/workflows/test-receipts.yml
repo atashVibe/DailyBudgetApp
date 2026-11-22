@@ -28,9 +28,9 @@ jobs:
       - run: npm --prefix functions test
       - name: Verify existing budget rules and receipt lifecycle in isolated emulators
         run: npx --yes firebase-tools@15.36.0 emulators:exec --project demo-dailybudget-receipts --only auth,firestore,storage "node --test tests/firestore.rules.test.mjs && npm --prefix functions run test:integration"
-      - name: Install browser for account-deletion checks
+      - name: Install browser for account and invitation checks
         run: npx playwright install --with-deps chromium
-      - name: Verify account deletion, identity protection and receipt/sign-in regressions
+      - name: Verify invitations, Premium discovery, identity protection and receipt/sign-in regressions
         run: npm run test:accounts:browser
       - name: Preserve emulator-only browser failure diagnostics
         if: failure()

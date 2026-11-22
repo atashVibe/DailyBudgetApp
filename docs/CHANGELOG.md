@@ -1,5 +1,13 @@
 # DailyBudget Changelog
 
+## Prepared — Premium entry points and invitation email
+
+- Add Upgrade family to Premium in receipt viewers, with honest unavailable checkout and the existing cancellation/grace explanation.
+- Add server-side invitation emails containing a code and join link, with verified family-admin authority, quotas, request deduplication and secure SMTP configuration.
+- Preserve invitation codes through Google/email sign-in, signup and recovery; require verified recipient email and explicit joining.
+- Block expired/used invitations and former-creator privilege recovery; atomically create families and preserve existing accounts when signup fails.
+- Live email activation and coordinated Functions/rules/frontend deployment remain pending. No real payment or email delivery is claimed from tests.
+
 ## After Milestone 2 — roadmap execution
 
 - Fix Google confirmation for DailyBudget account deletion using prepared, same-user reauthentication and current server ownership checks.

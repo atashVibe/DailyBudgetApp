@@ -24,10 +24,12 @@ const projectId = "dailybudget-rules-test";
 let testEnv;
 
 function signedIn(userId, email) {
-  return testEnv.authenticatedContext(userId, {
-    email,
-    email_verified: true,
-  }).firestore();
+  return testEnv
+    .authenticatedContext(userId, {
+      email,
+      email_verified: true,
+    })
+    .firestore();
 }
 
 before(async () => {
@@ -358,16 +360,13 @@ test("members can set only their own family display name", async () => {
 test("a new owner can atomically create their protected profile and membership", async () => {
   const owner = signedIn("new-owner", "owner@example.com");
 
-  await assertSucceeds(
-    setDoc(doc(owner, "families", "new-family"), {
-      name: "New Family",
-      dailyBudget: 30,
-      status: "active",
-      createdBy: "new-owner",
-    }),
-  );
-
   const batch = writeBatch(owner);
+  batch.set(doc(owner, "families", "new-family"), {
+    name: "New Family",
+    dailyBudget: 30,
+    status: "active",
+    createdBy: "new-owner",
+  });
   batch.set(doc(owner, "users", "new-owner"), {
     activeFamilyId: "new-family",
     role: "admin",
@@ -382,4 +381,91 @@ test("a new owner can atomically create their protected profile and membership",
   });
 
   await assertSucceeds(batch.commit());
+});
+
+test("unverified email addresses cannot inspect or consume another family's invitation", async () => {
+  const client = testEnv
+    .authenticatedContext("unverified-recipient", {
+      email: "invitee@example.com",
+      email_verified: false,
+    })
+    .firestore();
+  await assertFails(getDoc(doc(client, "invites", "invite-a")));
+  const batch = writeBatch(client);
+  batch.update(doc(client, "invites", "invite-a"), {
+    status: "accepted",
+    acceptedBy: "unverified-recipient",
+    acceptedAt: serverTimestamp(),
+  });
+  batch.set(doc(client, "familyMembers", "family-a_unverified-recipient"), {
+    familyId: "family-a",
+    userId: "unverified-recipient",
+    email: "invitee@example.com",
+    role: "member",
+    status: "active",
+    inviteId: "invite-a",
+  });
+  await assertFails(batch.commit());
+});
+test("expired and already-consumed invitations cannot authorize new membership", async () => {
+  for (const status of ["expired", "accepted"]) {
+    const uid = `replay-${status}`,
+      id = `replay-invite-${status}`,
+      email = `${uid}@example.com`;
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), "invites", id), {
+        familyId: "family-a",
+        email,
+        role: "admin",
+        code: "44445555",
+        status: status === "expired" ? "pending" : "accepted",
+        acceptedBy: uid,
+        expiresAt: new Date(
+          status === "expired" ? Date.now() - 1000 : Date.now() + 600000,
+        ),
+      });
+    });
+    const client = signedIn(uid, email);
+    const batch = writeBatch(client);
+    batch.set(doc(client, "familyMembers", `family-a_${uid}`), {
+      familyId: "family-a",
+      userId: uid,
+      email,
+      role: "admin",
+      status: "active",
+      inviteId: id,
+    });
+    batch.update(doc(client, "invites", id), {
+      status: "accepted",
+      acceptedBy: uid,
+      acceptedAt: serverTimestamp(),
+    });
+    await assertFails(batch.commit());
+  }
+});
+test("a former family creator cannot bootstrap back in or delete the family after losing membership", async () => {
+  const uid = "former-creator";
+  await testEnv.withSecurityRulesDisabled(async (context) => {
+    await setDoc(doc(context.firestore(), "families", "former-family"), {
+      createdBy: uid,
+      status: "active",
+      name: "Still shared",
+    });
+  });
+  const client = signedIn(uid, "former@example.com");
+  await assertFails(deleteDoc(doc(client, "families", "former-family")));
+  const batch = writeBatch(client);
+  batch.set(doc(client, "users", uid), {
+    activeFamilyId: "former-family",
+    role: "admin",
+    email: "former@example.com",
+  });
+  batch.set(doc(client, "familyMembers", `former-family_${uid}`), {
+    familyId: "former-family",
+    userId: uid,
+    email: "former@example.com",
+    role: "admin",
+    status: "active",
+  });
+  await assertFails(batch.commit());
 });

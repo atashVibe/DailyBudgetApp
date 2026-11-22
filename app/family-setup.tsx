@@ -1,16 +1,13 @@
 import { useRouter } from "expo-router";
 import {
-  addDoc,
   collection,
   doc,
-  getDocs,
-  query,
   serverTimestamp,
-  where,
   writeBatch,
 } from "firebase/firestore";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Text } from "react-native";
+import { joinFamilyWithCode } from "../services/families";
 import { auth, db } from "../services/auth";
 import { seedFinanceData } from "../services/seedFinanceData";
 import AppTextInput from "./components/common/AppTextInput";
@@ -26,8 +23,11 @@ export default function FamilySetupScreen() {
   const [familyName, setFamilyName] = useState("");
   const [inviteCode, setInviteCode] = useState("");
   const [loading, setLoading] = useState(false);
+  const submitting = useRef(false);
   const [message, setMessage] = useState("");
   const handleStartFamily = async () => {
+    if (submitting.current) return;
+    submitting.current = true;
     try {
       setLoading(true);
       setMessage("");
@@ -45,15 +45,15 @@ export default function FamilySetupScreen() {
       }
 
       // Create family
-      const familyRef = await addDoc(collection(db, "families"), {
+      const familyRef = doc(collection(db, "families"));
+      const batch = writeBatch(db);
+      batch.set(familyRef, {
         name: familyName.trim(),
         dailyBudget: 30,
         status: "active",
         createdBy: user.uid,
         createdAt: serverTimestamp(),
       });
-
-      const batch = writeBatch(db);
       batch.set(doc(db, "users", user.uid), {
         activeFamilyId: familyRef.id,
         role: "admin",
@@ -75,9 +75,7 @@ export default function FamilySetupScreen() {
 
       setMessage("Family created successfully!");
 
-      setTimeout(() => {
-        router.replace("/(drawer)/dashboard");
-      }, 1000);
+      router.replace("/(drawer)/dashboard");
     } catch (error: any) {
       console.log("CREATE FAMILY ERROR:", error);
       console.log("ERROR CODE:", error?.code);
@@ -86,10 +84,15 @@ export default function FamilySetupScreen() {
       setMessage(
         `Failed to create family: ${error?.message || "Unknown error"}`,
       );
+    } finally {
+      submitting.current = false;
+      setLoading(false);
     }
   };
 
   const handleJoinFamily = async () => {
+    if (submitting.current) return;
+    submitting.current = true;
     try {
       setLoading(true);
       setMessage("");
@@ -106,71 +109,33 @@ export default function FamilySetupScreen() {
         return;
       }
 
-      const q = query(
-        collection(db, "invites"),
-        where("code", "==", inviteCode),
-        where("status", "==", "pending"),
-        where("email", "==", user.email?.trim().toLowerCase() || ""),
+      if (!user.emailVerified) {
+        router.push({
+          pathname: "/join-invitation",
+          params: { code: inviteCode },
+        });
+        return;
+      }
+      if (!user.email) {
+        setMessage("Sign in with the invited email address.");
+        return;
+      }
+      await joinFamilyWithCode(
+        user.uid,
+        user.email,
+        inviteCode,
+        user.displayName,
       );
-
-      const snapshot = await getDocs(q);
-
-      if (snapshot.empty) {
-        setMessage("Invalid or expired code.");
-        return;
-      }
-
-      const inviteDoc = snapshot.docs[0];
-      const inviteData = inviteDoc.data();
-
-      const googleEmail = user.email?.trim().toLowerCase() || "";
-
-      const inviteEmail = inviteData.email?.trim().toLowerCase();
-
-      if (googleEmail !== inviteEmail) {
-        setMessage("This invite code does not match your Google account.");
-
-        return;
-      }
-
-      const familyId = inviteData.familyId;
-      const invitedRole = inviteData.role === "admin" ? "admin" : "member";
-
-      const batch = writeBatch(db);
-      batch.set(doc(db, "users", user.uid), {
-        activeFamilyId: familyId,
-        role: invitedRole,
-        email: googleEmail,
-      });
-      batch.set(doc(db, "familyMembers", `${familyId}_${user.uid}`), {
-        familyId,
-        userId: user.uid,
-        email: googleEmail,
-        role: invitedRole,
-        status: "active",
-        joinedAt: serverTimestamp(),
-        inviteId: inviteDoc.id,
-        ...(user.displayName?.trim()
-          ? { displayName: user.displayName.trim() }
-          : {}),
-      });
-      batch.update(doc(db, "invites", inviteDoc.id), {
-        status: "accepted",
-        acceptedBy: user.uid,
-        acceptedAt: serverTimestamp(),
-      });
-      await batch.commit();
 
       setMessage("Joined family successfully!");
 
-      setTimeout(() => {
-        router.replace("/(drawer)/dashboard");
-      }, 1000);
+      router.replace("/(drawer)/dashboard");
     } catch (error) {
       console.log(error);
 
       setMessage("Failed to join family.");
     } finally {
+      submitting.current = false;
       setLoading(false);
     }
   };

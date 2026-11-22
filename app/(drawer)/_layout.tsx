@@ -95,6 +95,13 @@ function DrawerNavigation() {
     >
       <Drawer.Screen name="dashboard" options={{ title: "Dashboard" }} />
       <Drawer.Screen name="receipts" options={{ title: "Family Receipts" }} />
+      <Drawer.Screen
+        name="premium"
+        options={{
+          title: "Family Premium",
+          drawerItemStyle: { display: "none" },
+        }}
+      />
 
       <Drawer.Screen
         name="settings"

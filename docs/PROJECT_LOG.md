@@ -1,5 +1,15 @@
 # DailyBudget Project Log
 
+## Premium discovery and emailed invitations — November 22, 2026
+
+Prepared the requested Upgrade family to Premium entry points in family/per-entry receipt viewers and a plan page that honestly disables checkout. No pricing/paid access/payment was created. Explained existing cancellation semantics: uploads/replacements stop when access ends; current members have 30 days to read/download/export, then scheduled cleanup may remove eligible receipts while budget entries remain. Separate global receipt-administrator sponsorship remains independent of subscriptions.
+
+Added the authenticated `familyInvitationsApi` in the existing us-west1 region, SMTP via Nodemailer, a Secret Manager-only password binding, server-derived family authority, verified sender/recipient checks, fixed HTTPS code/link emails, ten-minute expiry, bounded quotas and seven-day private request deduplication. SMTP acceptance is not inbox proof; uncertain outcomes are not automatically resent. Existing hourly maintenance removes expired private mail records. An explicit manual share fallback reports that no email was sent. Login/Google/signup/password recovery preserve the link, and joining requires an explicit action.
+
+Security review exposed concrete adjacent defects: unverified/expired/consumed invite use, former creators bootstrapping their old membership/deleting a family, and signup rollback deleting an existing `auth.currentUser`. Closed those gaps, made both new-family paths atomic and preserved accounts after uncertain/failed setup. This does not complete former-family personal-attribution cleanup.
+
+Local verification passes: TypeScript/lint; 14 finance, four cloud-report, nine backend unit, 14 Firestore rules and 52 backend integration cases; all 20 Chromium browser flows (9 receipt/sign-in + 6 invitation/Premium + 5 account deletion). The six new invitation/Premium browser cases also pass in iPhone-configured WebKit, and production web plus Android JavaScript exports pass. These are not physical-device or native-binary tests. No production email was sent. Owner Google credentials remain unavailable here: secure SMTP setup and Functions/rules deployment must precede frontend publication because old two-step family creation does not match the new atomic bootstrap rules. Detailed setup and limitations: `docs/PREMIUM_INVITATIONS.md`. Pricing/billing period and first-release purchase scope questions remain unanswered. Milestone 2 tag is unchanged; Apple remains deferred.
+
 ## Published checkpoint and next Android milestone — November 22, 2026
 
 PR #14 merged as `b04c2f5`. Full GitHub verification succeeded: four cloud-report tests, 14 accounting tests, six receipt unit tests, 11 rules tests, 40 receipt integration tests, nine receipt/sign-in browser flows and five account-deletion browser flows. Run: https://github.com/atashVibe/DailyBudgetApp/actions/runs/45062234202 . The updated Google startup flow also passes a focused local emulator run (18.7 seconds). Earlier failed attempts and the bounded startup/trace mitigation are documented below; no product authentication/UI behavior was changed.

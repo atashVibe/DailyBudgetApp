@@ -24,6 +24,7 @@ export type ReceiptAccess = {
   familyId: string;
   familyName: string;
   plan: string;
+  active: boolean;
   tier: string;
   canUpload: boolean;
   canRead: boolean;
