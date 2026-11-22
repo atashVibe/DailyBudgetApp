@@ -9,9 +9,13 @@ import {
   where,
 } from "firebase/firestore";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { Platform, ScrollView, Text, View } from "react-native";
 import { useDashboardBack } from "../../hooks/useDashboardBack";
-import { withTimeout, restartCloudConnection } from "../../services/loading";
+import {
+  withTimeout,
+  withCloudRetry,
+  restartCloudConnection,
+} from "../../services/loading";
 import PrimaryButton from "../components/common/PrimaryButton";
 import { auth, db } from "../../services/auth";
 import {
@@ -47,11 +51,30 @@ export default function DashboardScreen() {
   const [refreshSignal, setRefreshSignal] = useState(0);
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
   const [entries, setEntries] = useState<Entry[]>([]);
+  const [entriesLoaded, setEntriesLoaded] = useState(false);
+  const [entriesError, setEntriesError] = useState("");
+  const entriesFamily = useRef<string | null>(null);
   const scrollRef = useRef<ScrollView>(null);
+  const formRef = useRef<View>(null);
   const handleCancelEdit = () => {
     setEditingEntry(null);
   };
   const formPosition = useRef(0);
+  const revealForm = useCallback(() => {
+    if (Platform.OS === "web") {
+      // Web can scroll the document or an ancestor ScrollView. Let the browser
+      // reveal the actual form in either case instead of guessing an offset.
+      (formRef.current as unknown as HTMLElement | null)?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    } else {
+      scrollRef.current?.scrollTo({
+        y: Math.max(0, formPosition.current - 8),
+        animated: true,
+      });
+    }
+  }, []);
   const [dailyBudget, setDailyBudget] = useState(30);
   const [spentThisMonth, setSpentThisMonth] = useState(0);
   const [spentThisYear, setSpentThisYear] = useState(0);
@@ -88,9 +111,16 @@ export default function DashboardScreen() {
         setLoading(true);
         setLoadError("");
         try {
-          const userSnap = await withTimeout(
-            getDoc(doc(db, "users", user.uid)),
-          );
+          const userSnap = await withCloudRetry(async () => {
+            const snapshot = await getDoc(doc(db, "users", user.uid));
+            if (!snapshot.exists() && snapshot.metadata.fromCache)
+              throw Object.assign(
+                new Error("Reconnect to load your account."),
+                { code: "unavailable" },
+              );
+            return snapshot;
+          });
+          if (!active) return;
           const nextFamilyId = userSnap.data()?.activeFamilyId as
             | string
             | undefined;
@@ -100,12 +130,22 @@ export default function DashboardScreen() {
             return;
           }
 
-          const [familySnap, memberSnap] = await withTimeout(
-            Promise.all([
+          const [familySnap, memberSnap] = await withCloudRetry(async () => {
+            const snapshots = await Promise.all([
               getDoc(doc(db, "families", nextFamilyId)),
               getDoc(doc(db, "familyMembers", `${nextFamilyId}_${user.uid}`)),
-            ]),
-          );
+            ]);
+            if (
+              snapshots.some(
+                (snapshot) => !snapshot.exists() && snapshot.metadata.fromCache,
+              )
+            )
+              throw Object.assign(new Error("Reconnect to load your family."), {
+                code: "unavailable",
+              });
+            return snapshots;
+          });
+          if (!active) return;
 
           if (!familySnap.exists() || familySnap.data().status === "deleted") {
             router.replace("/family-setup");
@@ -125,9 +165,7 @@ export default function DashboardScreen() {
               ? displayName || "Email hidden by Apple"
               : email || displayName || "Unknown user",
           );
-          setEditingEntry(null);
-          setSpentThisMonth(0);
-          setSpentThisYear(0);
+          setEntriesError("");
           setFamilyId(nextFamilyId);
           setDailyBudget(Number(familySnap.data().dailyBudget || 30));
           setIsAdmin(memberSnap.exists() && memberSnap.data().role === "admin");
@@ -136,7 +174,7 @@ export default function DashboardScreen() {
           console.error("Failed to load dashboard:", error);
           if (active) {
             setLoadError(
-              "The dashboard could not be loaded. Please try opening it again.",
+              "You're still signed in. We couldn't connect to your budget. Check your connection and retry.",
             );
           }
         } finally {
@@ -155,55 +193,76 @@ export default function DashboardScreen() {
 
   useEffect(() => {
     if (!familyId) return;
+    if (entriesFamily.current !== familyId) {
+      entriesFamily.current = familyId;
+      setEntriesLoaded(false);
+      setEntries([]);
+      setSpentThisMonth(0);
+      setSpentThisYear(0);
+    }
+    let active = true;
+    setEntriesError("");
     const loadMonthSpending = async () => {
-      const now = new Date();
-      const currentYear = now.getFullYear();
-      const currentMonth = now.getMonth();
+      try {
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        const currentMonth = now.getMonth();
 
-      const q = query(
-        collection(db, "entries"),
-        where("familyId", "==", familyId),
-        orderBy("createdAt", "desc"),
-      );
+        const q = query(
+          collection(db, "entries"),
+          where("familyId", "==", familyId),
+          orderBy("createdAt", "desc"),
+        );
 
-      const snapshot = await getDocs(q);
+        const snapshot = await withCloudRetry(() => getDocs(q));
+        if (!active) return;
 
-      const loadedEntries: Entry[] = snapshot.docs.map((entryDocument) => {
-        const data = entryDocument.data();
+        const loadedEntries: Entry[] = snapshot.docs.map((entryDocument) => {
+          const data = entryDocument.data();
 
-        return {
-          id: entryDocument.id,
-          amount: Number(data.amount || 0),
-          type: String(data.type || "expense").toLowerCase(),
-          budgetAreaId: data.budgetAreaId,
-          category: data.category || "",
-          categoryId: data.categoryId,
-          note: String(data.note || ""),
-          date: data.date,
-        };
-      });
+          return {
+            id: entryDocument.id,
+            amount: Number(data.amount || 0),
+            type: String(data.type || "expense").toLowerCase(),
+            budgetAreaId: data.budgetAreaId,
+            category: data.category || "",
+            categoryId: data.categoryId,
+            note: String(data.note || ""),
+            date: data.date,
+          };
+        });
 
-      setEntries(loadedEntries);
+        setEntries(loadedEntries);
 
-      const reportEntries: ReportEntry[] = loadedEntries.map((entry) => ({
-        amount: entry.amount,
-        type: entry.type as ReportEntry["type"],
-        date: entry.date,
-      }));
+        const reportEntries: ReportEntry[] = loadedEntries.map((entry) => ({
+          amount: entry.amount,
+          type: entry.type as ReportEntry["type"],
+          date: entry.date,
+        }));
 
-      const monthTotal = calculateMonthlyTotal(
-        reportEntries,
-        currentYear,
-        currentMonth,
-      );
+        const monthTotal = calculateMonthlyTotal(
+          reportEntries,
+          currentYear,
+          currentMonth,
+        );
 
-      const yearTotal = calculateYearlyTotal(reportEntries, currentYear);
+        const yearTotal = calculateYearlyTotal(reportEntries, currentYear);
 
-      setSpentThisMonth(monthTotal);
-      setSpentThisYear(yearTotal);
+        setSpentThisMonth(monthTotal);
+        setSpentThisYear(yearTotal);
+        setEntriesLoaded(true);
+      } catch {
+        if (active)
+          setEntriesError(
+            "Couldn't update spending. Your entries are kept. Check your connection and retry.",
+          );
+      }
     };
 
-    loadMonthSpending();
+    void loadMonthSpending();
+    return () => {
+      active = false;
+    };
   }, [refreshSignal, familyId]);
 
   if (loading) {
@@ -230,6 +289,7 @@ export default function DashboardScreen() {
 
   return (
     <AppScreen
+      ref={scrollRef}
       style={{
         padding: 14,
         paddingTop: 18,
@@ -238,13 +298,27 @@ export default function DashboardScreen() {
         alignItems: "stretch",
       }}
     >
-      <BudgetSummaryCard
-        dailyBudget={dailyBudget}
-        spentThisMonth={spentThisMonth}
-        spentThisYear={spentThisYear}
-      />
+      {entriesLoaded ? (
+        <BudgetSummaryCard
+          dailyBudget={dailyBudget}
+          spentThisMonth={spentThisMonth}
+          spentThisYear={spentThisYear}
+        />
+      ) : !entriesError ? (
+        <Text style={{ padding: 16 }}>Loading spending…</Text>
+      ) : null}
+      {entriesError && (
+        <View style={{ gap: 8, marginBottom: 12 }}>
+          <Text accessibilityLiveRegion="polite">{entriesError}</Text>
+          <PrimaryButton
+            title="Retry spending"
+            onPress={() => setRefreshSignal((value) => value + 1)}
+          />
+        </View>
+      )}
 
       <View
+        ref={formRef}
         onLayout={(event) => {
           formPosition.current = event.nativeEvent.layout.y;
         }}
@@ -256,6 +330,7 @@ export default function DashboardScreen() {
             onEntrySaved={handleEntrySaved}
             entryToEdit={editingEntry}
             onCancelEdit={handleCancelEdit}
+            onEditReady={revealForm}
           />
         )}
       </View>
@@ -274,12 +349,6 @@ export default function DashboardScreen() {
           }}
           onEditEntry={(entry) => {
             setEditingEntry(entry);
-            setTimeout(() => {
-              scrollRef.current?.scrollTo({
-                y: formPosition.current,
-                animated: true,
-              });
-            }, 100);
           }}
         />
       )}

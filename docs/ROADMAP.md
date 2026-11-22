@@ -1,10 +1,18 @@
 # DailyBudget Roadmap
 
+## iPhone field sizing, Edit and sign-in recovery
+
+- [x] Bound the web date field and align free/Premium receipt controls beside their label.
+- [x] Put month/year figures beside progress labels and connect Edit to the expanded form.
+- [x] Prepare browser Google sign-in before enabling it; keep successful authentication separate from profile errors.
+- [x] Add bounded connection-read backoff and spending recovery without replaying writes.
+- [ ] Finish Chromium/WebKit checks and publish; owner retests on iPhone 17.
+
 ## Google popup sign-in regression
 
 - [x] Reproduce live `auth/argument-error` and restore the web popup resolver on demand.
 - [x] Add browser coverage for Google popup cancellation/retry, fake sign-in and session restoration.
-- [ ] Complete checks and publish the hotfix; confirm the live popup opens.
+- [x] Complete checks and publish PR #9 (`54ed8b6`); live Google popup verified.
 - [ ] Owner verifies Google sign-in and reopening on S22.
 
 ## Reference layout and Android session follow-up

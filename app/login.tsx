@@ -2,9 +2,8 @@ import { FontAwesome } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import * as AppleAuthentication from "expo-apple-authentication";
 import { useRouter } from "expo-router";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
-import { useCallback, useEffect, useState } from "react";
+import { onAuthStateChanged, signInWithEmailAndPassword } from "firebase/auth";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Platform,
   StyleSheet,
@@ -12,9 +11,13 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { auth, db } from "../services/auth";
+import { auth } from "../services/auth";
 import PolicyLinks from "../components/PolicyLinks";
-import { signInWithApple, signInWithGoogle } from "../services/googleAuth";
+import {
+  prepareGoogleSignIn,
+  signInWithApple,
+  signInWithGoogle,
+} from "../services/googleAuth";
 import AppScreen from "./components/common/AppScreen";
 import AppTextInput from "./components/common/AppTextInput";
 import PrimaryButton from "./components/common/PrimaryButton";
@@ -58,15 +61,34 @@ function SocialLoginButton({
 
 export default function LoginScreen() {
   const router = useRouter();
+  const signInPending = useRef(false);
+  useEffect(
+    () =>
+      onAuthStateChanged(auth, (user) => {
+        if (user && !signInPending.current) {
+          setMessage("");
+          router.replace("/");
+        }
+      }),
+    [router],
+  );
+  const [googleReady, setGoogleReady] = useState(Platform.OS !== "web");
+  const [googleSetupFailed, setGoogleSetupFailed] = useState(false);
+  const [googleSetupAttempt, setGoogleSetupAttempt] = useState(0);
   useEffect(() => {
-    let current = true;
-    void auth.authStateReady().then(() => {
-      if (current && auth.currentUser) router.replace("/");
-    });
+    let active = true;
+    setGoogleSetupFailed(false);
+    void prepareGoogleSignIn()
+      .then(() => {
+        if (active) setGoogleReady(true);
+      })
+      .catch(() => {
+        if (active) setGoogleSetupFailed(true);
+      });
     return () => {
-      current = false;
+      active = false;
     };
-  }, [router]);
+  }, [googleSetupAttempt]);
   const [message, setMessage] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -93,6 +115,7 @@ export default function LoginScreen() {
     }, []),
   );
   const handleLogin = async () => {
+    if (signInPending.current) return;
     if (!email.trim()) {
       setMessage("Please enter your email.");
       return;
@@ -103,16 +126,13 @@ export default function LoginScreen() {
       return;
     }
 
+    signInPending.current = true;
     setLoading(true);
+    setMessage("");
 
     try {
-      const userCredential = await signInWithEmailAndPassword(
-        auth,
-        email,
-        password,
-      );
-      setMessage(`Signed in: ${userCredential.user.email}`);
-      setTimeout(() => router.replace("/(drawer)/dashboard"), 1000);
+      await signInWithEmailAndPassword(auth, email, password);
+      router.replace("/");
     } catch (error: any) {
       if (error.code === "auth/invalid-credential") {
         setMessage("Incorrect email or password.");
@@ -122,36 +142,26 @@ export default function LoginScreen() {
         setMessage("Login failed. Please try again.");
       }
     } finally {
+      signInPending.current = false;
       setLoading(false);
     }
   };
   const handleGoogleLogin = async () => {
+    if (signInPending.current || !googleReady) return;
+    signInPending.current = true;
     try {
       setLoading(true);
       setMessage("");
 
-      const user = await signInWithGoogle();
-
-      const userDocRef = doc(db, "users", user.uid);
-      const userDoc = await getDoc(userDocRef);
-
-      if (userDoc.exists() && userDoc.data().activeFamilyId) {
-        setMessage(`Signed in: ${user.email}`);
-
-        setTimeout(() => {
-          router.replace("/(drawer)/dashboard");
-        }, 1000);
-      } else {
-        setMessage("Please finish your family setup.");
-
-        setTimeout(() => {
-          router.push("/family-setup");
-        }, 1000);
-      }
+      await signInWithGoogle();
+      router.replace("/");
     } catch (error: any) {
       console.log(error);
 
-      if (
+      if (auth.currentUser) {
+        setMessage("");
+        router.replace("/");
+      } else if (
         error?.code === "auth/popup-closed-by-user" ||
         error?.code === "auth/cancelled-popup-request"
       ) {
@@ -174,32 +184,19 @@ export default function LoginScreen() {
         setMessage("Google sign-in failed. Please try again.");
       }
     } finally {
+      signInPending.current = false;
       setLoading(false);
     }
   };
   const handleAppleLogin = async () => {
+    if (signInPending.current) return;
+    signInPending.current = true;
     try {
       setLoading(true);
       setMessage("");
 
-      const user = await signInWithApple();
-
-      const userDocRef = doc(db, "users", user.uid);
-      const userDoc = await getDoc(userDocRef);
-
-      if (userDoc.exists() && userDoc.data().activeFamilyId) {
-        setMessage(`Signed in: ${user.email}`);
-
-        setTimeout(() => {
-          router.replace("/(drawer)/dashboard");
-        }, 1000);
-      } else {
-        setMessage("Please finish your family setup.");
-
-        setTimeout(() => {
-          router.push("/family-setup");
-        }, 1000);
-      }
+      await signInWithApple();
+      router.replace("/");
     } catch (error: any) {
       console.log(error);
 
@@ -225,6 +222,7 @@ export default function LoginScreen() {
         setMessage("Apple sign-in failed. Please try again.");
       }
     } finally {
+      signInPending.current = false;
       setLoading(false);
     }
   };
@@ -300,9 +298,28 @@ export default function LoginScreen() {
         <SocialLoginButton
           provider="google"
           title="Continue with Google"
-          disabled={loading}
+          disabled={loading || !googleReady}
           onPress={handleGoogleLogin}
         />
+        {googleSetupFailed ? (
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Retry Google sign-in preparation"
+            onPress={() => setGoogleSetupAttempt((value) => value + 1)}
+            style={{ padding: 12 }}
+          >
+            <Text style={{ textAlign: "center", color: "#155E50" }}>
+              Google sign-in could not get ready. Check your connection and tap
+              to retry.
+            </Text>
+          </TouchableOpacity>
+        ) : !googleReady ? (
+          <Text
+            style={{ textAlign: "center", color: "#555", marginBottom: 12 }}
+          >
+            Preparing Google sign-in…
+          </Text>
+        ) : null}
         {APPLE_SIGN_IN_ENABLED && Platform.OS === "web" && (
           <SocialLoginButton
             provider="apple"
