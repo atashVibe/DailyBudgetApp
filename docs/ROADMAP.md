@@ -22,7 +22,9 @@ The owner has authorized progressing through this roadmap. Complete independent 
 - [x] Add repeatable emulator-only browser checks to GitHub CI alongside existing receipt/sign-in regressions.
 - [x] Prepare a read-only owner report for backup schedules/copies, storage protection/IAM, billing alerts, receipt jobs and Auth email privacy. Unit tests verify GET-only access, fixed Google hosts, secret filtering and blocked-permission reporting.
 - [ ] Verify the deletion confirmation on actual iPhone/Android hardware using spare DailyBudget accounts.
-- [ ] Run the owner report against the live project. This workspace has no Firebase owner CLI login and the shared browser reports `Browser runtime unavailable`.
+- [x] Run the owner report against the live project. Owner supplied the Cloud Shell output on November 22, 2026; backups are absent, while budget-alert/Auth-privacy queries returned 403 and remain unverified. See `docs/CLOUD_READINESS.md`.
+- [x] Choose the database backup policy with the owner: daily copies, retained 14 days; size-based storage charges disclosed.
+- [ ] Create the selected backup schedule, verify an actual backup and demonstrate an isolated restore. Receipt originals require a separate cloud backup/recovery plan.
 - [ ] Configure/verify any missing production safeguards only after inspecting the report; choose alert thresholds and backup retention with the owner.
 
 The current browser tests prove a second identity retains shared entries and original receipt bytes after the first user's deletion. They do not complete the following live-device rehearsal:
@@ -40,6 +42,8 @@ The current browser tests prove a second identity retains shared entries and ori
 In the owner's Google Cloud Shell, update/read the script from this repository and run `functions/scripts/cloud-readiness-audit.mjs` with Node. It requires no npm installation and does not change settings or read budget entries/receipt contents. It obtains the owner's gcloud token in memory, sends GET requests only to fixed Google APIs, and never prints the token, function environment variables or unrelated project budgets. Share only the JSON report, not credentials.
 
 A result marked `checked` means the configuration was read, not that recovery or notification delivery was proven. An empty schedule/budget list, a blocked API and an unperformed restore remain open checks. A real restore into a separate destination, original-file recovery, inherited IAM review, alert delivery and retained-copy cleanup still need evidence before the production gates are closed.
+
+The owner supplied the first live report on November 22, 2026. Findings, the selected 14-day daily database backup policy and reviewed Cloud Shell commands are recorded in `docs/CLOUD_READINESS.md`. Schedule creation has not yet been confirmed. The report now includes safe reason codes for blocked checks instead of assuming every 403 is an IAM problem.
 
 ## Family Premium purchase — requested
 

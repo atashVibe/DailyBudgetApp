@@ -81,3 +81,51 @@ test("missing cloud permissions stay blocked rather than being reported as empty
   assert.equal(report.checks.billingEnabled.status, "blocked");
   assert.ok(!JSON.stringify(report).includes("do not echo"));
 });
+
+test("denied checks expose only known Google reason codes and service names", async () => {
+  const secret = "FAKE_OWNER_TOKEN_DO_NOT_PRINT";
+  const read = createGoogleReader(
+    secret,
+    async () =>
+      new Response(
+        JSON.stringify({
+          error: {
+            message: secret,
+            details: [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                reason: "SERVICE_DISABLED",
+                metadata: {
+                  service: "billingbudgets.googleapis.com",
+                  consumer: secret,
+                  activationUrl: `https://example.test/${secret}`,
+                },
+              },
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                reason: "ACCESS_TOKEN_SCOPE_INSUFFICIENT",
+                metadata: { service: secret },
+              },
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                reason: secret,
+              },
+              {
+                "@type": "type.googleapis.com/google.rpc.DebugInfo",
+                detail: secret,
+              },
+            ],
+          },
+        }),
+        { status: 403 },
+      ),
+  );
+  const report = await collectCloudReadiness(read);
+  assert.deepEqual(report.checks.authPrivacy.diagnostics, [
+    { reason: "SERVICE_DISABLED", service: "billingbudgets.googleapis.com" },
+    { reason: "ACCESS_TOKEN_SCOPE_INSUFFICIENT" },
+  ]);
+  assert.equal(report.checks.authPrivacy.status, "blocked");
+  assert.ok(!JSON.stringify(report).includes(secret));
+  assert.ok(!JSON.stringify(report).includes("activationUrl"));
+});

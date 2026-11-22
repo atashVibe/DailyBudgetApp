@@ -17,6 +17,38 @@ const hosts = new Set([
   "cloudfunctions.googleapis.com",
   "identitytoolkit.googleapis.com",
 ]);
+const denialReasons = new Set([
+  "SERVICE_DISABLED",
+  "BILLING_DISABLED",
+  "ACCESS_TOKEN_SCOPE_INSUFFICIENT",
+  "IAM_PERMISSION_DENIED",
+  "USER_PROJECT_DENIED",
+  "CONSUMER_INVALID",
+  "API_KEY_INVALID",
+  "RATE_LIMIT_EXCEEDED",
+  "RESOURCE_QUOTA_EXCEEDED",
+  "QUOTA_EXCEEDED",
+]);
+
+async function denialDiagnostics(response) {
+  // Google error messages/metadata can contain account identifiers or arbitrary
+  // text. Keep only known reason codes and the already allowed API service name.
+  const body = await response.json().catch(() => ({}));
+  const details = body?.error?.details;
+  if (!Array.isArray(details)) return [];
+  return details
+    .filter(
+      (detail) =>
+        detail?.["@type"] === "type.googleapis.com/google.rpc.ErrorInfo" &&
+        denialReasons.has(detail.reason),
+    )
+    .map((detail) => ({
+      reason: detail.reason,
+      ...(hosts.has(detail.metadata?.service)
+        ? { service: detail.metadata.service }
+        : {}),
+    }));
+}
 
 export function createGoogleReader(accessToken, fetchImpl = fetch) {
   return async (url) => {
@@ -32,15 +64,17 @@ export function createGoogleReader(accessToken, fetchImpl = fetch) {
       },
       signal: AbortSignal.timeout(15000),
     });
-    if (!response.ok)
+    if (!response.ok) {
+      const diagnostics = await denialDiagnostics(response);
       throw Object.assign(
         new Error(
           response.status === 401 || response.status === 403
-            ? "Owner permission is required for this check."
+            ? "Google denied this check. Permissions, API setup or token scope may need attention."
             : "This read-only check did not complete.",
         ),
-        { status: response.status },
+        { status: response.status, diagnostics },
       );
+    }
     return response.json();
   };
 }
@@ -56,6 +90,9 @@ export async function collectCloudReadiness(read) {
             : "unavailable",
         httpStatus: error.status || null,
         message: error.message,
+        ...(error.diagnostics?.length
+          ? { diagnostics: error.diagnostics }
+          : {}),
       };
     }
   };
