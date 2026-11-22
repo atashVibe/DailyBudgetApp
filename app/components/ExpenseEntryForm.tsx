@@ -25,6 +25,7 @@ import AppTextInput from "./common/AppTextInput";
 import FormLabel from "./common/FormLabel";
 import { dashboardStyles as ui } from "./common/dashboardStyles";
 import PrimaryButton from "./common/PrimaryButton";
+import InfoButton from "../../components/InfoButton";
 
 type Entry = {
   id: string;
@@ -603,32 +604,12 @@ export default function ExpenseEntryForm({
                   <Ionicons name="attach-outline" size={24} color="#11735B" />
                 </TouchableOpacity>
               ) : receiptAccess ? (
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  accessibilityLabel="About Premium receipt attachments"
-                  accessibilityHint="Explains how to enable receipt attachments for your family."
+                <InfoButton
+                  label="About Premium receipt attachments"
+                  hint="Explains how to enable receipt attachments for your family."
+                  expanded={showPremiumInfo}
                   onPress={() => setShowPremiumInfo((shown) => !shown)}
-                  style={{
-                    width: 40,
-                    height: 40,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    borderRadius: 20,
-                    backgroundColor: "#EFF6FF",
-                    borderWidth: 1,
-                    borderColor: "#93C5FD",
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: 20,
-                      color: "#1D4ED8",
-                      fontWeight: "700",
-                    }}
-                  >
-                    i
-                  </Text>
-                </TouchableOpacity>
+                />
               ) : null}
             </View>
             {requiresReceipt && (

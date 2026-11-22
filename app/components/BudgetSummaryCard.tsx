@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { Platform, Pressable, Text, View } from "react-native";
 import { calculateBudgetSummary } from "../../services/financeCalculations";
 import { dashboardStyles as ui } from "./common/dashboardStyles";
+import InfoButton from "../../components/InfoButton";
 
 type Props = {
   dailyBudget: number;
@@ -170,18 +171,11 @@ export default function BudgetSummaryCard({
       >
         <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
           <Text style={[ui.title, { fontSize: 18 }]}>Budget Overview</Text>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Spending calculation"
+          <InfoButton
+            label="Spending calculation"
+            expanded={showInfo}
             onPress={() => setShowInfo(!showInfo)}
-            hitSlop={8}
-          >
-            <Ionicons
-              name="information-circle-outline"
-              size={20}
-              color="#52647A"
-            />
-          </Pressable>
+          />
         </View>
         <Pressable
           accessibilityRole="button"

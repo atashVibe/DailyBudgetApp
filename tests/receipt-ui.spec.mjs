@@ -750,6 +750,39 @@ test("phone controls stay aligned and Edit reveals the expanded form", async ({
     name: "About Premium receipt attachments",
   });
   await expect(info).toBeVisible();
+  const budgetInfo = page.getByRole("button", {
+    name: "Spending calculation",
+    exact: true,
+  });
+  const budgetInfoBox = await budgetInfo.boundingBox();
+  const receiptInfoBox = await info.boundingBox();
+  expect(receiptInfoBox.width).toBe(20);
+  expect(receiptInfoBox.height).toBe(20);
+  expect(receiptInfoBox.width).toBe(budgetInfoBox.width);
+  expect(receiptInfoBox.height).toBe(budgetInfoBox.height);
+  const glyphStyle = (button) =>
+    button
+      .locator('[dir="auto"]')
+      .first()
+      .evaluate((icon) => {
+        const style = getComputedStyle(icon);
+        return {
+          text: icon.textContent,
+          size: style.fontSize,
+          color: style.color,
+        };
+      });
+  expect(await glyphStyle(info)).toEqual(await glyphStyle(budgetInfo));
+  await expect(info).toHaveAttribute("aria-expanded", "false");
+  await budgetInfo.click();
+  await expect(budgetInfo).toHaveAttribute("aria-expanded", "true");
+  await expect(
+    page.getByText("Monthly allowance is earned through today", {
+      exact: false,
+    }),
+  ).toBeVisible();
+  await budgetInfo.click();
+  await expect(budgetInfo).toHaveAttribute("aria-expanded", "false");
   await assertSameLine(
     page.getByText("Receipt (optional)", { exact: true }),
     info,
@@ -761,6 +794,7 @@ test("phone controls stay aligned and Edit reveals the expanded form", async ({
     }),
   ).toBeVisible();
   await info.click();
+  await expect(info).toHaveAttribute("aria-expanded", "false");
   const monthRow = page.getByTestId("month-progress-row");
   await assertSameLine(
     monthRow.getByText("Month Progress", { exact: true }),

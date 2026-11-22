@@ -1,12 +1,27 @@
 # DailyBudget Roadmap
 
+## Milestone 2 checkpoint — v0.2
+
+[Milestone 2 release](https://github.com/atashVibe/DailyBudgetApp/releases/tag/v0.2) is the versioned web/source checkpoint for family receipts, corrected accounting/status rules, the reference dashboard/category icons and mobile sign-in/Edit recovery. Publication follows checks and the matching GitHub Pages deployment; the release page records the published tag. It does not stand for App Store/Google Play delivery or completion of every device/production gate below.
+
+**Information-button standard:** every information action uses `components/InfoButton.tsx`: the approved 20px outline glyph and muted color from Budget Overview, with invisible hit slop for tapping. Do not add page-specific icon sizes, filled circles or border/color overrides. Supply a meaningful accessible label and the current expanded state; leave layout to the caller. Budget Overview and the receipt explanation both use this component.
+
+## Recommended next work after Milestone 2
+
+1. **Two-person real-device family rehearsal.** On iPhone and Android, verify Google/email login and reopen, invitations/joining, synchronized entries, and shared receipt view/download/replace/delete. Verify that removing/leaving a family stops access and that an unrelated family cannot see its data. Existing emulator tests are evidence for the code, not proof of the live two-person/device path.
+2. **Account recovery and deletion completion.** Verify reset-link errors and unknown-email behavior; verify Google/email deletion, sole-admin handling, and inability to reuse the deleted account. Finish trusted cleanup of attribution in families a user left previously. Apple/provider-linking work remains deferred at the owner's request.
+3. **Cloud operations before a wider beta.** Verify billing/usage alerts, choose an independent backup and demonstrate a restore, and check actual shared-storage permissions and scheduled receipt cleanup/retention. Storage soft deletion and receipt export alone are not a tested independent recovery plan.
+
+After those checks, follow the existing private-beta/device distribution plan. Keep reports/charts, payment integration and other major features later; do not start them as part of this release. The owner reviews the next task before expanding scope.
+
 ## iPhone field sizing, Edit and sign-in recovery
 
 - [x] Bound the web date field and align free/Premium receipt controls beside their label.
 - [x] Put month/year figures beside progress labels and connect Edit to the expanded form.
 - [x] Prepare browser Google sign-in before enabling it; keep successful authentication separate from profile errors.
 - [x] Add bounded connection-read backoff and spending recovery without replaying writes.
-- [ ] Finish Chromium/WebKit checks and publish; owner retests on iPhone 17.
+- [x] Finish Chromium/WebKit checks and publish PR #10 (`f751850`).
+- [ ] Owner retests sign-in/reopen and Edit on iPhone 17 after the fixes.
 
 ## Google popup sign-in regression
 
@@ -110,7 +125,7 @@ Do not add major features during this phase.
 - [x] Commit them
 - [x] Push them to GitHub
 - [x] Confirm the `.p8` Apple key is not inside the repository
-- [ ] Create a stable beta checkpoint/tag
+- Release checkpoint tag: `v0.2` (Milestone 2); publication is recorded on the linked GitHub release page.
 
 ## 2. Account Deletion
 
@@ -137,7 +152,7 @@ Add an easy-to-find **Delete Account** option under Settings.
 These are beta-release requirements, not optional Version 2 features.
 
 2026-11-13 session scope: Apple-specific implementation and device testing are
-deferred at the owner's request. Existing Apple sign-in stays available. Leave
+deferred at the owner's request. Apple sign-in is disabled in the current beta. Leave
 Apple checklist items open; the original cross-platform release gate is unresolved.
 
 Password-reset request UI is implemented. TypeScript, lint, and web-export checks
