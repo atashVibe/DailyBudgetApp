@@ -1,10 +1,8 @@
-import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import * as AppleAuthentication from "expo-apple-authentication";
 import * as Crypto from "expo-crypto";
 import {
   deleteUser,
   EmailAuthProvider,
-  GoogleAuthProvider,
   OAuthProvider,
   reauthenticateWithCredential,
   reauthenticateWithPopup,
@@ -15,6 +13,7 @@ import {
   collection,
   doc,
   getDocs,
+  getDocsFromServer,
   query,
   where,
   writeBatch,
@@ -24,6 +23,11 @@ import { Platform } from "react-native";
 import { auth, db } from "./auth";
 import { removePersonalFamilyAttribution } from "./personalData";
 import { deleteAccountReceipts } from "./receipts";
+import {
+  prepareGoogleReauthentication,
+  reauthenticateWithGoogle,
+} from "./googleAuth";
+import { withCloudRetry } from "./loading";
 
 export type AccountReauthenticationMethod = "password" | "google" | "apple";
 
@@ -32,6 +36,7 @@ export class AccountDeletionError extends Error {
     public readonly code:
       | "LAST_ADMIN"
       | "PASSWORD_REQUIRED"
+      | "ACCOUNT_CHANGED"
       | "UNSUPPORTED_PROVIDER",
     message: string,
   ) {
@@ -44,6 +49,16 @@ type AccountDeletionPlan = {
 };
 
 const MAX_BATCH_WRITES = 400;
+
+function assertDeletingUser(expectedUserId: string) {
+  const user = auth.currentUser;
+  if (!user || user.uid !== expectedUserId)
+    throw new AccountDeletionError(
+      "ACCOUNT_CHANGED",
+      "Your signed-in account changed. Return to the original account before retrying.",
+    );
+  return user;
+}
 
 export function getAccountReauthenticationMethod(
   user: User,
@@ -63,7 +78,7 @@ export function getAccountReauthenticationMethod(
 }
 
 async function getDeletionPlan(userId: string): Promise<AccountDeletionPlan> {
-  const memberships = await getDocs(
+  const memberships = await getDocsFromServer(
     query(collection(db, "familyMembers"), where("userId", "==", userId)),
   );
   const soloFamilyIds: string[] = [];
@@ -73,7 +88,7 @@ async function getDeletionPlan(userId: string): Promise<AccountDeletionPlan> {
     if (data.status !== "active" || data.role !== "admin") continue;
 
     const familyId = String(data.familyId);
-    const familyMembers = await getDocs(
+    const familyMembers = await getDocsFromServer(
       query(collection(db, "familyMembers"), where("familyId", "==", familyId)),
     );
     const activeMembers = familyMembers.docs.filter(
@@ -102,8 +117,12 @@ async function getDeletionPlan(userId: string): Promise<AccountDeletionPlan> {
   return { soloFamilyIds };
 }
 
-async function deleteInChunks(references: DocumentReference[]) {
+async function deleteInChunks(
+  references: DocumentReference[],
+  expectedUserId: string,
+) {
   for (let index = 0; index < references.length; index += MAX_BATCH_WRITES) {
+    assertDeletingUser(expectedUserId);
     const batch = writeBatch(db);
     references.slice(index, index + MAX_BATCH_WRITES).forEach((reference) => {
       batch.delete(reference);
@@ -131,14 +150,17 @@ async function hardDeleteSoloFamilies(familyIds: string[], userId: string) {
         .filter((item) => item.ref.path !== currentMembershipPath)
         .map((item) => item.ref),
     );
-    await deleteInChunks(references);
+    await deleteInChunks(references, userId);
 
     // Keep the deleting administrator's membership until every other family
     // document is gone so secured rules can authorize all cleanup batches.
-    await deleteInChunks([
-      doc(db, "familyMembers", `${familyId}_${userId}`),
-      doc(db, "families", familyId),
-    ]);
+    await deleteInChunks(
+      [
+        doc(db, "familyMembers", `${familyId}_${userId}`),
+        doc(db, "families", familyId),
+      ],
+      userId,
+    );
   }
 }
 
@@ -157,13 +179,17 @@ async function removePersonalFirestoreData(
     .map((membership) => String(membership.data().familyId));
 
   for (const familyId of activeFamilyIds) {
+    assertDeletingUser(user.uid);
     await removePersonalFamilyAttribution(familyId, user.uid, user.email);
   }
 
-  await deleteInChunks([
-    ...memberships.docs.map((membership) => membership.ref),
-    doc(db, "users", user.uid),
-  ]);
+  await deleteInChunks(
+    [
+      ...memberships.docs.map((membership) => membership.ref),
+      doc(db, "users", user.uid),
+    ],
+    user.uid,
+  );
 }
 
 async function reauthenticatePasswordUser(user: User, password?: string) {
@@ -184,20 +210,7 @@ async function reauthenticatePasswordUser(user: User, password?: string) {
 }
 
 async function reauthenticateGoogleUser(user: User) {
-  if (Platform.OS === "web") {
-    await reauthenticateWithPopup(user, new GoogleAuthProvider());
-    return;
-  }
-
-  await GoogleSignin.hasPlayServices();
-  const response = await GoogleSignin.signIn();
-  const idToken = response.data?.idToken;
-  if (!idToken) throw new Error("Google did not return an ID token.");
-
-  await reauthenticateWithCredential(
-    user,
-    GoogleAuthProvider.credential(idToken),
-  );
+  await reauthenticateWithGoogle(user);
 }
 
 async function reauthenticateAppleUser(user: User) {
@@ -237,13 +250,25 @@ async function reauthenticateAppleUser(user: User) {
   return undefined;
 }
 
-export async function deleteCurrentAccount(password?: string) {
-  const user = auth.currentUser;
-  if (!user) throw new Error("No signed-in account was found.");
+export async function prepareAccountDeletion(expectedUserId: string) {
+  const user = assertDeletingUser(expectedUserId);
+  await Promise.all([
+    withCloudRetry(() => getDeletionPlan(user.uid)),
+    getAccountReauthenticationMethod(user) === "google"
+      ? prepareGoogleReauthentication(user)
+      : Promise.resolve(),
+  ]);
+  assertDeletingUser(expectedUserId);
+}
 
-  // Check family ownership before asking the user to authenticate again.
-  await getDeletionPlan(user.uid);
+export async function deleteCurrentAccount(
+  password: string | undefined,
+  expectedUserId: string,
+) {
+  const user = assertDeletingUser(expectedUserId);
 
+  // No awaited network read before opening the prepared mobile OAuth window:
+  // keep the user's tap activation. The dialog preflights ownership on opening.
   const method = getAccountReauthenticationMethod(user);
   if (method === "password") await reauthenticatePasswordUser(user, password);
   if (method === "google") await reauthenticateGoogleUser(user);
@@ -251,9 +276,12 @@ export async function deleteCurrentAccount(password?: string) {
     method === "apple" ? await reauthenticateAppleUser(user) : undefined;
 
   // Re-check immediately before deleting in case family membership changed.
-  const plan = await getDeletionPlan(user.uid);
+  assertDeletingUser(expectedUserId);
+  const plan = await withCloudRetry(() => getDeletionPlan(user.uid));
+  assertDeletingUser(expectedUserId);
   // The existing delete-account confirmation explicitly includes receipt files.
-  await deleteAccountReceipts();
+  await deleteAccountReceipts(expectedUserId);
+  assertDeletingUser(expectedUserId);
   await removePersonalFirestoreData(user, plan);
   if (appleAccessToken) {
     try {
@@ -264,5 +292,6 @@ export async function deleteCurrentAccount(password?: string) {
       console.error("Apple token revocation failed:", error);
     }
   }
+  assertDeletingUser(expectedUserId);
   await deleteUser(user);
 }
