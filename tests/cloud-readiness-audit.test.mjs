@@ -12,6 +12,7 @@ test("cloud report sends GET only to Google, excludes unrelated budgets and neve
     calls.push({ url, method: options.method });
     assert.equal(options.headers.Authorization, `Bearer ${secret}`);
     assert.equal(options.method, "GET");
+    assert.equal(options.headers["x-goog-user-project"], "dailybudget-35c26");
     let data = {};
     if (url.endsWith("/databases/(default)"))
       data = {
@@ -128,4 +129,38 @@ test("denied checks expose only known Google reason codes and service names", as
   assert.equal(report.checks.authPrivacy.status, "blocked");
   assert.ok(!JSON.stringify(report).includes(secret));
   assert.ok(!JSON.stringify(report).includes("activationUrl"));
+});
+
+test("consumer diagnostics compare the DailyBudget project without exposing other project IDs", async () => {
+  for (const [consumer, expected] of [
+    ["projects/dailybudget-35c26", true],
+    ["projects/420817333542", true],
+    ["projects/123456789", false],
+    ["projects/unrelated-project", false],
+    ["FAKE_OWNER_TOKEN_DO_NOT_PRINT", undefined],
+  ]) {
+    const read = createGoogleReader(
+      "FAKE",
+      async () =>
+        new Response(
+          JSON.stringify({
+            error: {
+              details: [
+                {
+                  "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                  reason: "SERVICE_DISABLED",
+                  metadata: { consumer },
+                },
+              ],
+            },
+          }),
+          { status: 403 },
+        ),
+    );
+    const report = await collectCloudReadiness(read);
+    const diagnostic = report.checks.authPrivacy.diagnostics[0];
+    assert.equal(diagnostic.consumerProjectMatchesDailyBudget, expected);
+    assert.equal(report.checks.authPrivacy.status, "blocked");
+    assert.ok(!JSON.stringify(report).includes(consumer));
+  }
 });

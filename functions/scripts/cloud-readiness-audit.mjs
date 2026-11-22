@@ -32,7 +32,8 @@ const denialReasons = new Set([
 
 async function denialDiagnostics(response) {
   // Google error messages/metadata can contain account identifiers or arbitrary
-  // text. Keep only known reason codes and the already allowed API service name.
+  // text. Keep known reason codes, an allowed API service name, and only whether
+  // Google's consumer project matches DailyBudget (never another project's ID).
   const body = await response.json().catch(() => ({}));
   const details = body?.error?.details;
   if (!Array.isArray(details)) return [];
@@ -46,6 +47,17 @@ async function denialDiagnostics(response) {
       reason: detail.reason,
       ...(hosts.has(detail.metadata?.service)
         ? { service: detail.metadata.service }
+        : {}),
+      ...(typeof detail.metadata?.consumer === "string" &&
+      /^projects\/(?:\d+|[a-z][a-z0-9-]{4,61}[a-z0-9])$/.test(
+        detail.metadata.consumer,
+      )
+        ? {
+            consumerProjectMatchesDailyBudget: [
+              `projects/${projectId}`,
+              `projects/${projectNumber}`,
+            ].includes(detail.metadata.consumer),
+          }
         : {}),
     }));
 }
@@ -61,6 +73,9 @@ export function createGoogleReader(accessToken, fetchImpl = fetch) {
       headers: {
         Authorization: `Bearer ${accessToken}`,
         Accept: "application/json",
+        // Raw gcloud user tokens otherwise may use the Cloud SDK consumer
+        // project, producing SERVICE_DISABLED for an unrelated project.
+        "x-goog-user-project": projectId,
       },
       signal: AbortSignal.timeout(15000),
     });
