@@ -8,6 +8,14 @@ const sharp = backend("sharp");
 const { PDFDocument } = backend("pdf-lib");
 const { unzipSync } = backend("fflate");
 
+async function waitForLoginHandlers(page) {
+  // Google is enabled by a client effect, so it also proves SSR hydration has
+  // attached the navigation handlers before a fast automated tap.
+  await expect(
+    page.getByRole("button", { name: "Continue with Google", exact: true }),
+  ).toBeEnabled({ timeout: 30000 });
+}
+
 test("Google popup sign-in can be cancelled, retried and restored without entering credentials again", async ({
   page,
   baseURL,
@@ -15,6 +23,7 @@ test("Google popup sign-in can be cancelled, retried and restored without enteri
   expect(baseURL).toMatch(/^http:\/\/localhost:809[134]$/);
   await page.goto("/login");
   // Navigate once so React has hydrated before invoking the click handler.
+  await waitForLoginHandlers(page);
   await page.getByText("Forgot Password?", { exact: true }).click();
   await page.getByText("Back to Sign In", { exact: true }).click();
   const google = page.getByRole("button", {
@@ -68,6 +77,7 @@ test("shared family receipts work through the real web interface against isolate
   const pdf = Buffer.from(await doc.save());
   await page.goto("/login");
   // Confirm client-side navigation is hydrated before filling controlled fields.
+  await waitForLoginHandlers(page);
   await page.getByText("Forgot Password?", { exact: true }).click();
   await expect(
     page.getByText("Reset your password", { exact: true }),
@@ -190,6 +200,7 @@ test("family admins require category receipts and entry-form attachments gate sa
     .png()
     .toBuffer();
   await page.goto("/login");
+  await waitForLoginHandlers(page);
   await page.getByText("Forgot Password?", { exact: true }).click();
   await expect(
     page.getByText("Reset your password", { exact: true }),
@@ -353,6 +364,7 @@ test("free families see Premium information while ordinary Premium-family member
     });
   });
   await page.goto("/login");
+  await waitForLoginHandlers(page);
   await page.getByText("Forgot Password?", { exact: true }).click();
   await expect(
     page.getByText("Reset your password", { exact: true }),
@@ -430,6 +442,7 @@ test("long receipt filenames keep Remove inside a narrow form and dashboard Back
   expect(baseURL).toMatch(/^http:\/\/localhost:809[134]$/);
   await page.setViewportSize({ width: 320, height: 850 });
   await page.goto("/login");
+  await waitForLoginHandlers(page);
   await page.getByText("Forgot Password?", { exact: true }).click();
   await expect(
     page.getByText("Reset your password", { exact: true }),
@@ -531,6 +544,7 @@ test("compact paperclip opens one system picker for photos and PDFs, cancels saf
 }) => {
   expect(baseURL).toMatch(/^http:\/\/localhost:809[134]$/);
   await page.goto("/login");
+  await waitForLoginHandlers(page);
   await page.getByText("Forgot Password?", { exact: true }).click();
   await expect(
     page.getByText("Reset your password", { exact: true }),
@@ -614,6 +628,7 @@ test("reference dashboard has tall fields, editable category icons and restores 
 }) => {
   expect(baseURL).toMatch(/^http:\/\/localhost:809[134]$/);
   await page.goto("/login");
+  await waitForLoginHandlers(page);
   await page.getByText("Forgot Password?", { exact: true }).click();
   await page.getByText("Back to Sign In", { exact: true }).click();
   await page
@@ -703,6 +718,7 @@ test("phone controls stay aligned and Edit reveals the expanded form", async ({
     });
   });
   await page.goto("/login");
+  await waitForLoginHandlers(page);
   await page.getByText("Forgot Password?", { exact: true }).click();
   await page.getByText("Back to Sign In", { exact: true }).click();
   await page
@@ -806,6 +822,7 @@ test("a brief mobile cloud interruption recovers without reporting a sign-in fai
 }) => {
   expect(baseURL).toMatch(/^http:\/\/localhost:809[134]$/);
   await page.goto("/login");
+  await waitForLoginHandlers(page);
   await page.getByText("Forgot Password?", { exact: true }).click();
   await page.getByText("Back to Sign In", { exact: true }).click();
   await page
