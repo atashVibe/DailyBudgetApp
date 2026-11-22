@@ -7,6 +7,9 @@ export default defineConfig({
   use: {
     baseURL: process.env.RECEIPTS_UI_URL || "http://localhost:8091",
     headless: true,
+    actionTimeout: 30000,
+    navigationTimeout: 30000,
+    trace: "retain-on-failure",
     launchOptions: process.env.CHROMIUM_PATH
       ? { executablePath: process.env.CHROMIUM_PATH }
       : {},

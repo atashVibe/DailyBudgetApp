@@ -21,7 +21,9 @@ test("Google popup sign-in can be cancelled, retried and restored without enteri
   baseURL,
 }) => {
   expect(baseURL).toMatch(/^http:\/\/localhost:809[134]$/);
-  await page.goto("/login");
+  // Wait for the app's explicit ready signal below rather than allowing an
+  // unrelated third-party resource to keep the first cold-page load pending.
+  await page.goto("/login", { waitUntil: "domcontentloaded" });
   // Navigate once so React has hydrated before invoking the click handler.
   await waitForLoginHandlers(page);
   await page.getByText("Forgot Password?", { exact: true }).click();
@@ -38,6 +40,7 @@ test("Google popup sign-in can be cancelled, retried and restored without enteri
     await expect(popup).toHaveURL(
       /^http:\/\/localhost:9099\/emulator\/auth\/handler\?.*providerId=google\.com/,
     );
+    await popup.waitForLoadState("domcontentloaded");
     return popup;
   };
 

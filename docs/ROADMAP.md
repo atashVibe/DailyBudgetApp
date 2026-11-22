@@ -6,6 +6,24 @@
 
 **Information-button standard:** every information action uses `components/InfoButton.tsx`: the approved 20px outline glyph and muted color from Budget Overview, with invisible hit slop for tapping. Do not add page-specific icon sizes, filled circles or border/color overrides. Supply a meaningful accessible label and the current expanded state; leave layout to the caller. Budget Overview and the receipt explanation both use this component.
 
+## First public Google Play release — remaining work
+
+The owner confirmed a **personal Play Console developer account** on November 22, 2026. Account creation date, identity verification and app setup/production access have not yet been inspected. The current website and older direct-install Android preview do not prove that the latest app is ready for Play production.
+
+- [x] Owner has a personal Play Console developer account.
+- [ ] Confirm account verification, create/inspect the DailyBudget app record, and check the account's production-access requirements.
+- [ ] Decide whether purchasable family Premium is included in the first release. If included, choose price/billing period, implement a policy-compliant Android purchase flow with backend verification and family-wide access, and test renewal/cancellation/refund/restore behavior in a sandbox. Google Play Billing is the standard path for these digital features; any market-specific alternative requires reviewing eligibility and applicable rules. No checkout is implemented yet.
+- [ ] Build a signed Android App Bundle for `com.atashvibe.dailybudget`, configure Play App Signing and the correct Firebase/Google login signing fingerprints, and upload to Internal Testing. Verify current target-API and native-library compatibility in the built artifact, including Android 16/API 36 and 16 KB compatibility; the source configuration alone is not evidence.
+- [ ] Install through Google Play on real Android phones and test Google/email login, reopening, family invitations/roles, accounting/refunds/income/cashback, shared receipts, camera/PDF permissions, editing, Back/keyboard behavior and slow/offline recovery. Finish account-deletion cleanup for previous family memberships and verify deletion/reset behavior on spare accounts. Apple-specific work remains deferred for this Android-first scope.
+- [ ] Finish our operational launch safeguards: an actual database backup and isolated restore, independently protected cloud receipt-original recovery, billing recipients/delivery, effective IAM and real retained-copy expiry. These are project readiness criteria, separate from Play's forms.
+- [ ] Finalize name/icon/screenshots/feature graphic/descriptions/support contact. Review existing public privacy/terms/deletion pages against final receipt/payment/retention behavior. Complete Data safety, account deletion, Financial features, age/target-audience/content rating and ads declarations accurately; provide a working reviewer account with sample family data and access instructions.
+- [ ] Run Internal Testing, then Closed Testing as required. Personal accounts created **after November 13, 2023** must have at least **12 testers opted in continuously for 14 days**, then apply for production access and provide genuine testing/feedback evidence. Account type alone does not establish whether this gate applies; approval is not automatic.
+- [ ] Resolve critical findings, submit the tested build for review, and use a controlled production rollout with monitored support/errors/costs.
+
+Recommended next delivery milestone: **a fresh build in Play Internal Testing**, while the remaining release gates are completed. Advanced reports and Apple/iOS delivery remain later; paid Premium's inclusion in the first public release is still an owner decision.
+
+Google requirements checked November 22, 2026: [personal-account testing](https://support.google.com/googleplay/android-developer/answer/14151465), [target API](https://support.google.com/googleplay/android-developer/answer/11926878), [native page-size compatibility](https://developer.android.com/guide/practices/page-sizes), [digital payments](https://support.google.com/googleplay/android-developer/answer/9858738), [user data and account deletion](https://support.google.com/googleplay/android-developer/answer/10144311).
+
 ## Recommended next work after Milestone 2
 
 1. **Finish account recovery/deletion verification.** The Google confirmation bug is now fixed and passes isolated tests for same-user deletion, wrong-user rejection, cancellation, sole-admin protection and ownership changes during confirmation. Remaining work: actual iPhone/Android confirmation on spare accounts, live reset-link/unknown-email protection checks, and trusted backend attribution cleanup in families the user previously left. Apple/provider-linking work remains deferred.
@@ -26,6 +44,7 @@ The owner has authorized progressing through this roadmap. Complete independent 
 - [x] Choose the database backup policy with the owner: daily copies, retained 14 days; size-based storage charges disclosed.
 - [x] Create the selected daily backup schedule with 14-day retention. Owner supplied the successful Cloud Shell output (`1209600s`); a repeated create returned the expected `ALREADY_EXISTS`.
 - [ ] Verify an actual backup and demonstrate an isolated restore. Receipt originals require a separate cloud backup/recovery plan.
+- [x] Resolve the cloud inspection failures and verify an existing applicable USD 10 budget with USD 5/9/10 warning thresholds; actual notification delivery remains open.
 - [ ] Configure/verify any missing production safeguards only after inspecting the report; choose alert thresholds and backup retention with the owner.
 
 The current browser tests prove a second identity retains shared entries and original receipt bytes after the first user's deletion. They do not complete the following live-device rehearsal:
@@ -46,7 +65,7 @@ A result marked `checked` means the configuration was read, not that recovery or
 
 The owner supplied the first live report and successful creation of the 14-day daily database backup schedule on November 22, 2026. Findings, the exact schedule ID and read-only verification commands are recorded in `docs/CLOUD_READINESS.md`. A completed backup copy and restore remain unverified. The report now includes safe reason codes for blocked checks instead of assuming every 403 is an IAM problem.
 
-The `19:21:00Z` follow-up independently confirms the daily/14-day schedule; backup copies are still absent. Both blocked checks report `SERVICE_DISABLED`, but the consumer project was unknown. The corrected report explicitly selects DailyBudget using Google's quota-project header and exposes only a boolean consumer-project match in safe diagnostics. Rerun it before changing APIs or roles; alert existence and email-privacy configuration remain unverified.
+The `19:21:00Z` follow-up independently confirms the daily/14-day schedule; backup copies are still absent. Both blocked checks report `SERVICE_DISABLED`, but the consumer project was unknown. The corrected report explicitly selects DailyBudget using Google's quota-project header and exposes only a boolean consumer-project match in safe diagnostics. The corrected rerun at `19:26:14Z` verified email privacy as enabled and identified the Budgets API as disabled in DailyBudget. The owner enabled that API; the `19:28:18Z` report reads both configurations. An applicable USD 10 budget already exists with USD 5/9/10 warnings and default billing IAM recipients enabled. Do not create another budget. Budget period/scope, actual email delivery, backup copies and restore remain unverified.
 
 ## Family Premium purchase — requested
 
@@ -211,7 +230,8 @@ remain separate verification tasks.
 
 - [x] Add a clear **Forgot Password** action to the login screen
 - [x] Send Firebase password-reset emails (normal phone flow confirmed by owner)
-- [ ] Verify Firebase email enumeration protection and unknown-account behavior
+- [x] Verify live Firebase email enumeration protection is enabled (owner reports November 22, 2026).
+- [ ] Verify unknown-account/reset behavior on real devices
 - [x] Show a clear reset-request confirmation
 - [ ] Verify expired-link and invalid-link messages on Firebase's hosted page
 - [ ] Let an authenticated Apple user add an Android-compatible sign-in method

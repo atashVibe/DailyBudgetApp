@@ -32,3 +32,11 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Verify account deletion, identity protection and receipt/sign-in regressions
         run: npm run test:accounts:browser
+      - name: Preserve emulator-only browser failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-failure-${{ github.run_attempt }}
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 3
