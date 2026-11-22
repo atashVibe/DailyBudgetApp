@@ -8,7 +8,7 @@ The project is `dailybudget-35c26`. No settings were changed by that report.
 
 | Area | Evidence | Remaining work |
 | --- | --- | --- |
-| Database | `(default)` in `us-west2`; point-in-time recovery disabled; one-hour version retention | No managed backup schedules or backup copies were listed. Configure the selected daily backup and verify an actual copy. |
+| Database | `(default)` in `us-west2`; point-in-time recovery disabled; one-hour version retention | Initial report listed no schedules/copies. The owner subsequently created the daily, 14-day schedule below; an actual backup copy and restore remain unverified. |
 | Receipt storage | `US-WEST1`; public-access prevention enforced; no public principals in bucket IAM; seven-day soft deletion; versioning off; no retention lock | Check inherited and object ACL permissions; prepare a separate cloud backup of originals. These settings alone do not prove effective least privilege or independent recovery. |
 | Bucket access mode | Uniform bucket-level access is off | Review fine-grained/object ACL use before changing access mode. Do not switch it simply to clear a checklist. |
 | Billing | Billing enabled | Budget-alert query returned HTTP 403. Alert existence and delivery remain unknown. |
@@ -23,22 +23,28 @@ reason codes and API service names. It still omits raw error messages, access
 tokens and arbitrary metadata. Unknown diagnostics stay omitted; an omitted reason
 does not prove a particular cause.
 
-## Selected next step: daily database backup, retained 14 days
+## Created: daily database backup schedule, retained 14 days
 
 The owner selected **14 days** after being told that backup storage is billed by
-Google based on size. The following is the reviewed setup for the existing
-default database; it has **not yet been run or verified**.
+Google based on size. The owner's Cloud Shell output confirms successful creation
+for the existing default database at `2026-11-22T19:11:07.568019Z`:
 
-Run this in the owner's Google Cloud Shell:
+- Schedule ID: `2030ce62-395e-45bc-8e87-9e3b672ca515`.
+- Database: `projects/dailybudget-35c26/databases/(default)`.
+- Recurrence: `dailyRecurrence: {}` (daily).
+- Retention: `1209600s`, exactly 14 days.
+
+The following command has already succeeded; use the read-only checks below to
+verify results rather than running it again:
 
 ```bash
 gcloud firestore backups schedules create --project=dailybudget-35c26 --database='(default)' --recurrence=daily --retention=14d
 ```
 
-This creates a daily schedule. It does not immediately prove a completed backup.
-Google chooses the time of day. A database can have one daily schedule; if Google
-reports that one already exists, inspect it rather than deleting/recreating it or
-guessing its identifier. Do not overwrite an existing policy.
+The owner repeated the create command and received `ALREADY_EXISTS` for the same
+frequency. This is consistent with the successful first creation, not evidence
+of backup failure. Leave the schedule in place. Creation does not prove a completed
+backup; Google chooses the time of day. No actual backup copy has yet been shown.
 
 Inspect schedules and actual backup copies with these separate read-only checks:
 
@@ -58,7 +64,7 @@ part of this command.
 
 ## Recovery evidence still needed
 
-- [ ] Record successful schedule creation and confirm daily recurrence plus 14-day retention.
+- [x] Record successful schedule creation and confirm daily recurrence plus 14-day retention (owner Cloud Shell output, November 22, 2026).
 - [ ] Confirm at least one backup for the default database reaches `READY`.
 - [ ] Plan and perform an isolated restore into a new database, keeping the app pointed at production. Verify representative families, entries, memberships and indexes. Account for restore charges and protection of the copied data before running it.
 - [ ] Review and apply appropriate security rules to the test destination. Managed database backups do not include Firebase Authentication identities, receipt-file originals, security rules or TTL policies; source-controlled rules and separately reviewed recovery steps are needed.

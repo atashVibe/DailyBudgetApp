@@ -1,5 +1,11 @@
 # DailyBudget Next-Session Prompt
 
+## Daily backup schedule created — November 22, 2026
+
+The owner's Cloud Shell output confirms creation of the default database's daily backup schedule at `2026-11-22T19:11:07.568019Z`, ID `2030ce62-395e-45bc-8e87-9e3b672ca515`, retention `1209600s` (14 days), with `dailyRecurrence: {}`. A repeated create returned `ALREADY_EXISTS` for the same frequency. The first creation succeeded; leave this schedule in place and do not delete/recreate it to address the second response.
+
+Schedule creation is now verified in the roadmap and `docs/CLOUD_READINESS.md`. A completed backup copy, isolated restore and independently protected receipt-original backup remain unverified. The next owner action is rerunning the read-only report from `df9b3c2` (or later) to list actual backup copies and obtain safe reason codes for the billing-alert/Auth-privacy 403s. The updated report was merged as PR #13; all GitHub checks passed. The workspace still has no Google owner credentials; no production mutation was performed from here. Keep Apple deferred and family Premium checkout/pricing pending.
+
 ## Live cloud findings and selected backup policy — November 22, 2026
 
 The owner ran the published read-only report from `f706d86` in Cloud Shell and supplied the output timestamped `2026-11-22T19:02:41.864Z`. Firestore `(default)` is in `us-west2`, PITR is disabled, and both backup schedules and backup-copy lists are empty. Receipt storage has public-access prevention enforced, seven-day soft deletion, no public principals in the returned bucket policy, fine-grained access and no versioning/retention lock. This does not complete inherited/object-ACL review. The API is active using the default Compute service account; hourly maintenance is enabled and reports status 0 for its last invocation, which does not prove actual retained-copy expiry. Budget-alert and Auth-privacy checks returned 403; their configuration remains unknown.
