@@ -877,9 +877,15 @@ test("branded verification requires confirmation, preserves joining and lets a m
   await page
     .getByRole("button", { name: "Start or join a family", exact: true })
     .click();
-  await page.getByText("Start family", { exact: true }).click();
+  // The outgoing setup screen remains mounted during the stack transition.
+  const startFamily = page
+    .getByText("Start family", { exact: true })
+    .filter({ visible: true });
+  await expect(startFamily).toHaveCount(1);
+  await startFamily.click();
   await page
     .getByPlaceholder("Example: Smith Family", { exact: true })
+    .filter({ visible: true })
     .fill("My independent family");
   await page
     .getByRole("button", { name: "Create family", exact: true })
