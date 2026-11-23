@@ -7,10 +7,11 @@ export function createFamilyContext(db, auth, clock) {
   return async function context(familyId, uid, tx) {
     identifier(familyId);
     const get = (ref) => (tx ? tx.get(ref) : ref.get());
-    const [family, accessDoc, config, membership] = await Promise.all([
+    const [family, accessDoc, config, catalog, membership] = await Promise.all([
       get(db.doc(`families/${familyId}`)),
       get(db.doc(`receiptFamilyAccess/${familyId}`)),
       get(db.doc("receiptConfig/global")),
+      get(db.doc("receiptConfig/subscriptions")),
       get(
         db
           .collection("familyMembers")
@@ -54,6 +55,7 @@ export function createFamilyContext(db, auth, clock) {
       { ...state, administrator: sponsored },
       clock(),
       config.data()?.plans,
+      catalog.data(),
     );
     // A family that loses administrator sponsorship gets a fresh grace period,
     // rather than keeping unpaid storage forever or deleting files immediately.
@@ -92,6 +94,7 @@ export function createFamilyContext(db, auth, clock) {
       { ...state, administrator: sponsored },
       clock(),
       config.data()?.plans,
+      catalog.data(),
     );
     return {
       ...result,

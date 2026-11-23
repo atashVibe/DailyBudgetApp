@@ -1,6 +1,7 @@
+import { FILE_LIMIT, PAID_PLANS, planCatalog, planName } from "./plans.mjs";
 export const DAY = 86400000;
 export const DEFAULT_LIMITS = Object.freeze({
-  maxFileBytes: 10 * 1024 * 1024,
+  maxFileBytes: FILE_LIMIT,
   maxReceiptsPerTransaction: 2,
   maxStorageBytes: 100 * 1024 * 1024,
   maxReceipts: 2000,
@@ -29,14 +30,20 @@ export function millis(value) {
 }
 
 // A family administrator is deliberately NOT a receipt administrator.
-export function permissions(access = {}, now = Date.now(), configuration = {}) {
+export function permissions(
+  access = {},
+  now = Date.now(),
+  configuration = {},
+  catalogConfig = {},
+) {
   const administrator = access.administrator === true;
-  const plan = ["premium", "archive"].includes(access.plan)
+  const plan = [...PAID_PLANS, "archive"].includes(access.plan)
     ? access.plan
     : "free";
   const paidThrough = millis(access.paidThrough);
   const active =
-    access.subscriptionStatus === "active" &&
+    (["active", "trialing"].includes(access.subscriptionStatus) ||
+      (access.subscriptionStatus === "canceled" && paidThrough > now)) &&
     (!paidThrough || now < paidThrough);
   const deadline =
     millis(access.graceUntil) ||
@@ -50,22 +57,50 @@ export function permissions(access = {}, now = Date.now(), configuration = {}) {
         ? "grace"
         : "free";
   const configured = configuration[tier === "grace" ? "premium" : tier] || {};
-  const limits = { ...DEFAULT_LIMITS };
+  const catalog = planCatalog(catalogConfig);
+  const allowance = catalog.plans.find(
+    (p) =>
+      p.id === (tier === "grace" || (administrator && active) ? plan : tier),
+  );
+  const limits = {
+    ...DEFAULT_LIMITS,
+    maxStorageBytes: allowance?.storageBytes ?? DEFAULT_LIMITS.maxStorageBytes,
+  };
   for (const key of Object.keys(limits)) {
     if (Number.isSafeInteger(configured[key]) && configured[key] > 0)
       limits[key] = configured[key];
   }
   // The HTTP gateway has a fixed safety ceiling regardless of plan configuration.
-  limits.maxFileBytes = Math.min(limits.maxFileBytes, 25 * 1024 * 1024);
+  limits.maxFileBytes = Math.min(limits.maxFileBytes, FILE_LIMIT);
   if (tier === "free") limits.maxStorageBytes = 0;
   return {
     administrator,
     plan,
+    planName: planName(plan),
+    subscriptionStatus: access.subscriptionStatus || "none",
+    paidThrough: paidThrough || null,
+    willRenew:
+      active &&
+      access.subscriptionStatus !== "canceled" &&
+      access.willRenew !== false,
+    billingSource: access.billingSource || "manual",
+    interval: access.subscriptionInterval || null,
+    trial: active && access.subscriptionStatus === "trialing",
+    downgradeDownloadUntil: millis(access.downgradeDownloadUntil) || null,
+    downgradeUploadBlocked: access.downgradeUploadBlocked === true,
     tier,
     active,
-    canUpload: administrator || (active && plan === "premium"),
+    canUpload:
+      administrator ||
+      (active &&
+        PAID_PLANS.includes(plan) &&
+        access.downgradeUploadBlocked !== true),
     canRead: administrator || active || grace,
-    canReplace: administrator || (active && plan === "premium"),
+    canReplace:
+      administrator ||
+      (active &&
+        PAID_PLANS.includes(plan) &&
+        access.downgradeUploadBlocked !== true),
     canDelete: true, // Current family members retain deletion rights regardless of payment.
     deletionScheduledAt:
       !administrator && !active && deadline ? deadline : null,

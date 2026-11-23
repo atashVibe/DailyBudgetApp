@@ -31,7 +31,15 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
-      ["expo-image-picker", { "cameraPermission": "Allow DailyBudget to photograph receipts you choose to attach.", "microphonePermission": false, "photosPermission": false }],
+      "expo-iap",
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Allow DailyBudget to photograph receipts you choose to attach.",
+          "microphonePermission": false,
+          "photosPermission": false
+        }
+      ],
       "expo-document-picker",
       "expo-router",
       "expo-font",

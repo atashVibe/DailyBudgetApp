@@ -232,7 +232,7 @@ export function createReceiptService({
       });
     }
   }
-  async function upload(
+  async function uploadOriginal(
     uid,
     { transactionId, requestId, replaceId, originalFilename, mimeType, bytes },
   ) {
@@ -325,7 +325,8 @@ export function createReceiptService({
       )
         throw new ReceiptError(
           413,
-          "Family receipt storage is full, including pending cleanup/retained copies.",
+          "This receipt would exceed your family’s storage allowance. Free space or choose a larger plan. Pending uploads and retained copies also count.",
+          "storage-quota-exceeded",
         );
       const receiptId = old?.receiptId || randomUUID(),
         storagePath = `receipts/${familyId}/${transactionId}/${receiptId}/${requestId}`;
@@ -392,6 +393,15 @@ export function createReceiptService({
               403,
               "Family membership, entry or upload access changed before saving.",
             );
+          if (
+            usage.liveBytes + usage.reservedBytes + bytes.length >
+            current.limits.maxStorageBytes
+          )
+            throw new ReceiptError(
+              413,
+              "Your family allowance changed during upload. Free space or upgrade, then retry.",
+              "storage-quota-exceeded",
+            );
           tx.set(db.doc(`receipts/${receiptId}`), record);
           tx.set(
             db.doc(`receiptFamilyAccess/${familyId}`),
@@ -440,6 +450,27 @@ export function createReceiptService({
         throw error;
       }
     });
+  }
+  async function upload(uid, details) {
+    try {
+      return await uploadOriginal(uid, details);
+    } catch (error) {
+      try {
+        const access = await getAccess(uid);
+        await audit({
+          familyId: access.familyId,
+          actor: uid,
+          action: "receipt_upload",
+          result: "upload_failed",
+          errorCode:
+            error instanceof ReceiptError ? error.code : "storage-failed",
+          status: error instanceof ReceiptError ? error.status : 503,
+        });
+      } catch {
+        /* Logging must not hide the original upload result. */
+      }
+      throw error;
+    }
   }
   async function queueDeletion(record, reason, fence, actor) {
     if (record.status === "deleting") return;
@@ -530,6 +561,122 @@ export function createReceiptService({
       path: exportPath(record),
     }));
   }
+  async function downgradeReview(uid, preference) {
+    if (!["newest", "oldest"].includes(preference))
+      throw new ReceiptError(400, "Choose newest or oldest receipts to keep.");
+    const access = await getAccess(uid);
+    const membership = (
+      await db.doc(`familyMembers/${access.familyId}_${uid}`).get()
+    ).data();
+    if (membership?.role !== "admin")
+      throw new ReceiptError(
+        403,
+        "Only a current family administrator can review downgrade storage.",
+      );
+    if (!access.canRead || !access.downgradeUploadBlocked)
+      throw new ReceiptError(
+        409,
+        "There is no downloadable downgrade review for this family.",
+      );
+    const [all, usage] = await Promise.all([
+      familyReceipts(access.familyId),
+      getUsage(uid),
+    ]);
+    const records = all
+      .filter((r) => r.status === "ready" && !r.draft)
+      .sort(
+        (a, b) =>
+          (millis(a.uploadedAt) - millis(b.uploadedAt)) *
+            (preference === "oldest" ? 1 : -1) ||
+          a.receiptId.localeCompare(b.receiptId),
+      );
+    const draftBytes = all
+      .filter((r) => r.status === "ready" && r.draft)
+      .reduce((sum, r) => sum + r.fileSize, 0);
+    let remaining = Math.max(
+      0,
+      access.limits.maxStorageBytes - usage.reservedBytes - draftBytes,
+    );
+    const keep = [],
+      extras = [];
+    for (const record of records) {
+      if (record.fileSize <= remaining) {
+        keep.push(record);
+        remaining -= record.fileSize;
+      } else extras.push(record);
+    }
+    const fingerprint = createHash("sha256")
+      .update(
+        JSON.stringify({
+          familyId: access.familyId,
+          quota: access.limits.maxStorageBytes,
+          reserved: usage.reservedBytes,
+          draftBytes,
+          preference,
+          records: records.map((r) => [
+            r.receiptId,
+            r.storagePath,
+            r.fileSize,
+            millis(r.updatedAt),
+          ]),
+        }),
+      )
+      .digest("hex");
+    const exportParts = [];
+    let part = [],
+      partBytes = 0;
+    for (const extra of extras) {
+      if (part.length && partBytes + extra.fileSize > 50_000_000) {
+        exportParts.push(part);
+        part = [];
+        partBytes = 0;
+      }
+      part.push(extra.receiptId);
+      partBytes += extra.fileSize;
+    }
+    if (part.length) exportParts.push(part);
+    return {
+      exportParts,
+      preference,
+      fingerprint,
+      keep: keep.map(publicRecord),
+      extras: extras.map(publicRecord),
+      extraBytes: extras.reduce((sum, r) => sum + r.fileSize, 0),
+      keptBytes: keep.reduce((sum, r) => sum + r.fileSize, 0),
+      retainedBytes: usage.reservedBytes,
+    };
+  }
+  async function removeDowngradeExtras(
+    uid,
+    { preference, fingerprint, downloadConfirmed },
+  ) {
+    if (downloadConfirmed !== true)
+      throw new ReceiptError(
+        400,
+        "Download and check the extra receipt files before confirming removal.",
+      );
+    const { familyId } = await getAccess(uid);
+    return lock(familyId, async (fence) => {
+      const review = await downgradeReview(uid, preference);
+      if (review.fingerprint !== fingerprint)
+        throw new ReceiptError(
+          409,
+          "Your receipts or allowance changed. Review and download the extras again.",
+          "review-changed",
+        );
+      let removed = 0;
+      for (const extra of review.extras) {
+        await queueDeletion(
+          await accessible(uid, extra.receiptId),
+          "downgrade_selected",
+          fence,
+          uid,
+        );
+        removed++;
+      }
+      return { removed, pendingCleanup: true };
+    });
+  }
   async function requireAdmin(uid, tx) {
     const snap = tx ? await tx.get(roleRef(uid)) : await roleRef(uid).get();
     if (snap.data()?.administrator !== true)
@@ -578,10 +725,18 @@ export function createReceiptService({
         await requireAdmin(actor, tx);
         const ref = db.doc(`receiptFamilyAccess/${familyId}`),
           current = (await tx.get(ref)).data();
+        if (["google", "apple"].includes(current?.billingSource))
+          throw new ReceiptError(
+            409,
+            "This is a store-verified subscription. Manage it in its original app store; administrative grants cannot change its billing.",
+          );
         let update;
         if (action === "activate-premium" || action === "activate-archive")
           update = {
             plan: action === "activate-premium" ? "premium" : "archive",
+            billingSource: "manual",
+            downgradeUploadBlocked: false,
+            downgradeDownloadUntil: null,
             subscriptionStatus: "active",
             graceUntil: null,
             paidThrough: null,
@@ -889,6 +1044,65 @@ export function createReceiptService({
         pageToken = next?.pageToken;
       } while (pageToken);
     }
+    const [allReceipts, allOperations, uploadFailures] = await Promise.all([
+      db.collection("receipts").get(),
+      db
+        .collection("receiptOperations")
+        .where("state", "in", pendingStates)
+        .get(),
+      db
+        .collection("receiptAudit")
+        .where("result", "==", "upload_failed")
+        .orderBy("createdAt", "desc")
+        .limit(20)
+        .get(),
+    ]);
+    const perFamily = [],
+      perUploader = new Map(),
+      subscribers = { premium: 0, premium_plus: 0, premium_pro: 0, trials: 0 };
+    for (const family of families.docs) {
+      const access = await context(family.id);
+      const live = allReceipts.docs
+        .map((d) => d.data())
+        .filter((r) => r.familyId === family.id && r.status === "ready");
+      const reserved = allOperations.docs
+        .map((d) => d.data())
+        .filter((o) => o.familyId === family.id)
+        .reduce(
+          (sum, o) =>
+            sum + (o.cleanupFiles || []).reduce((n, f) => n + f.bytes, 0),
+          0,
+        );
+      const liveBytes = live.reduce((sum, r) => sum + r.fileSize, 0),
+        chargedBytes = liveBytes + reserved;
+      perFamily.push({
+        familyId: family.id,
+        plan: access.plan,
+        billingSource: access.billingSource,
+        active: access.active,
+        liveBytes,
+        reservedBytes: reserved,
+        quotaBytes: access.limits.maxStorageBytes,
+        overQuota: chargedBytes > access.limits.maxStorageBytes,
+        receiptCount: live.length,
+      });
+      if (access.active && ["google", "apple"].includes(access.billingSource)) {
+        if (access.trial) subscribers.trials++;
+        else if (Object.hasOwn(subscribers, access.plan))
+          subscribers[access.plan]++;
+      }
+      for (const r of live) {
+        const id = r.userId || "removed-account";
+        const value = perUploader.get(id) || {
+          userId: id,
+          bytes: 0,
+          receiptCount: 0,
+        };
+        value.bytes += r.fileSize;
+        value.receiptCount++;
+        perUploader.set(id, value);
+      }
+    }
     const rate = config.data()?.pricing;
     const matched =
       !mixedStorageClasses &&
@@ -898,6 +1112,13 @@ export function createReceiptService({
       Number.isFinite(rate.usdPerGiBMonth) &&
       rate.usdPerGiBMonth >= 0;
     return {
+      perFamily,
+      perUploader: [...perUploader.values()],
+      verifiedSubscribers: subscribers,
+      monthlySubscriptionRevenueUSD: null,
+      revenueNotice:
+        "Net revenue and fees must be read from Google Play/Apple financial reports. Catalog prices, trials and manual grants are not revenue.",
+      failedUploads: uploadFailures.docs.map((d) => publicRecord(d.data())),
       receiptCount: totals.data().count,
       liveBytes: totals.data().bytes,
       totalStoredBytes,
@@ -948,6 +1169,9 @@ export function createReceiptService({
     maintain,
     adminStats,
     requireAdmin,
+    withFamilyLock: lock,
+    downgradeReview,
+    removeDowngradeExtras,
     list: async (uid, transactionId) => {
       const { familyId } = await getAccess(uid);
       return (await familyReceipts(familyId))

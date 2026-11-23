@@ -24,6 +24,15 @@ export type ReceiptAccess = {
   familyId: string;
   familyName: string;
   plan: string;
+  planName?: string;
+  subscriptionStatus?: string;
+  paidThrough?: number | null;
+  willRenew?: boolean;
+  interval?: string | null;
+  billingSource?: string;
+  trial?: boolean;
+  downgradeDownloadUntil?: number | null;
+  downgradeUploadBlocked?: boolean;
   active: boolean;
   tier: string;
   canUpload: boolean;
@@ -329,8 +338,8 @@ export async function openReceipt(receipt: Receipt, view = false) {
     throw error;
   }
 }
-export async function exportAllReceipts() {
-  const response = await request("/export");
+export async function exportAllReceipts(query = "") {
+  const response = await request(`/export${query}`);
   await saveOriginal(
     await response.blob(),
     "dailybudget-receipts.zip",
@@ -338,6 +347,7 @@ export async function exportAllReceipts() {
     false,
   );
 }
+export { request as receiptRequest };
 
 export async function startReceiptEntryDraft(
   familyId: string,

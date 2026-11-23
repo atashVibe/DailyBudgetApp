@@ -15,6 +15,7 @@ import {
   type ReceiptFile,
 } from "../services/receipts";
 import PrimaryButton from "../app/components/common/PrimaryButton";
+import ReceiptStorage from "./ReceiptStorage";
 
 export default function ReceiptPanel({
   transactionId,
@@ -85,7 +86,7 @@ export default function ReceiptPanel({
     if (!transactionId || !access) return;
     if (file.size > access.limits.maxFileBytes)
       throw new Error(
-        `Choose a file smaller than ${access.limits.maxFileBytes / 1024 / 1024} MB.`,
+        `Choose a file smaller than ${access.limits.maxFileBytes / 1e6} MB.`,
       );
     setRetry({ file, replaceId });
     setProgress(0);
@@ -149,16 +150,7 @@ export default function ReceiptPanel({
                 ? "Included through a receipt administrator"
                 : access.tier}
           </Text>
-          <Text>
-            Family storage:{" "}
-            {(
-              (access.usage.liveBytes + access.usage.reservedBytes) /
-              1024 /
-              1024
-            ).toFixed(1)}{" "}
-            / {(access.limits.maxStorageBytes / 1024 / 1024).toFixed(0)} MB,
-            including pending cleanup.
-          </Text>
+          {!transactionId && <ReceiptStorage access={access} />}
           {access.deletionScheduledAt && (
             <Text
               accessibilityLiveRegion="polite"
@@ -175,9 +167,9 @@ export default function ReceiptPanel({
           {transactionId && access.canUpload && (
             <>
               <Text>
-                JPG, JPEG, PNG or PDF · up to{" "}
-                {access.limits.maxFileBytes / 1024 / 1024} MB each ·{" "}
-                {access.limits.maxReceiptsPerTransaction} receipts per entry.
+                JPG, JPEG, PNG or PDF · up to {access.limits.maxFileBytes / 1e6}{" "}
+                MB each · {access.limits.maxReceiptsPerTransaction} receipts per
+                entry.
               </Text>
               <PrimaryButton
                 title="Photograph a receipt"
@@ -202,7 +194,10 @@ export default function ReceiptPanel({
               this family.
             </Text>
           )}
-          {!(access.plan === "premium" && access.active) && (
+          {(!(access.plan.startsWith("premium") && access.active) ||
+            access.usage.liveBytes + access.usage.reservedBytes >=
+              access.limits.maxStorageBytes ||
+            access.downgradeUploadBlocked) && (
             <View style={{ gap: 8 }}>
               <Text>
                 {access.canUpload
@@ -214,10 +209,15 @@ export default function ReceiptPanel({
                 onPress={() => router.push("/(drawer)/premium")}
               />
               <Text>
-                Purchasing is not available yet. View plan details and
-                cancellation rules.
+                View plans, billing availability and cancellation rules.
               </Text>
             </View>
+          )}
+          {access.plan.startsWith("premium") && access.active && (
+            <PrimaryButton
+              title="Manage family subscription"
+              onPress={() => router.push("/(drawer)/premium")}
+            />
           )}
           {access.canRead && (
             <PrimaryButton

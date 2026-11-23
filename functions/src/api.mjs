@@ -2,7 +2,7 @@ import express from "express";
 import { Zip, ZipPassThrough, strToU8 } from "fflate";
 import { ReceiptError, identifier } from "./policy.mjs";
 
-export function createReceiptApi(service, auth) {
+export function createReceiptApi(service, auth, subscriptions) {
   const app = express();
   app.disable("x-powered-by");
   app.use(async (req, res, next) => {
@@ -33,6 +33,46 @@ export function createReceiptApi(service, auth) {
       next(error);
     }
   };
+  if (subscriptions) {
+    app.get(
+      "/subscription",
+      route(async (req, res) =>
+        res.json(await subscriptions.overview(req.receiptUid)),
+      ),
+    );
+    app.post(
+      "/subscription/prepare",
+      route(async (req, res) =>
+        res.json(await subscriptions.prepare(req.receiptUid, req.body.store)),
+      ),
+    );
+    app.post(
+      "/subscription/refresh",
+      route(async (req, res) =>
+        res.json(await subscriptions.refresh(req.receiptUid)),
+      ),
+    );
+    app.post(
+      "/subscription/verify",
+      route(async (req, res) =>
+        res.json(await subscriptions.verify(req.body, req.receiptUid)),
+      ),
+    );
+  }
+  app.post(
+    "/subscription/cleanup-review",
+    route(async (req, res) =>
+      res.json(
+        await service.downgradeReview(req.receiptUid, req.body.preference),
+      ),
+    ),
+  );
+  app.post(
+    "/subscription/cleanup-remove",
+    route(async (req, res) =>
+      res.json(await service.removeDowngradeExtras(req.receiptUid, req.body)),
+    ),
+  );
   app.get(
     "/access",
     route(async (req, res) => {
@@ -132,7 +172,27 @@ export function createReceiptApi(service, auth) {
   app.get(
     "/export",
     route(async (req, res) => {
-      const items = await service.exportReceipts(req.receiptUid);
+      let items = await service.exportReceipts(req.receiptUid);
+      if (req.query.keep) {
+        const review = await service.downgradeReview(
+          req.receiptUid,
+          req.query.keep,
+        );
+        if (review.fingerprint !== req.query.review)
+          throw new ReceiptError(
+            409,
+            "Your receipts changed. Review the extras again.",
+          );
+        const part = Number(req.query.part);
+        if (
+          !Number.isSafeInteger(part) ||
+          part < 0 ||
+          part >= review.exportParts.length
+        )
+          throw new ReceiptError(400, "Choose a valid extra-receipt ZIP part.");
+        const ids = new Set(review.exportParts[part]);
+        items = items.filter((item) => ids.has(item.record.receiptId));
+      }
       res.set("Content-Type", "application/zip");
       res.set(
         "Content-Disposition",

@@ -4,6 +4,7 @@ import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
 import express from "express";
+import { createSubscriptionService } from "../src/subscriptions.mjs";
 import { createInvitationService } from "../src/invitations.mjs";
 import { createInvitationsApi } from "../src/invitations-api.mjs";
 import { createReceiptService } from "../src/service.mjs";
@@ -84,7 +85,14 @@ app.use(
     auth,
   ),
 );
-app.use(createReceiptApi(createReceiptService({ db, auth, bucket }), auth));
+const receipts = createReceiptService({ db, auth, bucket });
+app.use(
+  createReceiptApi(
+    receipts,
+    auth,
+    createSubscriptionService({ db, receipts, verifier: {} }),
+  ),
+);
 const { createServer } = await import("node:http");
 createServer((req, res) => {
   res.setHeader(

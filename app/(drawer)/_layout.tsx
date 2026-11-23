@@ -102,6 +102,13 @@ function DrawerNavigation() {
           drawerItemStyle: { display: "none" },
         }}
       />
+      <Drawer.Screen
+        name="receipt-storage"
+        options={{
+          title: "Receipt storage review",
+          drawerItemStyle: { display: "none" },
+        }}
+      />
 
       <Drawer.Screen
         name="settings"
