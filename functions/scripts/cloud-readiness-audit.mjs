@@ -299,6 +299,81 @@ export async function collectCloudReadiness(read) {
   };
 }
 
+// Narrow owner-only diagnostics: never return addresses, codes, document IDs,
+// environment values, passwords or provider error text.
+export async function collectInvitationMailAudit(read) {
+  const capture = async (work) => {
+    try {
+      return { status: "checked", details: await work() };
+    } catch (error) {
+      return {
+        status: [401, 403].includes(error.status) ? "blocked" : "unavailable",
+        httpStatus: Number.isInteger(error.status) ? error.status : null,
+      };
+    }
+  };
+  const query = new URL(
+    `https://firestore.googleapis.com/v1/${databasePath}/documents/invitationDeliveries`,
+  );
+  query.searchParams.set("pageSize", "5");
+  query.searchParams.set("orderBy", "createdAt desc");
+  for (const field of ["state", "failure", "createdAt"])
+    query.searchParams.append("mask.fieldPaths", field);
+  const states = new Set(["sending", "accepted", "failed", "unknown"]);
+  const failures = new Set([
+    "email-setup",
+    "address-rejected",
+    "delivery-unknown",
+    "invitation-changed",
+  ]);
+  const [senderSetup, recentAttempts] = await Promise.all([
+    capture(async () => {
+      const fn = await read(
+        `https://cloudfunctions.googleapis.com/v2/projects/${projectId}/locations/us-west1/functions/familyInvitationsApi`,
+      );
+      const env = fn.serviceConfig?.environmentVariables || {};
+      return {
+        senderMatches:
+          (env.INVITATION_SMTP_USER ?? "dailybudgethub@gmail.com") ===
+          "dailybudgethub@gmail.com",
+        hostMatches:
+          (env.INVITATION_SMTP_HOST ?? "smtp.gmail.com") === "smtp.gmail.com",
+        portMatches: Number(env.INVITATION_SMTP_PORT ?? 465) === 465,
+        passwordSecretAttached: (
+          fn.serviceConfig?.secretEnvironmentVariables || []
+        ).some(
+          (item) =>
+            item.key === "INVITATION_SMTP_PASSWORD" &&
+            item.secret === "INVITATION_SMTP_PASSWORD",
+        ),
+      };
+    }),
+    capture(async () => {
+      const data = await read(query.href);
+      return (data.documents || []).slice(0, 5).map((doc) => {
+        const fields = doc.fields || {};
+        const state = fields.state?.stringValue;
+        const failure = fields.failure?.stringValue;
+        const time = Date.parse(fields.createdAt?.timestampValue || "");
+        return {
+          state: states.has(state) ? state : "unknown",
+          ...(failures.has(failure) ? { failure } : {}),
+          ...(Number.isFinite(time)
+            ? { createdAt: new Date(time).toISOString() }
+            : {}),
+        };
+      });
+    }),
+  ]);
+  return {
+    projectId,
+    checkedAt: new Date().toISOString(),
+    senderSetup,
+    recentAttempts,
+    note: "Accepted means the mail server accepted the message, not proof of inbox delivery. An empty checked list means no automatic email attempts were found.",
+  };
+}
+
 const cli =
   !process.argv[1] ||
   import.meta.url === pathToFileURL(resolve(process.argv[1])).href;
@@ -319,7 +394,12 @@ if (cli) {
     if (!token) throw new Error("No owner access token was available.");
     console.log(
       JSON.stringify(
-        await collectCloudReadiness(createGoogleReader(token)),
+        await (
+          process.env.DAILYBUDGET_MAIL_AUDIT === "1" ||
+            process.argv.includes("--invitation-mail")
+            ? collectInvitationMailAudit
+            : collectCloudReadiness
+        )(createGoogleReader(token)),
         null,
         2,
       ),

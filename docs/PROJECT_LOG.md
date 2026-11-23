@@ -1,5 +1,11 @@
 # DailyBudget Project Log
 
+## Active: real invitation email missing — November 23, 2026
+
+The owner has completed deployment and HTTP invocation repair. The UI is published; PR #18's complete CI passed, it merged at main `191e9c3`, and Pages run 45276962400 succeeded. The invitation POST correctly returns JSON 401 without authentication; this proves reachability, not email delivery. The owner tested three recipient emails and reports app success with none received. Exact UI confirmation/provider/spam details were requested but not supplied; do not assume Gmail accepted these attempts, or treat displayed invitation codes as delivery evidence.
+
+Prepared a narrow read-only mode in the existing cloud report (`DAILYBUDGET_MAIL_AUDIT=1`, or file CLI flag `--invitation-mail`). It checks effective sender/host/port matches and password-secret binding as booleans, then reads only five most recent automatic-delivery states/failure codes/timestamps using Firestore field projection. It makes two authenticated GETs to fixed Google endpoints with the DailyBudget quota header; it never sends/resends email, changes configuration, reads secret values or returns recipient addresses, invitation codes, document IDs, tokens or raw errors. Six cloud-report tests pass, including redaction and blocked/empty distinction. Ask the owner to run the reviewed script from Cloud Shell and return its sanitized output. No further deploy is required for this check.
+
 ## Cloud deployment confirmed; HTTP invocation recovery — November 23, 2026
 
 The owner reported enabled SMTP secret version 1, corrected SMTP user/host/port, retried the interrupted deployment and supplied **Deploy complete!** for reviewed source `f45d303`. PRs #15/#16/#17 are now merged into main (`50aa679`); its tree is identical to reviewed source. Pages publication succeeded (run 45274648030). Live HTML/JavaScript return HTTP 200 and include the new Settings, Account/receipt and subscription UI markers. Served bundle is `entry-5669fd74fdae68dda04accffb6a75910.js`, SHA-256 `30bb35671429c03cb4a8c52833d4b935171de2c64361af29d0ba7c93a262aa35`. Paid store purchasing remains disabled; real inbox delivery, store/device tests and the remaining recovery/privacy gates are still unverified. Do not ask the owner to repeat password setup or deploy all functions solely to fix HTTP access.

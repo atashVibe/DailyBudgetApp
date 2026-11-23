@@ -94,3 +94,13 @@ Reference: <https://docs.cloud.google.com/sdk/gcloud/reference/functions/add-inv
 ### Current publication evidence — November 23, 2026
 
 The owner supplied **Deploy complete!** for reviewed `f45d303`, followed by successful invocation-repair bindings on both new services. The invitation unauthenticated POST now returns the app's JSON HTTP 401; receipt access also returns 401, and the store service is reachable (unsupported GET `/` returns Express 404). No probe sent an email or processed a store event. PRs #15/#16/#17 were merged; Pages run 45274648030 succeeded at main `50aa679`, whose source tree matches the reviewed/deployed checkpoint. The actual served bundle contains the new UI and disabled-purchase copy. Real inbox delivery/join and store/native tests remain unverified. No further Cloud Shell setup/deployment is needed solely for this repaired invocation setting; the explicit source declarations preserve it on future deployments.
+
+## Diagnose a missing invitation without exposing recipient details
+
+Run the reviewed cloud-report script in owner Cloud Shell with `node functions/scripts/cloud-readiness-audit.mjs --invitation-mail`. The stdin form uses `DAILYBUDGET_MAIL_AUDIT=1 node --input-type=module` after fetching the reviewed script. It reads only expected SMTP-setting matches, secret-binding presence, and the latest five automatic-delivery outcomes/timestamps. It does not access the password value or send any email. Six cloud-report checks cover credential/recipient/code redaction and blocked-versus-empty results.
+
+- `failed` / `email-setup`: check the Gmail App Password belongs to the configured sender; never paste it into chat.
+- `failed` / `address-rejected`: the provider rejected the address.
+- `accepted`: the SMTP server accepted the message; investigate the sender's Sent/bounce messages and recipient folders. This is not inbox proof.
+- `unknown` / `delivery-unknown` or prolonged `sending`: do not automatically resend an uncertain attempt.
+- An empty **checked** list means no automatic email attempts were found; confirm the updated screen and Send invitation email action. A blocked/unavailable check does not prove an empty history.
