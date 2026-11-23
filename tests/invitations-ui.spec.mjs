@@ -154,6 +154,52 @@ test("free-family receipt viewers expose Premium details without enabling checko
     }),
   ).toBeVisible();
 });
+test("SMTP authentication failure clearly reports unsent email and preserves a single shareable invitation on retry", async ({
+  page,
+}) => {
+  const owner = await seed("smtp-failure");
+  const recipient = `smtp-auth-failure-${run}@example.test`;
+  await login(page, owner);
+  await page.goto("/invite-family", { waitUntil: "domcontentloaded" });
+  await page.getByLabel("Invitation email", { exact: true }).fill(recipient);
+  const send = async () => {
+    const response = page.waitForResponse(
+      (r) =>
+        r.url() === "http://localhost:8791/invitations" &&
+        r.request().method() === "POST",
+    );
+    await page
+      .getByRole("button", { name: "Send invitation email", exact: true })
+      .click();
+    const result = await response;
+    expect(result.status()).toBe(200);
+    return result.json();
+  };
+  const first = await send();
+  expect(first.status).toBe("failed");
+  expect(first.failure).toBe("email-setup");
+  await expect(page.getByRole("alert")).toContainText("Email was not sent.");
+  await expect(page.getByText(first.code, { exact: true })).toBeVisible();
+  await expect(page.getByText(/Invitation emailed to/)).toHaveCount(0);
+  const retry = await send();
+  expect(retry.code).toBe(first.code);
+  expect(retry.status).toBe("failed");
+  const jobs = await db
+    .collection("invitationDeliveries")
+    .where("familyId", "==", owner.familyId)
+    .get();
+  expect(jobs.size).toBe(1);
+  expect(jobs.docs[0].data().failure).toBe("email-setup");
+  expect(
+    (
+      await db
+        .collection("invitationTestMail")
+        .where("to", "==", recipient)
+        .get()
+    ).empty,
+  ).toBe(true);
+});
+
 test("emailed code and link survive Google sign-in; joining is explicit and email-bound", async ({
   page,
   browser,

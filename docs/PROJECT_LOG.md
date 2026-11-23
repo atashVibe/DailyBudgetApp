@@ -1,5 +1,13 @@
 # DailyBudget Project Log
 
+## Confirmed invitation sender authentication failure — November 23, 2026
+
+The owner's mail audit at `2026-11-23T22:30:34.420Z` shows all sender/host/port checks true and the password secret attached. All three automatic attempts (22:03:25, 22:05:13, 22:06:49 UTC) are `failed` / `email-setup`, which the backend assigns to SMTP `EAUTH`. These messages were not accepted by Gmail; this is not evidence of inbox/spam delivery failure. The owner has been asked to create an App Password while signed in as dailybudgethub@gmail.com, enter its 16 characters into the masked Secret Manager CLI prompt, and accept the CLI's update of the function's secret binding. Confirmation/retest is pending; never ask for the password in chat. Firebase CLI 15.36.0 can update the bound secret version directly when Yes is selected, so do not require another whole-codebase deploy if it reports the function updated successfully.
+
+Prepared a UI-only error fix: definite failed email reports Email was not sent with an accessible red alert; EAUTH explains the email service needs attention. Valid manual sharing is retained; accepted/unknown states and existing request deduplication are unchanged. An emulator-only authentication-failure fixture exercises the real backend outcome, proves one failed job/code persists across retry and no mailbox message was created. TypeScript/lint and focused Chromium2 + iPhone-configured WebKit2 checks pass (new failure + existing email/Google/join path). Full CI remains required before publication. No production backend/rules/data change is needed for this UI fix.
+
+After the owner confirms secret rotation/function update, reload the app before creating one new test invitation: the old failed request intentionally remains deduplicated and cannot resend. Check a fresh outcome/inbox/code/link rather than treating old failed records as another credential failure. PR #19's six cloud-report tests/full CI passed and its diagnostics merged at `d90d04b`; prior UI/deployment recovery checkpoints remain published.
+
 ## Active: real invitation email missing — November 23, 2026
 
 The owner has completed deployment and HTTP invocation repair. The UI is published; PR #18's complete CI passed, it merged at main `191e9c3`, and Pages run 45276962400 succeeded. The invitation POST correctly returns JSON 401 without authentication; this proves reachability, not email delivery. The owner tested three recipient emails and reports app success with none received. Exact UI confirmation/provider/spam details were requested but not supplied; do not assume Gmail accepted these attempts, or treat displayed invitation codes as delivery evidence.

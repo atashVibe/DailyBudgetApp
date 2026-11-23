@@ -14,6 +14,7 @@ import {
 import AppScreen from "../components/common/AppScreen";
 import AppTextInput from "../components/common/AppTextInput";
 import PrimaryButton from "../components/common/PrimaryButton";
+import { uiTokens } from "../components/common/dashboardStyles";
 
 export default function InviteFamilyScreen() {
   const [email, setEmail] = useState("");
@@ -22,6 +23,7 @@ export default function InviteFamilyScreen() {
   const [verified, setVerified] = useState(false);
   const [result, setResult] = useState<InvitationResult | null>(null);
   const [message, setMessage] = useState("");
+  const [messageIsError, setMessageIsError] = useState(false);
   const [working, setWorking] = useState(false);
   const [sendingEmail, setSendingEmail] = useState(false);
   const lock = useRef(false);
@@ -65,9 +67,11 @@ export default function InviteFamilyScreen() {
     lock.current = true;
     setWorking(true);
     setMessage("");
+    setMessageIsError(false);
     try {
       await action();
     } catch (error) {
+      setMessageIsError(true);
       setMessage(error instanceof Error ? error.message : "Please retry.");
     } finally {
       lock.current = false;
@@ -104,7 +108,14 @@ export default function InviteFamilyScreen() {
         setMessage(
           "This invitation is no longer pending. Change the email or reopen this screen to create a new one.",
         );
-      else
+      else if (next.status === "failed") {
+        setMessageIsError(true);
+        setMessage(
+          next.failure === "email-setup"
+            ? "Email was not sent. Our email service needs attention. You can copy or share the invitation below."
+            : "Email was not sent. Check the email address or copy and share the invitation below.",
+        );
+      } else
         setMessage(
           "Email delivery has not been confirmed. You can copy or share the invitation below. Retrying the same request will not send a duplicate email.",
         );
@@ -227,7 +238,14 @@ export default function InviteFamilyScreen() {
           </>
         )}
         {message ? (
-          <Text accessibilityLiveRegion="polite" style={{ lineHeight: 24 }}>
+          <Text
+            accessibilityRole={messageIsError ? "alert" : undefined}
+            accessibilityLiveRegion={messageIsError ? "assertive" : "polite"}
+            style={{
+              lineHeight: 24,
+              color: messageIsError ? uiTokens.danger : uiTokens.text,
+            }}
+          >
             {message}
           </Text>
         ) : null}

@@ -104,3 +104,11 @@ Run the reviewed cloud-report script in owner Cloud Shell with `node functions/s
 - `accepted`: the SMTP server accepted the message; investigate the sender's Sent/bounce messages and recipient folders. This is not inbox proof.
 - `unknown` / `delivery-unknown` or prolonged `sending`: do not automatically resend an uncertain attempt.
 - An empty **checked** list means no automatic email attempts were found; confirm the updated screen and Send invitation email action. A blocked/unavailable check does not prove an empty history.
+
+### Verified sender-authentication issue and recovery
+
+The owner audit at 2026-11-23T22:30:34Z found three failed `email-setup` attempts while all expected configuration matches and secret-binding presence were true. The backend classifies SMTP EAUTH this way: Gmail rejected the configured login; it did not accept these three messages for delivery. Replace the saved value with an App Password created while signed in as dailybudgethub@gmail.com (normal Google login passwords do not replace an App Password). Enter it only in the masked `functions:secrets:set INVITATION_SMTP_PASSWORD` prompt. Firebase CLI 15.36.0 offers to update functions using the stale version; selecting Yes updates the secret binding without requiring a full source deployment. Verify its completion before testing again.
+
+A failed request retains its original result for duplicate protection. After credential repair, reload the app and create one fresh invitation; repeated clicks on the old request will not send another email. Verify a new accepted outcome and actual inbox/code/link/join. The owner has been asked to rotate the credential; rotation and delivery remain unconfirmed.
+
+The UI now distinguishes definite failure with an Email was not sent alert while keeping the manual share code. Unknown delivery remains explicitly unconfirmed; the app does not retry uncertain mail automatically. Emulator-only browser coverage checks failed authentication, absence of mailbox delivery and stable request/code deduplication.

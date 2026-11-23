@@ -78,6 +78,11 @@ app.use(
       send: async (message) => {
         if (!message.to.endsWith("@example.test"))
           throw new Error("Only emulator test recipients are allowed.");
+        if (message.to.startsWith("smtp-auth-failure-"))
+          throw Object.assign(
+            new Error("Emulator-only SMTP authentication failure"),
+            { code: "EAUTH" },
+          );
         await db.collection("invitationTestMail").add(message);
         return { accepted: [message.to] };
       },
