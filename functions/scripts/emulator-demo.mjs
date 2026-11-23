@@ -9,6 +9,7 @@ import { createInvitationService } from "../src/invitations.mjs";
 import { createInvitationsApi } from "../src/invitations-api.mjs";
 import { createReceiptService } from "../src/service.mjs";
 import { createReceiptApi } from "../src/api.mjs";
+import { createFamilyMembershipService } from "../src/family-membership.mjs";
 
 const projectId = "demo-dailybudget-receipts";
 if (
@@ -96,6 +97,7 @@ app.use(
     receipts,
     auth,
     createSubscriptionService({ db, receipts, verifier: {} }),
+    createFamilyMembershipService({ db, auth }),
   ),
 );
 const { createServer } = await import("node:http");

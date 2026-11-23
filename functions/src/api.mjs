@@ -2,7 +2,7 @@ import express from "express";
 import { Zip, ZipPassThrough, strToU8 } from "fflate";
 import { ReceiptError, identifier } from "./policy.mjs";
 
-export function createReceiptApi(service, auth, subscriptions) {
+export function createReceiptApi(service, auth, subscriptions, families) {
   const app = express();
   app.disable("x-powered-by");
   app.use(async (req, res, next) => {
@@ -33,6 +33,20 @@ export function createReceiptApi(service, auth, subscriptions) {
       next(error);
     }
   };
+  if (families) {
+    app.get(
+      "/family/leave",
+      route(async (req, res) =>
+        res.json(await families.prepare(req.receiptUid)),
+      ),
+    );
+    app.post(
+      "/family/leave",
+      route(async (req, res) =>
+        res.json(await families.leave(req.receiptUid, req.body)),
+      ),
+    );
+  }
   if (subscriptions) {
     app.get(
       "/subscription",

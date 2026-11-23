@@ -1,5 +1,14 @@
 # DailyBudget Project Log
 
+## Active: Leave family and branded verification — November 23, 2026
+
+The owner confirms invitation email delivery, signup, verification and joining now work after `INVITATION_SMTP_PASSWORD` version 2 was attached to `familyInvitationsApi`. The older mail-failure sections below are historical; do not repeat sender/password setup.
+
+Prepared `codex/leave-family-branded-verification`: Account and Switch family offer a confirmed departure that retains account/shared records and prevents the last live administrator from leaving. Users without a family can access personal Account actions. Shared AuthCard/controls now brand verification, password reset, email recovery, invitation verification and forgotten-password screens. All new email actions require explicit confirmation, keep trusted invitation context, reject arbitrary return destinations and offer bounded connection retries. `AGENTS.md` records the owner's shared-UI requirement.
+
+See `docs/FAMILY_LEAVE_EMAIL_ACTIONS.md` for deployment and test boundaries. Owner must deploy only the reviewed existing receipts API first; then publish the frontend after full CI. Once the new handler is live, owner must set Firebase Authentication templates' custom action URL to `https://atashvibe.github.io/DailyBudgetApp/auth-action`. This console setting is separate from continuation URLs in source. Fresh emails must be tested afterwards. No new secret, Storage/rules deployment, subscription activation or release-tag move is needed. Real verification/leave and former-family attribution cleanup remain open until separately evidenced.
+
+
 ## Confirmed invitation sender authentication failure — November 23, 2026
 
 The owner's mail audit at `2026-11-23T22:30:34.420Z` shows all sender/host/port checks true and the password secret attached. All three automatic attempts (22:03:25, 22:05:13, 22:06:49 UTC) are `failed` / `email-setup`, which the backend assigns to SMTP `EAUTH`. These messages were not accepted by Gmail; this is not evidence of inbox/spam delivery failure. The owner has been asked to create an App Password while signed in as dailybudgethub@gmail.com, enter its 16 characters into the masked Secret Manager CLI prompt, and accept the CLI's update of the function's secret binding. Confirmation/retest is pending; never ask for the password in chat. Firebase CLI 15.36.0 can update the bound secret version directly when Yes is selected, so do not require another whole-codebase deploy if it reports the function updated successfully.

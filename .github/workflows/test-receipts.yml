@@ -25,6 +25,7 @@ jobs:
       - run: npx tsc --noEmit
       - run: npm run test:finance
       - run: node --test tests/cloud-readiness-audit.test.mjs
+      - run: node --experimental-strip-types --test tests/email-action-links.test.mjs
       - run: npm --prefix functions test
       - name: Verify existing budget rules and receipt lifecycle in isolated emulators
         run: npx --yes firebase-tools@15.36.0 emulators:exec --project demo-dailybudget-receipts --only auth,firestore,storage "node --test tests/firestore.rules.test.mjs && npm --prefix functions run test:integration"

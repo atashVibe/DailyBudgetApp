@@ -8,6 +8,8 @@ import {
 import { auth, db } from "./auth";
 import { getFamilyContext, type FamilyRole } from "./families";
 import { withTimeout } from "./loading";
+import { invitationLink } from "./appLinks";
+export { validInvitationCode, invitationLink } from "./appLinks";
 
 export type InvitationResult = {
   status:
@@ -24,10 +26,6 @@ export type InvitationResult = {
   expiresAt?: number;
   failure?: string;
 };
-export const validInvitationCode = (code: unknown): code is string =>
-  typeof code === "string" && /^\d{8}$/.test(code);
-export const invitationLink = (code: string) =>
-  `https://atashvibe.github.io/DailyBudgetApp/join-invitation?code=${encodeURIComponent(code)}`;
 export const validInvitationEmail = (value: string) =>
   value.trim().length <= 254 &&
   /^[^\s@<>,;]+@[^\s@<>,;]+\.[^\s@<>,;]+$/.test(value.trim());

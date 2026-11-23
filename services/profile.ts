@@ -1,10 +1,10 @@
 import { updateProfile, type User } from "firebase/auth";
-import { doc, writeBatch } from "firebase/firestore";
+import { doc, runTransaction } from "firebase/firestore";
 import { db } from "./auth";
 
 export async function saveUserDisplayName(
   user: User,
-  familyId: string,
+  familyId: string | null,
   displayName: string,
 ) {
   const normalizedName = displayName.trim().replace(/\s+/g, " ");
@@ -14,16 +14,27 @@ export async function saveUserDisplayName(
 
   await updateProfile(user, { displayName: normalizedName });
 
-  const batch = writeBatch(db);
-  batch.set(
-    doc(db, "users", user.uid),
-    { displayName: normalizedName },
-    { merge: true },
-  );
-  batch.update(doc(db, "familyMembers", `${familyId}_${user.uid}`), {
-    displayName: normalizedName,
+  await runTransaction(db, async (tx) => {
+    const profileRef = doc(db, "users", user.uid);
+    const profile = await tx.get(profileRef);
+    const currentFamilyId = profile.data()?.activeFamilyId;
+    const memberRef =
+      currentFamilyId && (!familyId || familyId === currentFamilyId)
+        ? doc(db, "familyMembers", `${currentFamilyId}_${user.uid}`)
+        : null;
+    const member = memberRef ? await tx.get(memberRef) : null;
+    if (profile.exists())
+      tx.update(profileRef, { displayName: normalizedName });
+    else
+      tx.set(profileRef, {
+        displayName: normalizedName,
+        email: user.email || "",
+        activeFamilyId: null,
+        role: null,
+      });
+    if (memberRef && member?.data()?.status === "active")
+      tx.update(memberRef, { displayName: normalizedName });
   });
-  await batch.commit();
 
   return normalizedName;
 }

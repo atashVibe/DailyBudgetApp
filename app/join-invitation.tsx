@@ -11,8 +11,9 @@ import Text from "./components/common/AppText";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { auth } from "../services/auth";
 import { joinFamilyWithCode } from "../services/families";
-import { invitationLink, validInvitationCode } from "../services/invitations";
-import AppScreen from "./components/common/AppScreen";
+import { validInvitationCode } from "../services/invitations";
+import { emailActionSettings } from "../services/appLinks";
+import AuthCard from "./components/common/AuthCard";
 import PrimaryButton from "./components/common/PrimaryButton";
 
 export default function JoinInvitationScreen() {
@@ -69,9 +70,8 @@ export default function JoinInvitationScreen() {
       router.replace("/(drawer)/dashboard");
     });
   return (
-    <AppScreen>
+    <AuthCard title="Join a family">
       <View style={{ gap: 16 }}>
-        <Text style={{ fontSize: 24, fontWeight: "700" }}>Join a family</Text>
         {!ready ? (
           <Text>Loading invitation…</Text>
         ) : !code ? (
@@ -108,6 +108,7 @@ export default function JoinInvitationScreen() {
                 />
                 <PrimaryButton
                   title="Create an account to join"
+                  variant="outline"
                   onPress={() =>
                     router.push({
                       pathname: "/signup",
@@ -134,9 +135,10 @@ export default function JoinInvitationScreen() {
                         void run(async () => {
                           const current = auth.currentUser;
                           if (!current) return;
-                          await sendEmailVerification(current, {
-                            url: invitationLink(code),
-                          });
+                          await sendEmailVerification(
+                            current,
+                            emailActionSettings(code),
+                          );
                           setMessage(
                             "Verification email sent. Open it, then return and check verification. If the invitation expires, ask for a new one.",
                           );
@@ -145,6 +147,7 @@ export default function JoinInvitationScreen() {
                     />
                     <PrimaryButton
                       title="I verified my email"
+                      variant="outline"
                       disabled={working}
                       onPress={() =>
                         void run(async () => {
@@ -171,6 +174,7 @@ export default function JoinInvitationScreen() {
                 />
                 <PrimaryButton
                   title="Use a different account"
+                  variant="text"
                   disabled={working}
                   onPress={() =>
                     void run(async () => {
@@ -201,6 +205,6 @@ export default function JoinInvitationScreen() {
           </Text>
         ) : null}
       </View>
-    </AppScreen>
+    </AuthCard>
   );
 }

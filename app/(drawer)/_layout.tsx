@@ -3,7 +3,7 @@ import {
   DrawerItemList,
   DrawerContentScrollView,
 } from "@react-navigation/drawer";
-import { useRouter } from "expo-router";
+import { useRouter, useSegments } from "expo-router";
 import { Drawer } from "expo-router/drawer";
 import { onAuthStateChanged } from "firebase/auth";
 import SignOutConfirmation, {
@@ -30,6 +30,8 @@ export default function DrawerLayout() {
 
 function DrawerNavigation() {
   const router = useRouter();
+  const segments = useSegments();
+  const personalAccount = segments[segments.length - 1] === "account";
   const requestSignOut = useRequestSignOut();
   const [isAdmin, setIsAdmin] = useState(false);
   const [familyName, setFamilyName] = useState("Family");
@@ -58,6 +60,7 @@ function DrawerNavigation() {
       setPhoto(user.photoURL?.startsWith("https://") ? user.photoURL : null);
       unsubscribeRole = onSnapshot(
         doc(db, "users", user.uid),
+        { includeMetadataChanges: true },
         (snapshot) => {
           setIsAdmin(snapshot.exists() && snapshot.data().role === "admin");
           setDisplayName(
@@ -67,6 +70,15 @@ function DrawerNavigation() {
               "Your account",
           );
           unsubscribeFamily();
+          if (
+            snapshot.exists() &&
+            snapshot.data().activeFamilyId === null &&
+            !snapshot.metadata.fromCache
+          ) {
+            setFamilyName("No family");
+            if (!personalAccount) router.replace("/family-setup");
+            return;
+          }
           if (
             typeof snapshot.data()?.activeFamilyId === "string" &&
             snapshot.data()?.activeFamilyId
@@ -90,7 +102,7 @@ function DrawerNavigation() {
       unsubscribeRole();
       unsubscribeFamily();
     };
-  }, [router]);
+  }, [router, personalAccount]);
 
   if (!isRoleLoaded) {
     return null;

@@ -46,7 +46,11 @@ export default function Index() {
         });
         if (active) {
           setError("");
-          setState(profile.exists() ? "dashboard" : "setup");
+          setState(
+            profile.exists() && profile.data().activeFamilyId
+              ? "dashboard"
+              : "setup",
+          );
         }
       } catch (failure) {
         if (active)

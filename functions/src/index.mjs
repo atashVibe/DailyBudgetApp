@@ -17,6 +17,7 @@ import { createReceiptApi } from "./api.mjs";
 import { createSubscriptionService } from "./subscriptions.mjs";
 import { createStoreVerifier } from "./store-verification.mjs";
 import { createStoreNotifications } from "./store-notifications.mjs";
+import { createFamilyMembershipService } from "./family-membership.mjs";
 import { GoogleAuth } from "google-auth-library";
 
 initializeApp();
@@ -67,7 +68,12 @@ export const receiptsApi = onRequest(
     concurrency: 1,
     cors: ["https://atashvibe.github.io", /^http:\/\/localhost(:\d+)?$/],
   },
-  createReceiptApi(service, getAuth(), subscriptions),
+  createReceiptApi(
+    service,
+    getAuth(),
+    subscriptions,
+    createFamilyMembershipService({ db: getFirestore(), auth: getAuth() }),
+  ),
 );
 export const storeNotifications = onRequest(
   {

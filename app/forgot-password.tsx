@@ -1,11 +1,14 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { sendPasswordResetEmail } from "firebase/auth";
 import { useRef, useState } from "react";
-import { TouchableOpacity } from "react-native";
 import Text from "./components/common/AppText";
 import { auth } from "../services/auth";
 import { validInvitationCode } from "../services/invitations";
-import AppScreen from "./components/common/AppScreen";
+import AuthCard from "./components/common/AuthCard";
+import FormLabel from "./components/common/FormLabel";
+import { emailActionSettings } from "../services/appLinks";
+import { View } from "react-native";
+import { uiStyles as ui, uiTokens } from "./components/common/dashboardStyles";
 import AppTextInput from "./components/common/AppTextInput";
 import PrimaryButton from "./components/common/PrimaryButton";
 
@@ -41,8 +44,11 @@ export default function ForgotPasswordScreen() {
     setMessage("");
     setSent(false);
     try {
-      // Firebase's hosted email action page validates and completes the reset.
-      await sendPasswordResetEmail(auth, normalizedEmail);
+      await sendPasswordResetEmail(
+        auth,
+        normalizedEmail,
+        emailActionSettings(inviteCode),
+      );
       setSent(true);
       setMessage(resetMessage);
     } catch (error: unknown) {
@@ -69,33 +75,32 @@ export default function ForgotPasswordScreen() {
   };
 
   return (
-    <AppScreen
-      style={{ padding: 24, justifyContent: "center", backgroundColor: "#fff" }}
-    >
-      <Text style={{ fontSize: 24, fontWeight: "700", marginBottom: 16 }}>
-        Reset your password
-      </Text>
-      <Text style={{ fontSize: 16, color: "#374151", marginBottom: 24 }}>
+    <AuthCard title="Reset your password">
+      <Text style={ui.body}>
         Enter the email you use for email/password sign-in. We’ll send a link to
         choose a new password.
       </Text>
-      <AppTextInput
-        accessibilityLabel="Email address"
-        placeholder="Enter your email"
-        autoCapitalize="none"
-        autoCorrect={false}
-        autoComplete="email"
-        keyboardType="email-address"
-        value={email}
-        editable={!loading}
-        onChangeText={(value) => {
-          setEmail(value);
-          setMessage("");
-          setSent(false);
-        }}
-        returnKeyType="send"
-        onSubmitEditing={handleReset}
-      />
+      <View>
+        <FormLabel>Email address</FormLabel>
+        <AppTextInput
+          style={{ marginBottom: 0 }}
+          accessibilityLabel="Email address"
+          placeholder="Enter your email"
+          autoCapitalize="none"
+          autoCorrect={false}
+          autoComplete="email"
+          keyboardType="email-address"
+          value={email}
+          editable={!loading}
+          onChangeText={(value) => {
+            setEmail(value);
+            setMessage("");
+            setSent(false);
+          }}
+          returnKeyType="send"
+          onSubmitEditing={handleReset}
+        />
+      </View>
       <PrimaryButton
         title={sent ? "Send another reset link" : "Send reset link"}
         onPress={handleReset}
@@ -104,24 +109,24 @@ export default function ForgotPasswordScreen() {
       {message ? (
         <Text
           accessibilityLiveRegion="polite"
-          style={{
-            marginTop: 16,
-            fontSize: 16,
-            color: sent ? "#155E50" : "#B91C1C",
-          }}
+          style={[
+            ui.body,
+            { color: sent ? uiTokens.tealText : uiTokens.danger },
+          ]}
         >
           {message}
         </Text>
       ) : null}
-      <Text style={{ marginTop: 24, fontSize: 16, color: "#374151" }}>
+      <Text style={ui.helper}>
         Signed up with Apple or Google? Continue with that provider on the
         sign-in screen. A password reset does not link a different provider or
         recover an account you can no longer access. For help, contact
         dailybudgethub@gmail.com. Don’t create a new account to recover an
         existing family budget.
       </Text>
-      <TouchableOpacity
-        accessibilityRole="button"
+      <PrimaryButton
+        title="Back to sign in"
+        variant="text"
         onPress={() =>
           router.replace(
             inviteCode
@@ -129,10 +134,7 @@ export default function ForgotPasswordScreen() {
               : "/login",
           )
         }
-        style={{ padding: 16, alignItems: "center", marginTop: 12 }}
-      >
-        <Text style={{ fontSize: 16, color: "#155E50" }}>Back to sign in</Text>
-      </TouchableOpacity>
-    </AppScreen>
+      />
+    </AuthCard>
   );
 }
