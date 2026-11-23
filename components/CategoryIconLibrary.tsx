@@ -1,13 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useState } from "react";
-import {
-  Modal,
-  Pressable,
-  ScrollView,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { Modal, Pressable, ScrollView, TextInput, View } from "react-native";
+import Text from "../app/components/common/AppText";
 import PrimaryButton from "../app/components/common/PrimaryButton";
 const icons = Object.keys(Ionicons.glyphMap).filter((name) =>
   name.endsWith("-outline"),
@@ -99,7 +93,11 @@ export default function CategoryIconLibrary({
               ))}
           </View>
         </ScrollView>
-        <PrimaryButton title="Close icon library" onPress={onClose} />
+        <PrimaryButton
+          variant="text"
+          title="Close icon library"
+          onPress={onClose}
+        />
       </View>
     </Modal>
   );

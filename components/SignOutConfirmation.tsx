@@ -7,7 +7,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { Modal, Platform, Text, View } from "react-native";
+import { Modal, Platform, View } from "react-native";
+import Text from "../app/components/common/AppText";
 import { useRouter } from "expo-router";
 import { signOut } from "firebase/auth";
 import { auth } from "../services/auth";
@@ -73,6 +74,9 @@ export default function SignOutConfirmation({
           }}
         >
           <View
+            role="dialog"
+            aria-modal={true}
+            accessibilityLabel="Sign out confirmation"
             accessibilityViewIsModal
             style={{
               width: "100%",
@@ -85,7 +89,7 @@ export default function SignOutConfirmation({
           >
             <Text
               accessibilityRole="header"
-              style={{ fontSize: 22, fontWeight: "700" }}
+              style={{ fontSize: 18, fontWeight: "700" }}
             >
               Sign out of DailyBudget?
             </Text>
@@ -99,11 +103,13 @@ export default function SignOutConfirmation({
               </Text>
             ) : null}
             <PrimaryButton
+              variant="text"
               title="Stay signed in"
               disabled={working}
               onPress={() => setVisible(false)}
             />
             <PrimaryButton
+              variant="danger"
               title="Sign out"
               loading={working}
               onPress={() => void confirm()}

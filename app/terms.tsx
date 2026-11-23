@@ -3,7 +3,7 @@ import PublicInfoPage from "../components/PublicInfoPage";
 export default function TermsScreen() {
   return (
     <PublicInfoPage
-      title="Terms of Use"
+      title="Terms of use"
       dated
       introduction="These terms describe using DailyBudget, a personal and family budgeting app. Contact dailybudgethub@gmail.com if you have questions before using the service."
       sections={[
@@ -26,6 +26,10 @@ export default function TermsScreen() {
         {
           title: "Beta availability and changes",
           body: "DailyBudget is being prepared for beta testing. Features may change, and interruptions or errors may occur. Keep your own copies of records you need. We do not guarantee uninterrupted availability or error-free calculations. These statements do not remove rights that cannot be excluded under applicable law.",
+        },
+        {
+          title: "Store subscriptions",
+          body: "Paid store subscriptions are being prepared and are not enabled until configuration and testing are complete. When available, the store shows the actual price, trial eligibility and renewal terms before you confirm. Eligible Premium trials renew at the store-confirmed recurring price unless cancelled in the store. Cancel through the store that took payment; access continues through the verified paid period. Receipt download/deletion rules are shown in the app and Privacy Policy. Deleting your DailyBudget account does not cancel a store subscription. Catalog prices are proposals until confirmed by the store.",
         },
         {
           title: "Leaving and deleting",

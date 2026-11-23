@@ -3,7 +3,7 @@ import PublicInfoPage from "../components/PublicInfoPage";
 export default function PrivacyScreen() {
   return (
     <PublicInfoPage
-      title="Privacy Policy"
+      title="Privacy policy"
       dated
       introduction="DailyBudget helps you track spending and manage a shared family budget. This policy explains the information used by the app and how to contact us about it."
       sections={[
@@ -37,11 +37,15 @@ export default function PrivacyScreen() {
         },
         {
           title: "Receipt access and retention",
-          body: "Active Premium and receipt-administrator access allow uploads. Archive access retains existing originals without new uploads. Premium and Archive access belong to the family and cover its current members. Canceling the family plan stops Premium uploads and starts a shared 30-day download/export grace period. A current member with separately assigned global receipt-administrator access can sponsor the family without a Premium subscription. The app shows the scheduled deletion date. Renewing Premium or activating Archive before expiry preserves files that have not already been deleted. After expiry, scheduled backend cleanup removes eligible originals and receipt metadata; budget history stays intact. Deleting one member’s account preserves shared receipts for remaining members; a sole-member family’s originals are submitted for deletion. Storage soft deletion, versioning or retention holds can delay permanent erasure and remain chargeable. Such copies are tracked until deletion can be verified. No independent backup is currently promised. Export your originals before the deadline and keep copies you need for your records. Email support with access or deletion questions.",
+          body: "Active Premium and receipt-administrator access allow uploads. Archive access retains existing originals without new uploads. Premium and Archive access belong to the family and cover its current members. Cancelling a paid store subscription keeps receipt access until the verified paid period ends. When access ends, uploads stop and a shared 30-day download/export grace period begins. After a verified downgrade, uploads remain paused until an upgrade; a family administrator can download extra receipts and choose which originals to keep within the smaller allowance before confirming removal. A current member with separately assigned global receipt-administrator access can sponsor the family without a Premium subscription. The app shows the scheduled deletion date. Renewing Premium or activating Archive before expiry preserves files that have not already been deleted. After expiry, scheduled backend cleanup removes eligible originals and receipt metadata; budget history stays intact. Deleting one member’s account preserves shared receipts for remaining members; a sole-member family’s originals are submitted for deletion. Storage soft deletion, versioning or retention holds can delay permanent erasure and remain chargeable. Such copies are tracked until deletion can be verified. No independent backup is currently promised. Export your originals before the deadline and keep copies you need for your records. Email support with access or deletion questions.",
+        },
+        {
+          title: "Store subscription information",
+          body: "Store purchasing is being prepared and is not enabled until configuration and testing are complete. When available, Google Play or Apple handles payment information and renewal consent. DailyBudget uses store product and transaction references, subscription dates/status and a family billing association to verify shared access and investigate purchase issues. We do not receive full payment-card details. Contact support about billing records when requesting account deletion; deleting the app account does not cancel a store subscription.",
         },
         {
           title: "Your requests",
-          body: "You can edit information through the app and delete your account in Settings. You can also email dailybudgethub@gmail.com to request access, correction, or deletion of your information, including information in families you previously left. We may need to verify account ownership before acting. The Account & Data Deletion page explains the process.",
+          body: "You can edit information through the app and delete your account from Account in the main menu. You can also email dailybudgethub@gmail.com to request access, correction, or deletion of your information, including information in families you previously left. We may need to verify account ownership before acting. The Account & Data Deletion page explains the process.",
         },
         {
           title: "Policy updates",

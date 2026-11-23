@@ -4,12 +4,12 @@ import PublicInfoPage from "../components/PublicInfoPage";
 export default function DeletionInfoScreen() {
   return (
     <PublicInfoPage
-      title="Account & Data Deletion"
+      title="Account & data deletion"
       introduction="You can delete your DailyBudget account in the app or request help by email. You do not need to sign in to read this page or contact support."
       sections={[
         {
           title: "Delete in the app",
-          body: "Sign in, open Settings, find Account, and tap Delete Account. Read the warning, type DELETE, and confirm your identity with your password or original sign-in provider. Deletion is permanent. If other members remain and you are the only administrator, add another administrator first. If you are the only family member, that family’s budget data is also deleted.",
+          body: "Sign in, open the menu, choose Account, and tap Delete account. Read the warning, type DELETE, and confirm your identity with your password or original sign-in provider. Deletion is permanent. If other members remain and you are the only administrator, add another administrator first. If you are the only family member, that family’s budget data is also deleted.",
         },
         {
           title: "Request deletion by email",

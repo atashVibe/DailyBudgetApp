@@ -15,7 +15,8 @@ import {
 } from "../../services/receipts";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Platform, Text, TouchableOpacity, View } from "react-native";
+import { Platform, TouchableOpacity, View } from "react-native";
+import Text from "./common/AppText";
 import { useBudgetAreas } from "../../hooks/useBudgetAreas";
 import { useCategories } from "../../hooks/useCategories";
 import { auth } from "../../services/auth";
@@ -23,7 +24,10 @@ import { addEntry, updateEntry } from "../../services/entries";
 import AppPicker from "./common/AppPicker";
 import AppTextInput from "./common/AppTextInput";
 import FormLabel from "./common/FormLabel";
-import { dashboardStyles as ui } from "./common/dashboardStyles";
+import {
+  dashboardStyles as ui,
+  uiTokens as tokens,
+} from "./common/dashboardStyles";
 import PrimaryButton from "./common/PrimaryButton";
 import InfoButton from "../../components/InfoButton";
 
@@ -383,7 +387,7 @@ export default function ExpenseEntryForm({
           <Ionicons name="add" size={26} color="white" />
         </View>
         <Text style={[ui.title, { flex: 1 }]}>
-          {entryToEdit ? "Edit Entry" : "Add Expense"}
+          {entryToEdit ? "Edit Entry" : "Add expense"}
         </Text>
         <Ionicons
           name={collapsed ? "chevron-down" : "chevron-up"}
@@ -401,7 +405,7 @@ export default function ExpenseEntryForm({
             }}
           >
             <View style={{ flex: 1, minWidth: 0 }}>
-              <FormLabel icon="grid-outline">Budget Area</FormLabel>
+              <FormLabel icon="grid-outline">Budget area</FormLabel>
               <AppPicker
                 tall
                 disabled={saving}
@@ -454,15 +458,15 @@ export default function ExpenseEntryForm({
                     marginBottom: 12,
                     backgroundColor: "#fff",
                     width: "100%",
-                    height: 60,
-                    minHeight: 60,
-                    maxHeight: 60,
+                    height: 48,
+                    minHeight: 48,
+                    maxHeight: 48,
                     minWidth: 0,
                     maxWidth: "100%",
                     display: "block",
                     appearance: "none",
                     WebkitAppearance: "none",
-                    color: "#111827",
+                    color: tokens.text,
                     boxSizing: "border-box",
                     border: "1px solid #ccc",
                   },
@@ -470,7 +474,7 @@ export default function ExpenseEntryForm({
               ) : (
                 <View
                   style={{
-                    height: 60,
+                    height: 48,
                     borderWidth: 1,
                     borderColor: "#ccc",
                     borderRadius: 10,
@@ -498,10 +502,10 @@ export default function ExpenseEntryForm({
                   style={{
                     position: "absolute",
                     left: 14,
-                    top: 19,
+                    top: 13,
                     zIndex: 1,
                     fontSize: 16,
-                    color: "#111827",
+                    color: tokens.text,
                   }}
                 >
                   $
@@ -520,7 +524,7 @@ export default function ExpenseEntryForm({
                       setAmount(Number(amount).toFixed(2));
                     }
                   }}
-                  style={{ height: 60, paddingLeft: 30, marginBottom: 12 }}
+                  style={{ height: 48, paddingLeft: 30, marginBottom: 12 }}
                 />
               </View>
             </View>
@@ -543,7 +547,7 @@ export default function ExpenseEntryForm({
           <FormLabel icon="document-text-outline">Note (optional)</FormLabel>
           <AppTextInput
             style={{
-              height: 60,
+              height: 48,
               borderRadius: 12,
               backgroundColor: "#FFFFFF",
               marginBottom: 12,
@@ -692,7 +696,7 @@ export default function ExpenseEntryForm({
 
           <View style={{ gap: 12 }}>
             <PrimaryButton
-              title={entryToEdit ? "Update Entry" : "Save Entry"}
+              title={entryToEdit ? "Update entry" : "Save entry"}
               onPress={handleSave}
               disabled={
                 missingReceipt ||
@@ -714,7 +718,7 @@ export default function ExpenseEntryForm({
                     paddingVertical: 8,
                   }}
                 >
-                  Cancel Edit
+                  Cancel edit
                 </Text>
               </TouchableOpacity>
             )}

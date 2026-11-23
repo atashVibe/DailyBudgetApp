@@ -1,4 +1,6 @@
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { uiTokens } from "./dashboardStyles";
+import { StyleSheet, TouchableOpacity, View } from "react-native";
+import Text from "./AppText";
 
 type Props = {
   mode: "start" | "join" | null;
@@ -17,7 +19,7 @@ export default function ModeToggle({ mode, onSelect }: Props) {
         ]}
       >
         <Text style={{ color: mode === "start" ? "white" : "black" }}>
-          Start Family
+          Start family
         </Text>
       </TouchableOpacity>
 
@@ -30,7 +32,7 @@ export default function ModeToggle({ mode, onSelect }: Props) {
         ]}
       >
         <Text style={{ color: mode === "join" ? "white" : "black" }}>
-          Join Family
+          Join family
         </Text>
       </TouchableOpacity>
     </View>
@@ -45,15 +47,14 @@ const styles = StyleSheet.create({
   button: {
     flex: 1,
     padding: 12,
+    minHeight: 48,
     borderRadius: 8,
     alignItems: "center",
   },
   active: {
-    backgroundColor: "#0cb48a",
+    backgroundColor: uiTokens.button,
   },
   inactive: {
-    backgroundColor: "#eee",
+    backgroundColor: uiTokens.tint,
   },
 });
-
-

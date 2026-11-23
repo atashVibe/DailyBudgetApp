@@ -1,6 +1,9 @@
-import { StyleSheet } from "react-native";
+import { StyleSheet, Platform } from "react-native";
 export const uiTokens = Object.freeze({
-  font: "Inter",
+  font:
+    Platform.OS === "web"
+      ? "Inter, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif"
+      : "Inter",
   primary: "#0F9D88",
   pressed: "#0C8573",
   button: "#0C8573",

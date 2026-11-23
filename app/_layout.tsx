@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useResumeConnection } from "../hooks/useResumeConnection";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -10,8 +11,13 @@ import { uiTokens } from "./components/common/dashboardStyles";
 
 export default function RootLayout() {
   useResumeConnection();
+  const [fontWaitEnded, setFontWaitEnded] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => setFontWaitEnded(true), 3000);
+    return () => clearTimeout(timer);
+  }, []);
   const [loaded, error] = useFonts({ Inter: require("../assets/Inter.ttf") });
-  if (!loaded && !error)
+  if (!loaded && !error && !fontWaitEnded)
     return (
       <View
         accessibilityLabel="Loading DailyBudget"

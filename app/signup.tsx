@@ -11,7 +11,8 @@ import {
   writeBatch,
 } from "firebase/firestore";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Text, TouchableOpacity } from "react-native";
+import { TouchableOpacity } from "react-native";
+import Text from "./components/common/AppText";
 import { auth, db } from "../services/auth";
 import PolicyLinks from "../components/PolicyLinks";
 import { validInvitationCode } from "../services/invitations";
@@ -256,13 +257,13 @@ export default function SignupScreen() {
         <>
           <Text
             style={{
-              fontSize: 32,
+              fontSize: 24,
               fontWeight: "700",
               textAlign: "center",
               marginBottom: 12,
             }}
           >
-            Create Account
+            Create account
           </Text>
 
           <Text
@@ -282,7 +283,7 @@ export default function SignupScreen() {
         <>
           {mode === "start" && (
             <>
-              <Text style={{ marginBottom: 8, fontSize: 16 }}>Family Name</Text>
+              <Text style={{ marginBottom: 8, fontSize: 16 }}>Family name</Text>
               <AppTextInput
                 placeholder="Example: Smith Family"
                 value={familyName}
@@ -293,7 +294,7 @@ export default function SignupScreen() {
 
           {mode === "join" && (
             <>
-              <Text style={{ marginBottom: 8, fontSize: 16 }}>Invite Code</Text>
+              <Text style={{ marginBottom: 8, fontSize: 16 }}>Invite code</Text>
               <AppTextInput
                 placeholder="Enter 8-digit invitation code"
                 value={inviteCode}
@@ -334,7 +335,8 @@ export default function SignupScreen() {
           />
 
           <PrimaryButton
-            title="Create Account"
+            variant="text"
+            title="Create account"
             onPress={handleSignup}
             loading={loading}
           />
@@ -366,7 +368,7 @@ export default function SignupScreen() {
               marginTop: 12,
             }}
           >
-            <Text style={{ color: "#111", fontSize: 16 }}>Back to Sign In</Text>
+            <Text style={{ color: "#111", fontSize: 16 }}>Back to sign in</Text>
           </TouchableOpacity>
         </>
       )}

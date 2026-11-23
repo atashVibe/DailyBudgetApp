@@ -1,5 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Pressable, StyleSheet } from "react-native";
+import { uiTokens } from "../app/components/common/dashboardStyles";
 
 type Props = {
   label: string;
@@ -18,11 +19,15 @@ export default function InfoButton({ label, hint, expanded, onPress }: Props) {
       accessibilityHint={hint}
       accessibilityState={{ expanded }}
       aria-expanded={expanded}
-      hitSlop={12}
+      hitSlop={14}
       onPress={onPress}
       style={styles.button}
     >
-      <Ionicons name="information-circle-outline" size={20} color="#52647A" />
+      <Ionicons
+        name="information-circle-outline"
+        size={20}
+        color={uiTokens.muted}
+      />
     </Pressable>
   );
 }

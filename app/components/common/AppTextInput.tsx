@@ -1,6 +1,5 @@
-import React from "react";
+import React, { useState } from "react";
 import { StyleSheet, TextInput, TextInputProps } from "react-native";
-import { useState } from "react";
 import { uiTokens } from "./dashboardStyles";
 
 export default function AppTextInput(props: TextInputProps) {
@@ -8,6 +7,7 @@ export default function AppTextInput(props: TextInputProps) {
   return (
     <TextInput
       {...props}
+      {...{ dir: "auto" }}
       onFocus={(event) => {
         setFocused(true);
         props.onFocus?.(event);

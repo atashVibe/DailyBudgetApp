@@ -6,7 +6,8 @@ import {
   writeBatch,
 } from "firebase/firestore";
 import { useRef, useState } from "react";
-import { Text } from "react-native";
+
+import Text from "./components/common/AppText";
 import { joinFamilyWithCode } from "../services/families";
 import { auth, db } from "../services/auth";
 import { seedFinanceData } from "../services/seedFinanceData";
@@ -153,13 +154,13 @@ export default function FamilySetupScreen() {
         <>
           <Text
             style={{
-              fontSize: 32,
+              fontSize: 24,
               fontWeight: "700",
               textAlign: "center",
               marginBottom: 12,
             }}
           >
-            Family Setup
+            Family setup
           </Text>
 
           <Text
@@ -192,7 +193,7 @@ export default function FamilySetupScreen() {
 
       {mode === "start" && (
         <>
-          <Text style={{ marginBottom: 8, fontSize: 16 }}>Family Name</Text>
+          <Text style={{ marginBottom: 8, fontSize: 16 }}>Family name</Text>
 
           <AppTextInput
             placeholder="Example: Smith Family"
@@ -201,7 +202,7 @@ export default function FamilySetupScreen() {
           />
 
           <PrimaryButton
-            title="Create Family"
+            title="Create family"
             onPress={handleStartFamily}
             loading={loading}
           />
@@ -209,7 +210,7 @@ export default function FamilySetupScreen() {
       )}
       {mode === "join" && (
         <>
-          <Text style={{ marginBottom: 8, fontSize: 16 }}>Invite Code</Text>
+          <Text style={{ marginBottom: 8, fontSize: 16 }}>Invite code</Text>
 
           <AppTextInput
             placeholder="Enter 8-digit invitation code"
@@ -222,7 +223,7 @@ export default function FamilySetupScreen() {
           />
 
           <PrimaryButton
-            title="Join Family"
+            title="Join family"
             onPress={handleJoinFamily}
             loading={loading}
           />

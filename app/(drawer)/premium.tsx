@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from "react";
-import { Platform, Text, View } from "react-native";
+import { Platform, View } from "react-native";
+import Text from "../components/common/AppText";
 import { useFocusEffect, useRouter } from "expo-router";
 import {
   getSubscriptionOverview,
@@ -105,14 +106,14 @@ export default function PremiumScreen() {
   return (
     <AppScreen>
       <View style={{ gap: 16 }}>
-        <Text style={{ fontSize: 28, fontWeight: "700" }}>Family Premium</Text>
+        <Text style={{ fontSize: 24, fontWeight: "700" }}>Family Premium</Text>
         <Text>
           One family subscription shares receipt storage with every current
           family member. Only a family administrator can buy or change the plan.
         </Text>
         {access && (
           <>
-            <Text style={{ fontSize: 20, fontWeight: "700" }}>
+            <Text style={{ fontSize: 18, fontWeight: "700" }}>
               Family: {access.familyName}
             </Text>
             <Text>
@@ -185,7 +186,7 @@ export default function PremiumScreen() {
                 gap: 8,
               }}
             >
-              <Text style={{ fontSize: 22, fontWeight: "700" }}>
+              <Text style={{ fontSize: 18, fontWeight: "700" }}>
                 {plan.name}
               </Text>
               <Text>
@@ -293,7 +294,7 @@ export default function PremiumScreen() {
             )
           }
         />
-        <Text style={{ fontSize: 20, fontWeight: "700" }}>
+        <Text style={{ fontSize: 18, fontWeight: "700" }}>
           Cancellation and downgrades
         </Text>
         <Text>

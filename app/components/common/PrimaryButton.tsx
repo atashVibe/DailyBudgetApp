@@ -1,4 +1,6 @@
-import { ActivityIndicator, StyleSheet, Text, Pressable } from "react-native";
+import { useState } from "react";
+import { ActivityIndicator, StyleSheet, Pressable } from "react-native";
+import Text from "./AppText";
 import { uiTokens } from "./dashboardStyles";
 
 type Props = {
@@ -17,10 +19,13 @@ export default function PrimaryButton({
   variant = "primary",
 }: Props) {
   const isDisabled = disabled || loading;
+  const [hovered, setHovered] = useState(false);
 
   return (
     <Pressable
       onPress={onPress}
+      onHoverIn={() => setHovered(true)}
+      onHoverOut={() => setHovered(false)}
       disabled={isDisabled}
       accessibilityRole="button"
       accessibilityState={{ disabled: isDisabled, busy: loading }}
@@ -33,7 +38,7 @@ export default function PrimaryButton({
             : variant === "danger"
               ? styles.dangerButton
               : null,
-        pressed && {
+        (pressed || hovered) && {
           backgroundColor:
             variant === "primary"
               ? uiTokens.tealText

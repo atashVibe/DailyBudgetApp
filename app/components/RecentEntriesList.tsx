@@ -4,12 +4,15 @@ import {
   Alert,
   Modal,
   Platform,
-  Text,
   View,
   Pressable,
   useWindowDimensions,
 } from "react-native";
-import { dashboardStyles as ui } from "./common/dashboardStyles";
+import Text from "./common/AppText";
+import {
+  dashboardStyles as ui,
+  uiTokens as tokens,
+} from "./common/dashboardStyles";
 import ReceiptPanel from "../../components/ReceiptPanel";
 import AppScreen from "./common/AppScreen";
 import { getAllCategoriesForFamily } from "../../services/categories";
@@ -139,7 +142,7 @@ export default function RecentEntriesList({
         >
           <Ionicons name="list" size={24} color="#173963" />
         </View>
-        <Text style={[ui.title, { flex: 1 }]}>Recent Entries</Text>
+        <Text style={[ui.title, { flex: 1 }]}>Recent entries</Text>
         {entries.length > 3 && (
           <Pressable
             accessibilityRole="button"
@@ -190,10 +193,11 @@ export default function RecentEntriesList({
                 borderBottomWidth: 1,
                 borderBottomColor: "#eee",
                 flexDirection: "row",
+                flexWrap: "wrap",
                 justifyContent: "space-between",
                 alignItems: "center",
                 backgroundColor:
-                  entry.id === editingEntryId ? "#9af2c6" : "#ffffff",
+                  entry.id === editingEntryId ? tokens.tint : tokens.card,
                 borderRadius: 8,
                 paddingHorizontal: 6,
               }}
@@ -227,7 +231,9 @@ export default function RecentEntriesList({
                 >
                   {categoryMap[entry.categoryId ?? ""] ?? "Unknown Category"}
                 </Text>
-                <Text style={{ fontSize: 11, color: "#64748B", marginTop: 3 }}>
+                <Text
+                  style={{ fontSize: 13, color: tokens.muted, marginTop: 3 }}
+                >
                   {typeof entry.date === "string" && entry.date
                     ? new Date(
                         `${entry.date.split("T")[0]}T12:00:00`,
@@ -241,13 +247,13 @@ export default function RecentEntriesList({
                 {entry.note ? (
                   <Text
                     numberOfLines={2}
-                    style={{ fontSize: 11, color: "#64748B" }}
+                    style={{ fontSize: 13, color: tokens.muted }}
                   >
                     {entry.note}
                   </Text>
                 ) : null}
                 {entry.type !== "expense" && (
-                  <Text style={{ fontSize: 11, color: "#64748B" }}>
+                  <Text style={{ fontSize: 13, color: tokens.muted }}>
                     {entry.type}
                   </Text>
                 )}
@@ -267,41 +273,70 @@ export default function RecentEntriesList({
                 style={{
                   flexDirection: "row",
                   alignItems: "center",
-                  gap: wide ? 12 : 7,
+                  gap: 4,
+                  width: wide ? undefined : "100%",
+                  justifyContent: "flex-end",
+                  marginTop: wide ? 0 : 8,
                 }}
               >
-                <Ionicons
-                  name="attach-outline"
-                  size={19}
-                  color="#155E50"
+                <Pressable
                   accessibilityRole="button"
                   accessibilityLabel="Manage family receipts for this entry"
                   onPress={() => setReceiptTransactionId(entry.id)}
-                />
-                <Ionicons
-                  name="create-outline"
+                  style={{
+                    width: 48,
+                    height: 48,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Ionicons
+                    name="attach-outline"
+                    size={21}
+                    color={tokens.tealText}
+                  />
+                </Pressable>
+                <Pressable
                   accessibilityRole="button"
                   accessibilityLabel="Edit this entry"
-                  size={20}
-                  color="#234976"
                   onPress={() => onEditEntry?.(entry)}
-                />
-
-                <Ionicons
-                  name="trash-outline"
+                  style={{
+                    width: 48,
+                    height: 48,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Ionicons
+                    name="create-outline"
+                    size={21}
+                    color={tokens.tealText}
+                  />
+                </Pressable>
+                <Pressable
                   accessibilityRole="button"
                   accessibilityLabel="Delete this entry"
-                  size={20}
-                  color="#D05252"
                   onPress={() => handleDeleteEntry(entry.id)}
-                />
+                  style={{
+                    width: 48,
+                    height: 48,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Ionicons
+                    name="trash-outline"
+                    size={21}
+                    color={tokens.danger}
+                  />
+                </Pressable>
               </View>
             </View>
           ))}
           {visibleCount < entries.length && (
             <View style={{ marginTop: 16 }}>
               <PrimaryButton
-                title="Load More"
+                title="Load more"
                 onPress={() => setVisibleCount((prev) => prev + 10)}
               />
             </View>

@@ -1,8 +1,12 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import React, { useState } from "react";
-import { Platform, Pressable, Text, View } from "react-native";
+import { Platform, Pressable, View } from "react-native";
+import Text from "./common/AppText";
 import { calculateBudgetSummary } from "../../services/financeCalculations";
-import { dashboardStyles as ui } from "./common/dashboardStyles";
+import {
+  dashboardStyles as ui,
+  uiTokens as tokens,
+} from "./common/dashboardStyles";
 import InfoButton from "../../components/InfoButton";
 
 type Props = {
@@ -34,7 +38,7 @@ function Progress({
       accessibilityValue={{ min: 0, max: 100, now: value }}
       style={{
         height: 9,
-        backgroundColor: "#DCE5F1",
+        backgroundColor: tokens.border,
         borderRadius: 20,
         overflow: "hidden",
         marginTop: 5,
@@ -53,7 +57,7 @@ function Progress({
 }
 function Ring({ percent, negative }: { percent: number; negative: boolean }) {
   const value = Math.max(0, Math.min(100, percent));
-  const color = negative ? "#C53030" : "#2BCEA6";
+  const color = negative ? tokens.danger : tokens.pressed;
   return (
     <View
       style={{
@@ -170,7 +174,7 @@ export default function BudgetSummaryCard({
         }}
       >
         <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
-          <Text style={[ui.title, { fontSize: 18 }]}>Budget Overview</Text>
+          <Text style={[ui.title, { fontSize: 18 }]}>Budget overview</Text>
           <InfoButton
             label="Spending calculation"
             expanded={showInfo}
@@ -185,7 +189,7 @@ export default function BudgetSummaryCard({
           style={ui.period}
         >
           <Text style={{ color: "#17243A", fontSize: 13 }}>
-            {yearly ? "This Year" : "This Month"}
+            {yearly ? "This year" : "This month"}
           </Text>
           <Ionicons name="chevron-down" size={15} />
         </Pressable>
@@ -202,7 +206,7 @@ export default function BudgetSummaryCard({
               }}
               style={ui.period}
             >
-              <Text>{value ? "This Year" : "This Month"}</Text>
+              <Text>{value ? "This year" : "This month"}</Text>
             </Pressable>
           ))}
         </View>
@@ -233,7 +237,7 @@ export default function BudgetSummaryCard({
           />
           <Metric
             icon="pricetag-outline"
-            label="Total Expenses"
+            label="Total expenses"
             value={money(spending)}
           />
           <Metric
@@ -245,7 +249,7 @@ export default function BudgetSummaryCard({
           />
           <Text
             style={{
-              fontSize: 12,
+              fontSize: 13,
               color: status.text === "Over budget" ? "#B91C1C" : "#486175",
             }}
           >
@@ -258,7 +262,7 @@ export default function BudgetSummaryCard({
             <Progress
               value={summary.progressPercent}
               label="Monthly budget used"
-              color="#2BCEA6"
+              color={tokens.pressed}
             />
           )}
         </View>
@@ -282,7 +286,7 @@ export default function BudgetSummaryCard({
           <View style={ui.progressRow}>
             <View style={ui.progressLabel}>
               <Ionicons name="calendar-outline" size={19} color="#009F62" />
-              <Text style={ui.progressTitle}>Month Progress</Text>
+              <Text style={ui.progressTitle}>Month progress</Text>
             </View>
             <Text style={[ui.detail, { flexShrink: 1, textAlign: "right" }]}>
               {now.getDate()} of {days} days (
@@ -292,7 +296,7 @@ export default function BudgetSummaryCard({
           <Progress
             value={summary.monthPassedPercent}
             label="Month progress"
-            color="#2BCEA6"
+            color={tokens.pressed}
           />
         </View>
         <View testID="yearly-spending-row">
@@ -303,7 +307,7 @@ export default function BudgetSummaryCard({
                 size={19}
                 color="#009F62"
               />
-              <Text style={ui.progressTitle}>Yearly Spending</Text>
+              <Text style={ui.progressTitle}>Yearly spending</Text>
             </View>
             <Text
               accessibilityLabel={`${money(spentThisYear)} of ${money((Math.round(dailyBudget * 100) * yearDays) / 100)} (${summary.yearlyUsedPercent.toFixed(0)}%)`}
@@ -349,14 +353,14 @@ function Metric({
         backgroundColor: highlighted
           ? negative
             ? "#FEE2E2"
-            : "#CFF3DF"
+            : tokens.tint
           : "transparent",
       }}
     >
       <Ionicons
         name={icon}
         size={20}
-        color={highlighted ? "#00854C" : "#17243A"}
+        color={highlighted ? tokens.tealText : "#17243A"}
       />
       <Text
         style={{
