@@ -387,7 +387,7 @@ export default function ExpenseEntryForm({
           <Ionicons name="add" size={26} color="white" />
         </View>
         <Text style={[ui.title, { flex: 1 }]}>
-          {entryToEdit ? "Edit Entry" : "Add expense"}
+          {entryToEdit ? "Edit entry" : "Add expense"}
         </Text>
         <Ionicons
           name={collapsed ? "chevron-down" : "chevron-up"}

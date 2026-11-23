@@ -835,12 +835,12 @@ test("phone controls stay aligned and Edit reveals the expanded form", async ({
   await entry
     .getByRole("button", { name: "Edit this entry", exact: true })
     .click();
-  await expect(page.getByText("Edit Entry", { exact: true })).toBeVisible();
+  await expect(page.getByText("Edit entry", { exact: true })).toBeVisible();
   await expect(amount).toHaveValue("7.45");
   await expect
     .poll(
       async () =>
-        (await page.getByText("Edit Entry", { exact: true }).boundingBox()).y,
+        (await page.getByText("Edit entry", { exact: true }).boundingBox()).y,
     )
     .toBeLessThan(160);
   await page.getByText("Cancel edit", { exact: true }).click();

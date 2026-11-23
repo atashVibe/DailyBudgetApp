@@ -531,7 +531,12 @@ test("360px settings save and cancel the budget, preserve RTL names and validate
     .poll(async () => (await added.docs[0].ref.get()).data().isDefault)
     .toBe(true);
   await page.getByRole("button", { name: "+ Add area", exact: true }).click();
+  // A click waits for the opening sheet to settle before entering text.
+  await page.getByLabel("Area name", { exact: true }).click();
   await page.getByLabel("Area name", { exact: true }).fill("Travel");
+  await expect(page.getByLabel("Area name", { exact: true })).toHaveValue(
+    "Travel",
+  );
   await page.getByRole("button", { name: "Add area", exact: true }).click();
   await expect(
     page.getByRole("button", {
