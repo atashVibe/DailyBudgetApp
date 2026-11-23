@@ -90,3 +90,7 @@ This documented gcloud command handles gen2's underlying Cloud Run service; no `
 Verify with an empty unauthenticated POST to the invitation endpoint: the expected result is the app's JSON HTTP 401, never a sent email or a successful operation. An actual delivered invitation and phone join still require a separate signed-in test.
 
 Reference: <https://docs.cloud.google.com/sdk/gcloud/reference/functions/add-invoker-policy-binding>.
+
+### Current publication evidence — November 23, 2026
+
+The owner supplied **Deploy complete!** for reviewed `f45d303`, followed by successful invocation-repair bindings on both new services. The invitation unauthenticated POST now returns the app's JSON HTTP 401; receipt access also returns 401, and the store service is reachable (unsupported GET `/` returns Express 404). No probe sent an email or processed a store event. PRs #15/#16/#17 were merged; Pages run 45274648030 succeeded at main `50aa679`, whose source tree matches the reviewed/deployed checkpoint. The actual served bundle contains the new UI and disabled-purchase copy. Real inbox delivery/join and store/native tests remain unverified. No further Cloud Shell setup/deployment is needed solely for this repaired invocation setting; the explicit source declarations preserve it on future deployments.
