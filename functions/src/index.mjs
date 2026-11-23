@@ -1,3 +1,11 @@
+import nodemailer from "nodemailer";
+import {
+  defineSecret,
+  defineString,
+  defineInt,
+} from "firebase-functions/params";
+import { createInvitationService } from "./invitations.mjs";
+import { createInvitationsApi } from "./invitations-api.mjs";
 import { initializeApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 import { getAuth } from "firebase-admin/auth";
@@ -37,5 +45,68 @@ export const receiptMaintenance = onSchedule(
     concurrency: 1,
     retryCount: 3,
   },
-  () => service.maintain(),
+  async () => {
+    await service.maintain();
+    await createInvitationService({
+      db: getFirestore(),
+      auth: getAuth(),
+    }).cleanup();
+  },
+);
+
+// A separate endpoint keeps invitation SMTP credentials out of the receipt API.
+const invitationPassword = defineSecret("INVITATION_SMTP_PASSWORD");
+const invitationUser = defineString("INVITATION_SMTP_USER", {
+  default: "dailybudgethub@gmail.com",
+});
+const invitationHost = defineString("INVITATION_SMTP_HOST", {
+  default: "smtp.gmail.com",
+});
+const invitationPort = defineInt("INVITATION_SMTP_PORT", { default: 465 });
+let invitationsApp;
+export const familyInvitationsApi = onRequest(
+  {
+    region,
+    memory: "256MiB",
+    timeoutSeconds: 60,
+    minInstances: 0,
+    maxInstances: 2,
+    concurrency: 1,
+    secrets: [invitationPassword],
+    cors: ["https://atashvibe.github.io", /^http:\/\/localhost(:\d+)?$/],
+  },
+  (req, res) => {
+    if (!invitationsApp) {
+      const transport = nodemailer.createTransport({
+        host: invitationHost.value(),
+        port: invitationPort.value(),
+        secure: invitationPort.value() === 465,
+        requireTLS: invitationPort.value() !== 465,
+        auth: {
+          user: invitationUser.value(),
+          pass: invitationPassword.value(),
+        },
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 15000,
+        logger: false,
+        debug: false,
+      });
+      invitationsApp = createInvitationsApi(
+        createInvitationService({
+          db: getFirestore(),
+          auth: getAuth(),
+          send: (message) =>
+            transport.sendMail({
+              from: { name: "DailyBudget", address: invitationUser.value() },
+              ...message,
+              disableFileAccess: true,
+              disableUrlAccess: true,
+            }),
+        }),
+        getAuth(),
+      );
+    }
+    return invitationsApp(req, res);
+  },
 );

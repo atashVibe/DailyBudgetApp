@@ -117,12 +117,15 @@ if (Platform.OS !== "web") {
 
 // Request an OAuth credential without changing the durable application session.
 // Reauthentication must use this instead of signing another Google user in.
-export const requestGoogleCredential = async (email?: string | null) => {
+export const requestGoogleCredential = async (
+  email?: string | null,
+  chooseAccount = false,
+) => {
   if (Platform.OS === "web") {
     const provider = new GoogleAuthProvider();
-    if (email)
+    if (email || chooseAccount)
       provider.setCustomParameters({
-        login_hint: email,
+        ...(email ? { login_hint: email } : {}),
         prompt: "select_account",
       });
 
@@ -156,8 +159,8 @@ export const requestGoogleCredential = async (email?: string | null) => {
   return GoogleAuthProvider.credential(idToken);
 };
 
-export const signInWithGoogle = async () => {
-  const credential = await requestGoogleCredential();
+export const signInWithGoogle = async (chooseAccount = false) => {
+  const credential = await requestGoogleCredential(undefined, chooseAccount);
   return (await signInWithCredential(auth, credential)).user;
 };
 export const signInWithApple = async () => {

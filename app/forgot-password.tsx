@@ -1,8 +1,9 @@
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { sendPasswordResetEmail } from "firebase/auth";
 import { useRef, useState } from "react";
 import { Text, TouchableOpacity } from "react-native";
 import { auth } from "../services/auth";
+import { validInvitationCode } from "../services/invitations";
 import AppScreen from "./components/common/AppScreen";
 import AppTextInput from "./components/common/AppTextInput";
 import PrimaryButton from "./components/common/PrimaryButton";
@@ -12,6 +13,10 @@ const resetMessage =
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ inviteCode?: string }>();
+  const inviteCode = validInvitationCode(params.inviteCode)
+    ? params.inviteCode
+    : "";
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -21,7 +26,10 @@ export default function ForgotPasswordScreen() {
   const handleReset = async () => {
     if (submitting.current) return;
     const normalizedEmail = email.trim();
-    if (!normalizedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+    if (
+      !normalizedEmail ||
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)
+    ) {
       setSent(false);
       setMessage("Please enter a valid email address.");
       return;
@@ -45,7 +53,9 @@ export default function ForgotPasswordScreen() {
       } else if (code === "auth/invalid-email") {
         setMessage("Please enter a valid email address.");
       } else if (code === "auth/too-many-requests") {
-        setMessage("Too many requests. Please wait a few minutes and try again.");
+        setMessage(
+          "Too many requests. Please wait a few minutes and try again.",
+        );
       } else if (code === "auth/network-request-failed") {
         setMessage("Check your internet connection and try again.");
       } else {
@@ -93,20 +103,31 @@ export default function ForgotPasswordScreen() {
       {message ? (
         <Text
           accessibilityLiveRegion="polite"
-          style={{ marginTop: 16, fontSize: 16, color: sent ? "#155E50" : "#B91C1C" }}
+          style={{
+            marginTop: 16,
+            fontSize: 16,
+            color: sent ? "#155E50" : "#B91C1C",
+          }}
         >
           {message}
         </Text>
       ) : null}
       <Text style={{ marginTop: 24, fontSize: 16, color: "#374151" }}>
-        Signed up with Apple or Google? Continue with that provider on the sign-in
-        screen. A password reset does not link a different provider or recover an
-        account you can no longer access. For help, contact dailybudgethub@gmail.com.
-        Don’t create a new account to recover an existing family budget.
+        Signed up with Apple or Google? Continue with that provider on the
+        sign-in screen. A password reset does not link a different provider or
+        recover an account you can no longer access. For help, contact
+        dailybudgethub@gmail.com. Don’t create a new account to recover an
+        existing family budget.
       </Text>
       <TouchableOpacity
         accessibilityRole="button"
-        onPress={() => router.replace("/login")}
+        onPress={() =>
+          router.replace(
+            inviteCode
+              ? { pathname: "/login", params: { inviteCode } }
+              : "/login",
+          )
+        }
         style={{ padding: 16, alignItems: "center", marginTop: 12 }}
       >
         <Text style={{ fontSize: 16, color: "#155E50" }}>Back to Sign In</Text>

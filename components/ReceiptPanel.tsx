@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Alert, Platform, Text, View } from "react-native";
+import { useRouter } from "expo-router";
 import {
   receiptsConfigured,
   getReceiptAccess,
@@ -20,6 +21,7 @@ export default function ReceiptPanel({
 }: {
   transactionId?: string;
 }) {
+  const router = useRouter();
   const [access, setAccess] = useState<ReceiptAccess | null>(null);
   const [receipts, setReceipts] = useState<Receipt[]>([]);
   const [message, setMessage] = useState("");
@@ -133,8 +135,9 @@ export default function ReceiptPanel({
   return (
     <View style={{ gap: 12 }}>
       <Text style={{ fontSize: 16, lineHeight: 24 }}>
-        All current family members can view, download, replace, and delete these
-        family receipts. Other families cannot access them.
+        These receipts are shared with current family members. Uploads,
+        replacements and downloads depend on the family plan. Other families
+        cannot access them.
       </Text>
       {access && (
         <>
@@ -199,11 +202,22 @@ export default function ReceiptPanel({
               this family.
             </Text>
           )}
-          {!access.canUpload && (
-            <Text>
-              New uploads and replacements require active family Premium or
-              receipt administrator access. Payments are not enabled yet.
-            </Text>
+          {!(access.plan === "premium" && access.active) && (
+            <View style={{ gap: 8 }}>
+              <Text>
+                {access.canUpload
+                  ? "Your family already has sponsored receipt access. View family Premium details below."
+                  : "Enable receipt uploads for your family with Premium."}
+              </Text>
+              <PrimaryButton
+                title="Upgrade family to Premium"
+                onPress={() => router.push("/(drawer)/premium")}
+              />
+              <Text>
+                Purchasing is not available yet. View plan details and
+                cancellation rules.
+              </Text>
+            </View>
           )}
           {access.canRead && (
             <PrimaryButton

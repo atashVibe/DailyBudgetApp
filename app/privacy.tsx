@@ -21,7 +21,7 @@ export default function PrivacyScreen() {
         },
         {
           title: "Services we use",
-          body: "Firebase, operated by Google, provides authentication and Cloud Firestore data storage. If you choose Google or Apple sign-in, that provider processes your sign-in and shares account information according to your choices and its own privacy policy. Password sign-in and password resets are handled by Firebase. GitHub Pages hosts the web app and may process network information such as IP addresses under GitHub’s privacy policy. Our support email is hosted by Gmail. These providers may process information outside your country.",
+          body: "Firebase, operated by Google, provides authentication and Cloud Firestore data storage. If you choose Google or Apple sign-in, that provider processes your sign-in and shares account information according to your choices and its own privacy policy. Password sign-in and password resets are handled by Firebase. GitHub Pages hosts the web app and may process network information such as IP addresses under GitHub’s privacy policy. Our support email is hosted by Gmail. When enabled, automatic family invitation emails are sent through our configured SMTP email provider (Gmail by default) and contain the recipient address, family name, invitation role, temporary code and join link. Scheduled cleanup removes invitation delivery and abuse-prevention metadata after seven days; operational failures can delay cleanup. Invitation emails can remain in sender and recipient mailboxes until those account owners delete them. These providers may process information outside your country.",
         },
         {
           title: "Protection and device storage",

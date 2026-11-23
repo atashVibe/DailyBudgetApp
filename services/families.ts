@@ -10,7 +10,7 @@ import {
   writeBatch,
 } from "firebase/firestore";
 import { Platform, Share } from "react-native";
-import { db } from "./auth";
+import { auth, db } from "./auth";
 
 export type FamilyRole = "admin" | "member";
 
@@ -40,7 +40,8 @@ export class FamilyActionError extends Error {
       | "INVALID_INVITE"
       | "INVITE_EMAIL_MISMATCH"
       | "INVITE_EXPIRED"
-      | "SAME_FAMILY",
+      | "SAME_FAMILY"
+      | "EMAIL_NOT_VERIFIED",
     message: string,
   ) {
     super(message);
@@ -60,10 +61,7 @@ export async function getFamilyContext(
     getDoc(doc(db, "families", familyId)),
     getDoc(doc(db, "familyMembers", `${familyId}_${userId}`)),
     getDocs(
-      query(
-        collection(db, "familyMembers"),
-        where("familyId", "==", familyId),
-      ),
+      query(collection(db, "familyMembers"), where("familyId", "==", familyId)),
     ),
   ]);
 
@@ -81,8 +79,7 @@ export async function getFamilyContext(
     familyName: familySnap.data().name || "Current family",
     role,
     activeAdminCount: adminSnapshot.docs.filter(
-      (item) =>
-        item.data().role === "admin" && item.data().status === "active",
+      (item) => item.data().role === "admin" && item.data().status === "active",
     ).length,
   };
 }
@@ -95,12 +92,21 @@ export async function joinFamilyWithCode(
 ) {
   const currentContext = await getFamilyContext(userId);
 
-  if (currentContext?.role === "admin" && currentContext.activeAdminCount <= 1) {
+  if (
+    currentContext?.role === "admin" &&
+    currentContext.activeAdminCount <= 1
+  ) {
     throw new FamilyActionError(
       "LAST_ADMIN",
       "You are the only administrator of this family. Invite another administrator before leaving, or delete the current family.",
     );
   }
+
+  if (auth.currentUser?.uid === userId && !auth.currentUser.emailVerified)
+    throw new FamilyActionError(
+      "EMAIL_NOT_VERIFIED",
+      "Verify your email before joining. Open the invitation link to verify and continue.",
+    );
 
   const inviteSnapshot = await getDocs(
     query(
@@ -210,10 +216,7 @@ export async function getFamilyAdmins(
 ): Promise<FamilyAdmin[]> {
   const [memberSnapshot, inviteSnapshot] = await Promise.all([
     getDocs(
-      query(
-        collection(db, "familyMembers"),
-        where("familyId", "==", familyId),
-      ),
+      query(collection(db, "familyMembers"), where("familyId", "==", familyId)),
     ),
     getDocs(
       query(collection(db, "invites"), where("familyId", "==", familyId)),
@@ -254,10 +257,7 @@ export async function getFamilyAdmins(
 
   return memberSnapshot.docs
     .map((item) => item.data())
-    .filter(
-      (member) =>
-        member.role === "admin" && member.status === "active",
-    )
+    .filter((member) => member.role === "admin" && member.status === "active")
     .map((member) => ({
       userId: String(member.userId),
       name:
@@ -292,7 +292,9 @@ export async function exportFamilyEntries(
   selectedBudgetAreaIds?: string[],
 ) {
   const [entrySnapshot, areaSnapshot, categorySnapshot] = await Promise.all([
-    getDocs(query(collection(db, "entries"), where("familyId", "==", familyId))),
+    getDocs(
+      query(collection(db, "entries"), where("familyId", "==", familyId)),
+    ),
     getDocs(
       query(collection(db, "budgetAreas"), where("familyId", "==", familyId)),
     ),
@@ -328,13 +330,11 @@ export async function exportFamilyEntries(
         .join(","),
     );
 
-  const csv = [
-    "Date,Budget Area,Category,Type,Amount,Note",
-    ...rows,
-  ].join("\n");
+  const csv = ["Date,Budget Area,Category,Type,Amount,Note", ...rows].join(
+    "\n",
+  );
   const safeName =
-    familyName.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") ||
-    "family";
+    familyName.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") || "family";
   const fileName = `${safeName}-budget-export-${new Date()
     .toISOString()
     .slice(0, 10)}.csv`;

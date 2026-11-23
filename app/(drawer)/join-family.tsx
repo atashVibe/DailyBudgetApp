@@ -57,7 +57,9 @@ export default function JoinFamilyScreen() {
       }
     } catch (error) {
       console.error("Failed to load family information:", error);
-      setMessage("We could not load your family information. Please try again.");
+      setMessage(
+        "We could not load your family information. Please try again.",
+      );
     } finally {
       setLoading(false);
     }
@@ -80,6 +82,13 @@ export default function JoinFamilyScreen() {
       setCode("");
       router.replace("/(drawer)/dashboard");
     } catch (error) {
+      if (
+        error instanceof FamilyActionError &&
+        error.code === "EMAIL_NOT_VERIFIED"
+      ) {
+        router.push({ pathname: "/join-invitation", params: { code } });
+        return;
+      }
       setMessage(
         error instanceof FamilyActionError
           ? error.message
@@ -106,9 +115,7 @@ export default function JoinFamilyScreen() {
         selectedOnly ? selectedAreaIds : undefined,
       );
       setMessage(
-        count === 1
-          ? "Exported 1 entry."
-          : `Exported ${count} entries.`,
+        count === 1 ? "Exported 1 entry." : `Exported ${count} entries.`,
       );
     } catch (error) {
       console.error("Family export failed:", error);
@@ -242,8 +249,7 @@ export default function JoinFamilyScreen() {
         <>
           <Text style={styles.body}>
             Enter the eight-digit invitation code for the family you want to
-            join. You will leave your current family after the code is
-            accepted.
+            join. You will leave your current family after the code is accepted.
           </Text>
           <Text style={styles.label}>Invitation code</Text>
           <AppTextInput
@@ -288,7 +294,12 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     marginBottom: 8,
   },
-  sectionTitle: { fontSize: 20, fontWeight: "700", marginTop: 32, marginBottom: 8 },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    marginTop: 32,
+    marginBottom: 8,
+  },
   areaRow: {
     flexDirection: "row",
     alignItems: "center",

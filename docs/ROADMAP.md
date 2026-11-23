@@ -67,12 +67,25 @@ The owner supplied the first live report and successful creation of the 14-day d
 
 The `19:21:00Z` follow-up independently confirms the daily/14-day schedule; backup copies are still absent. Both blocked checks report `SERVICE_DISABLED`, but the consumer project was unknown. The corrected report explicitly selects DailyBudget using Google's quota-project header and exposes only a boolean consumer-project match in safe diagnostics. The corrected rerun at `19:26:14Z` verified email privacy as enabled and identified the Budgets API as disabled in DailyBudget. The owner enabled that API; the `19:28:18Z` report reads both configurations. An applicable USD 10 budget already exists with USD 5/9/10 warnings and default billing IAM recipients enabled. Do not create another budget. Budget period/scope, actual email delivery, backup copies and restore remain unverified.
 
+## Premium entry points and emailed invitations — prepared
+
+- [x] Add visible Upgrade family to Premium actions to family/per-entry receipt viewers and an honest plan page with checkout disabled until payments are implemented.
+- [x] Explain the existing 30-day receipt read/download/export grace period after access ends, subsequent cleanup and preservation of budget entries.
+- [x] Prepare a verified-admin SMTP invitation endpoint with code/link, ten-minute expiry, request deduplication, quotas and explicit manual-share fallback.
+- [x] Preserve invitation links through Google/email signup/sign-in/recovery; require verified recipient email and explicit joining.
+- [x] Close expired/consumed invite and former-creator membership/deletion gaps; atomically create new families and preserve existing accounts after failed signup.
+- [x] Verify isolated unit/rules/backend and all 20 Chromium browser flows (9 existing receipt/sign-in, 6 invitation/Premium, 5 account-deletion).
+- [ ] Set up the sender credential securely, deploy reviewed Functions/rules, then publish the matching frontend. Coordinate this order because atomic family creation requires matching rules.
+- [ ] Verify real inbox delivery and the emailed join link with spare accounts on actual phones. Automated tests send no real mail.
+
+See `docs/PREMIUM_INVITATIONS.md` for behavior, security, secure activation and remaining limitations. Premium price/billing period and inclusion in the first public store release remain unanswered; do not enable charges or claim checkout works.
+
 ## Family Premium purchase — requested
 
 A family administrator must be able to purchase Premium in the app to enable receipt uploads for the family. This is a requested feature, not just a possible paid idea. Checkout implementation follows the current readiness work and the owner's pricing/payment decisions.
 
 - [ ] Decide the family price, billing period and payment provider/store approach with the owner.
-- [ ] Add an Upgrade Family to Premium action for active family admins; other members see how to ask their admin.
+- [x] Prepare the visible Upgrade family to Premium action and plan page; other members see how to ask their admin. Checkout is explicitly unavailable, not activated by this action.
 - [ ] Create checkout on the trusted backend, bound to the authorized admin and the correct family. Prevent duplicate purchases/charges.
 - [ ] Activate Premium only after server verification of a real payment/store purchase; never trust a browser success screen or allow client writes to paid access.
 - [ ] One active family subscription enables receipt uploads for **all current members**, under the existing shared limits. It does not grant access to other families or former members.

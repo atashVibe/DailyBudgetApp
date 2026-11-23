@@ -1,7 +1,7 @@
 import { FontAwesome } from "@expo/vector-icons";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect, useIsFocused } from "@react-navigation/native";
 import * as AppleAuthentication from "expo-apple-authentication";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { onAuthStateChanged, signInWithEmailAndPassword } from "firebase/auth";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { auth } from "../services/auth";
 import PolicyLinks from "../components/PolicyLinks";
+import { validInvitationCode } from "../services/invitations";
 import {
   prepareGoogleSignIn,
   signInWithApple,
@@ -61,16 +62,31 @@ function SocialLoginButton({
 
 export default function LoginScreen() {
   const router = useRouter();
+  const isFocused = useIsFocused();
+  const params = useLocalSearchParams<{ inviteCode?: string }>();
+  const inviteCode = validInvitationCode(params.inviteCode)
+    ? params.inviteCode
+    : "";
+  const destination = useCallback(
+    () =>
+      inviteCode
+        ? router.replace({
+            pathname: "/join-invitation",
+            params: { code: inviteCode },
+          })
+        : router.replace("/"),
+    [router, inviteCode],
+  );
   const signInPending = useRef(false);
   useEffect(
     () =>
       onAuthStateChanged(auth, (user) => {
-        if (user && !signInPending.current) {
+        if (user && isFocused && !signInPending.current) {
           setMessage("");
-          router.replace("/");
+          destination();
         }
       }),
-    [router],
+    [router, destination, isFocused],
   );
   const [googleReady, setGoogleReady] = useState(Platform.OS !== "web");
   const [googleSetupFailed, setGoogleSetupFailed] = useState(false);
@@ -132,7 +148,7 @@ export default function LoginScreen() {
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      router.replace("/");
+      destination();
     } catch (error: any) {
       if (error.code === "auth/invalid-credential") {
         setMessage("Incorrect email or password.");
@@ -153,14 +169,14 @@ export default function LoginScreen() {
       setLoading(true);
       setMessage("");
 
-      await signInWithGoogle();
-      router.replace("/");
+      await signInWithGoogle(Boolean(inviteCode));
+      destination();
     } catch (error: any) {
       console.log(error);
 
       if (auth.currentUser) {
         setMessage("");
-        router.replace("/");
+        destination();
       } else if (
         error?.code === "auth/popup-closed-by-user" ||
         error?.code === "auth/cancelled-popup-request"
@@ -196,7 +212,7 @@ export default function LoginScreen() {
       setMessage("");
 
       await signInWithApple();
-      router.replace("/");
+      destination();
     } catch (error: any) {
       console.log(error);
 
@@ -280,7 +296,13 @@ export default function LoginScreen() {
         <TouchableOpacity
           accessibilityRole="button"
           disabled={loading}
-          onPress={() => router.push("/forgot-password")}
+          onPress={() =>
+            router.push(
+              inviteCode
+                ? { pathname: "/forgot-password", params: { inviteCode } }
+                : "/forgot-password",
+            )
+          }
           style={{ alignSelf: "flex-end", padding: 12, marginBottom: 12 }}
         >
           <Text style={{ color: "#155E50", fontSize: 16 }}>
@@ -367,7 +389,13 @@ export default function LoginScreen() {
 
         <PrimaryButton
           title="Create Account"
-          onPress={() => router.push("/signup")}
+          onPress={() =>
+            router.push(
+              inviteCode
+                ? { pathname: "/signup", params: { inviteCode } }
+                : "/signup",
+            )
+          }
         />
         <PolicyLinks />
       </View>

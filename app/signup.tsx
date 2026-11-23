@@ -1,10 +1,8 @@
 import { useFocusEffect } from "@react-navigation/native";
-import { useRouter } from "expo-router";
-import { createUserWithEmailAndPassword, deleteUser } from "firebase/auth";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { createUserWithEmailAndPassword } from "firebase/auth";
 import {
-  addDoc,
   collection,
-  deleteDoc,
   doc,
   getDocs,
   query,
@@ -12,10 +10,11 @@ import {
   where,
   writeBatch,
 } from "firebase/firestore";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Text, TouchableOpacity } from "react-native";
 import { auth, db } from "../services/auth";
 import PolicyLinks from "../components/PolicyLinks";
+import { validInvitationCode } from "../services/invitations";
 import { seedFinanceData } from "../services/seedFinanceData";
 import AppScreen from "./components/common/AppScreen";
 import AppTextInput from "./components/common/AppTextInput";
@@ -24,6 +23,7 @@ import PrimaryButton from "./components/common/PrimaryButton";
 
 export default function SignupScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ inviteCode?: string }>();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -33,6 +33,13 @@ export default function SignupScreen() {
   const [familyName, setFamilyName] = useState("");
   const [inviteCode, setInviteCode] = useState("");
   const [loading, setLoading] = useState(false);
+  const submitting = useRef(false);
+  useEffect(() => {
+    if (validInvitationCode(params.inviteCode)) {
+      setMode("join");
+      setInviteCode(params.inviteCode);
+    }
+  }, [params.inviteCode]);
 
   const clearForm = () => {
     setEmail("");
@@ -43,17 +50,25 @@ export default function SignupScreen() {
   };
   useFocusEffect(
     useCallback(() => {
+      if (validInvitationCode(params.inviteCode)) {
+        setMode("join");
+        setInviteCode(params.inviteCode);
+      }
       return () => {
         clearForm();
         setMessage("");
         setMode(null);
       };
-    }, []),
+    }, [params.inviteCode]),
   );
 
   const handleSignup = async () => {
+    if (submitting.current) return;
+    submitting.current = true;
     setLoading(true);
-    let createdFamilyId = "";
+    let newAccountCreated = false;
+    let pendingFamily: { ref: ReturnType<typeof doc>; name: string } | null =
+      null;
     let setupFinished = false;
 
     try {
@@ -90,6 +105,17 @@ export default function SignupScreen() {
         password,
       );
       const user = userCredential.user;
+      newAccountCreated = true;
+      if (mode === "join" && !user.emailVerified) {
+        // Keep the newly created sign-in while the recipient proves email ownership.
+        // No membership or access to family data is granted here.
+        setupFinished = true;
+        router.replace({
+          pathname: "/join-invitation",
+          params: { code: inviteCode },
+        });
+        return;
+      }
 
       let finalFamilyId = "";
       let userRole = "admin";
@@ -132,20 +158,21 @@ export default function SignupScreen() {
       }
 
       if (mode === "start") {
-        const newFamilyRef = await addDoc(collection(db, "families"), {
-          name: familyName.trim(),
+        const newFamilyRef = doc(collection(db, "families"));
+        pendingFamily = { ref: newFamilyRef, name: familyName.trim() };
+        finalFamilyId = newFamilyRef.id;
+        userRole = "admin";
+      }
+
+      const batch = writeBatch(db);
+      if (pendingFamily)
+        batch.set(pendingFamily.ref, {
+          name: pendingFamily.name,
           dailyBudget: 30,
           status: "active",
           createdBy: user.uid,
           createdAt: serverTimestamp(),
         });
-
-        finalFamilyId = newFamilyRef.id;
-        createdFamilyId = newFamilyRef.id;
-        userRole = "admin";
-      }
-
-      const batch = writeBatch(db);
       batch.set(doc(db, "users", user.uid), {
         activeFamilyId: finalFamilyId,
         role: userRole,
@@ -181,20 +208,17 @@ export default function SignupScreen() {
       clearForm();
 
       // redirect
-      setTimeout(() => router.push("/login"), 1000);
+      router.replace("/");
     } catch (error: any) {
-      const user = auth.currentUser;
-      if (user && !setupFinished) {
-        try {
-          if (createdFamilyId) {
-            await deleteDoc(doc(db, "families", createdFamilyId));
-          }
-          await deleteUser(user);
-        } catch (cleanupError) {
-          console.error("Could not clean up incomplete signup:", cleanupError);
-        }
+      // Never delete auth.currentUser here: account creation may have failed
+      // while a different existing user was signed in, or the batch may have
+      // committed before its network acknowledgement was lost.
+      if (newAccountCreated && !setupFinished) {
+        setMessage(
+          "Your sign-in was created, but family setup could not finish. Sign in with this email and password to continue setup.",
+        );
+        return;
       }
-
       if (error.code === "auth/email-already-in-use") {
         setMessage(
           "This email already has an account. Please sign in instead.",
@@ -214,6 +238,7 @@ export default function SignupScreen() {
         setMessage("Account creation failed. Please try again.");
       }
     } finally {
+      submitting.current = false;
       setLoading(false);
     }
   };
@@ -327,7 +352,13 @@ export default function SignupScreen() {
           ) : null}
 
           <TouchableOpacity
-            onPress={() => router.push("/login")}
+            onPress={() =>
+              router.push(
+                validInvitationCode(inviteCode)
+                  ? { pathname: "/login", params: { inviteCode } }
+                  : "/login",
+              )
+            }
             style={{
               padding: 16,
               borderRadius: 10,
@@ -343,5 +374,3 @@ export default function SignupScreen() {
     </AppScreen>
   );
 }
-
-

@@ -3,6 +3,9 @@ import { initializeApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
+import express from "express";
+import { createInvitationService } from "../src/invitations.mjs";
+import { createInvitationsApi } from "../src/invitations-api.mjs";
 import { createReceiptService } from "../src/service.mjs";
 import { createReceiptApi } from "../src/api.mjs";
 
@@ -37,42 +40,51 @@ await db.doc(`receiptAccess/${uid}`).set({ administrator: true });
 await db
   .doc(`users/${uid}`)
   .set({ activeFamilyId: "demo-family", role: "admin", email });
-await db
-  .doc("families/demo-family")
-  .set({
-    name: "Receipt Demo",
-    createdBy: uid,
-    dailyBudget: 30,
-    status: "active",
-  });
-await db
-  .doc(`familyMembers/demo-family_${uid}`)
-  .set({
-    familyId: "demo-family",
-    userId: uid,
-    role: "admin",
-    status: "active",
-    email,
-  });
-await db
-  .doc("budgetAreas/demo-area")
-  .set({
-    name: "Daily Life",
-    familyId: "demo-family",
-    isDefault: true,
-    isArchived: false,
-  });
-await db
-  .doc("categories/demo-category")
-  .set({
-    name: "Groceries",
-    familyId: "demo-family",
-    budgetAreaId: "demo-area",
-    type: "expense",
-    isDefault: true,
-    isArchived: false,
-  });
-const app = createReceiptApi(createReceiptService({ db, auth, bucket }), auth);
+await db.doc("families/demo-family").set({
+  name: "Receipt Demo",
+  createdBy: uid,
+  dailyBudget: 30,
+  status: "active",
+});
+await db.doc(`familyMembers/demo-family_${uid}`).set({
+  familyId: "demo-family",
+  userId: uid,
+  role: "admin",
+  status: "active",
+  email,
+});
+await db.doc("budgetAreas/demo-area").set({
+  name: "Daily Life",
+  familyId: "demo-family",
+  isDefault: true,
+  isArchived: false,
+});
+await db.doc("categories/demo-category").set({
+  name: "Groceries",
+  familyId: "demo-family",
+  budgetAreaId: "demo-area",
+  type: "expense",
+  isDefault: true,
+  isArchived: false,
+});
+const app = express();
+app.use(
+  "/invitations",
+  createInvitationsApi(
+    createInvitationService({
+      db,
+      auth,
+      send: async (message) => {
+        if (!message.to.endsWith("@example.test"))
+          throw new Error("Only emulator test recipients are allowed.");
+        await db.collection("invitationTestMail").add(message);
+        return { accepted: [message.to] };
+      },
+    }),
+    auth,
+  ),
+);
+app.use(createReceiptApi(createReceiptService({ db, auth, bucket }), auth));
 const { createServer } = await import("node:http");
 createServer((req, res) => {
   res.setHeader(
