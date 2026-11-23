@@ -1,5 +1,13 @@
 # DailyBudget Project Log
 
+## Cloud deployment confirmed; HTTP invocation recovery — November 23, 2026
+
+The owner reported enabled SMTP secret version 1, corrected SMTP user/host/port, retried the interrupted deployment and supplied **Deploy complete!** for reviewed source `f45d303`. PRs #15/#16/#17 are now merged into main (`50aa679`); its tree is identical to reviewed source. Pages publication is in progress. Paid store purchasing remains disabled; real inbox delivery, store/device tests and the remaining recovery/privacy gates are still unverified. Do not ask the owner to repeat password setup or deploy all functions solely to fix HTTP access.
+
+Live receipt `/access` rejects anonymous callers with the expected HTTP 401. The new invitation and store-notification endpoints return Google's HTTP 403 before their handlers. Firebase CLI 15.36.0 sets the default public invoker on creation but leaves unspecified invoker unchanged on updates; interrupted initial creation can therefore leave invocation permissions unrepaired by a successful retry. This is consistent with the symptoms, not proof of the exact live IAM policy. The owner has been given two targeted `gcloud functions add-invoker-policy-binding ... --member=allUsers` commands, which handle gen2 Cloud Run invocation. Confirmation/live recheck is pending. These permissions expose only the HTTP entry points; Firebase-token/current-family checks, store signature verification and private Storage/Firestore rules remain in place.
+
+The source now declares `invoker: "public"` explicitly on all three existing HTTP functions, so future update deployments can restore their intended invocation policy. Scheduled maintenance is unchanged. No new password, schema, payment activation or data access was introduced. A local generated-endpoint check verifies the three public invocation declarations and absence of an HTTP trigger on maintenance; full CI must pass before merging this recovery change.
+
 ## Shared visual refresh — November 23, 2026
 
 The owner's visual brief is implemented on `codex/shared-ui-polish`, stacked above the subscription checkpoint PR #16. See `docs/UI_POLISH.md` for the seven delivery stages, changed files, preview instructions and deliberate exceptions. The existing framework, service calls, financial calculations, database/rules and dependencies are unchanged relative to `2cc60e0`; the requested Account destination reuses the original Settings profile/deletion handlers. Inter uses existing expo-font, with its OFL license bundled. Shared controls, nested budget areas/category sheets, Account, drawer and receipt states use the tokens. Free-family receipt guards and account identity/sole-admin protections remain.

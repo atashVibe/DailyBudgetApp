@@ -57,6 +57,9 @@ const subscriptions = createSubscriptionService({
 export const receiptsApi = onRequest(
   {
     region,
+    // Browser requests reach our Firebase authentication checks. Explicit on
+    // updates too, so a retry can repair an interrupted initial IAM setup.
+    invoker: "public",
     memory: "512MiB",
     timeoutSeconds: 120,
     minInstances: 0,
@@ -69,6 +72,8 @@ export const receiptsApi = onRequest(
 export const storeNotifications = onRequest(
   {
     region,
+    // Apple/Google callbacks authenticate inside the notification handler.
+    invoker: "public",
     memory: "256MiB",
     timeoutSeconds: 120,
     minInstances: 0,
@@ -111,6 +116,7 @@ let invitationsApp;
 export const familyInvitationsApi = onRequest(
   {
     region,
+    invoker: "public",
     memory: "256MiB",
     timeoutSeconds: 60,
     minInstances: 0,
