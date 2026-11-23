@@ -1,5 +1,7 @@
 import { Picker } from "@react-native-picker/picker";
 import { Platform, View } from "react-native";
+import { useState } from "react";
+import { uiTokens } from "./dashboardStyles";
 
 type PickerOption = {
   label: string;
@@ -21,11 +23,12 @@ export default function AppPicker({
   disabled = false,
   tall = false,
 }: Props) {
+  const [focused, setFocused] = useState(false);
   return (
     <View
       style={{
         borderWidth: 1,
-        borderColor: "#D1D5DB",
+        borderColor: focused ? uiTokens.primary : uiTokens.border,
         borderRadius: 12,
         marginBottom: tall ? 12 : 16,
         overflow: "hidden",
@@ -36,13 +39,16 @@ export default function AppPicker({
         enabled={!disabled}
         selectedValue={selectedValue}
         onValueChange={onValueChange}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
         style={{
           color: "#111827",
           backgroundColor: "#ffffff",
           width: "100%",
           minWidth: 0,
           fontSize: 16,
-          height: tall ? 60 : Platform.OS === "web" ? 52 : undefined,
+          fontFamily: uiTokens.font,
+          height: 48,
           paddingVertical: Platform.OS === "web" ? 0 : undefined,
           paddingHorizontal: Platform.OS === "web" ? 12 : undefined,
           borderWidth: Platform.OS === "web" ? 0 : undefined,

@@ -1,15 +1,12 @@
-import {
-  ActivityIndicator,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-} from "react-native";
+import { ActivityIndicator, StyleSheet, Text, Pressable } from "react-native";
+import { uiTokens } from "./dashboardStyles";
 
 type Props = {
   title: string;
   onPress: () => void;
   disabled?: boolean;
   loading?: boolean;
+  variant?: "primary" | "outline" | "text" | "danger";
 };
 
 export default function PrimaryButton({
@@ -17,32 +14,68 @@ export default function PrimaryButton({
   onPress,
   disabled = false,
   loading = false,
+  variant = "primary",
 }: Props) {
   const isDisabled = disabled || loading;
 
   return (
-    <TouchableOpacity
+    <Pressable
       onPress={onPress}
       disabled={isDisabled}
       accessibilityRole="button"
       accessibilityState={{ disabled: isDisabled, busy: loading }}
-      activeOpacity={0.8}
-      style={[styles.button, isDisabled && styles.disabledButton]}
+      style={({ pressed }) => [
+        styles.button,
+        variant === "text"
+          ? styles.textButton
+          : variant === "outline"
+            ? styles.outlineButton
+            : variant === "danger"
+              ? styles.dangerButton
+              : null,
+        pressed && {
+          backgroundColor:
+            variant === "primary"
+              ? uiTokens.tealText
+              : variant === "danger"
+                ? "#B91C1C"
+                : uiTokens.tint,
+        },
+        isDisabled && styles.disabledButton,
+      ]}
     >
       {loading ? (
-        <ActivityIndicator color="#FFFFFF" />
+        <ActivityIndicator
+          color={
+            variant === "text" || variant === "outline"
+              ? uiTokens.tealText
+              : "#4B5563"
+          }
+        />
       ) : (
-        <Text style={styles.text}>{title}</Text>
+        <Text
+          style={[
+            styles.text,
+            (variant === "text" || variant === "outline") && {
+              color: uiTokens.tealText,
+            },
+            isDisabled && { color: "#4B5563" },
+          ]}
+        >
+          {title}
+        </Text>
       )}
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   button: {
-    height: 52,
+    minHeight: 48,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
 
-    backgroundColor: "#2bcea6",
+    backgroundColor: uiTokens.button,
 
     borderRadius: 12,
 
@@ -52,14 +85,23 @@ const styles = StyleSheet.create({
   },
 
   disabledButton: {
-    backgroundColor: "#9CA3AF",
+    backgroundColor: "#E5E7EB",
   },
 
   text: {
     color: "#FFFFFF",
 
-    fontSize: 16,
+    fontFamily: uiTokens.font,
+    fontSize: 15,
+    textAlign: "center",
 
     fontWeight: "600",
   },
+  textButton: { backgroundColor: "transparent" },
+  outlineButton: {
+    backgroundColor: uiTokens.card,
+    borderWidth: 1,
+    borderColor: uiTokens.border,
+  },
+  dangerButton: { backgroundColor: uiTokens.danger },
 });
