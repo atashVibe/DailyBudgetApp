@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { Text, View } from "react-native";
+import { View } from "react-native";
+import Text from "../components/common/AppText";
 import { useFocusEffect, useRouter } from "expo-router";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../../services/auth";
@@ -123,8 +124,8 @@ export default function ReceiptsScreen() {
   };
   return (
     <AppScreen>
-      <Text style={{ fontSize: 28, fontWeight: "700", marginBottom: 16 }}>
-        Family Receipts
+      <Text style={{ fontSize: 24, fontWeight: "700", marginBottom: 16 }}>
+        Family receipts
       </Text>
       <ReceiptPanel key={`${uid}-${refreshKey}`} />
       {(administrator || !receiptsConfigured) && (
@@ -140,7 +141,7 @@ export default function ReceiptsScreen() {
       {administrator && (
         <View style={{ marginTop: 24, gap: 12 }}>
           <Text style={{ fontSize: 23, fontWeight: "600" }}>
-            Receipt Administration
+            Receipt administration
           </Text>
           <PrimaryButton
             title="Refresh storage overview"
@@ -233,7 +234,7 @@ export default function ReceiptsScreen() {
               ))}
             </>
           )}
-          <Text style={{ fontSize: 20, fontWeight: "600", marginTop: 16 }}>
+          <Text style={{ fontSize: 18, fontWeight: "600", marginTop: 16 }}>
             Manage receipt access
           </Text>
           <Text>
@@ -248,11 +249,13 @@ export default function ReceiptsScreen() {
             autoCapitalize="none"
           />
           <PrimaryButton
+            variant="outline"
             title="Grant receipt administrator access"
             onPress={() => void adminAction("grant-admin")}
             disabled={working || !target.trim()}
           />
           <PrimaryButton
+            variant="outline"
             title="Revoke receipt administrator access"
             onPress={() => void adminAction("revoke-admin")}
             disabled={working || !target.trim()}
@@ -266,16 +269,19 @@ export default function ReceiptsScreen() {
             autoCapitalize="none"
           />
           <PrimaryButton
+            variant="outline"
             title="Grant family Premium access (no payment)"
             onPress={() => void adminAction("activate-premium")}
             disabled={working || !familyTarget.trim()}
           />
           <PrimaryButton
+            variant="outline"
             title="Activate family Archive access"
             onPress={() => void adminAction("activate-archive")}
             disabled={working || !familyTarget.trim()}
           />
           <PrimaryButton
+            variant="outline"
             title="End a manual grant and start 30-day grace"
             onPress={() => void adminAction("cancel")}
             disabled={working || !familyTarget.trim()}

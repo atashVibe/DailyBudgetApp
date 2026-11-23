@@ -1,4 +1,9 @@
-import { Text, View } from "react-native";
+import { View } from "react-native";
+import Text from "../app/components/common/AppText";
+import {
+  uiStyles as ui,
+  uiTokens as tokens,
+} from "../app/components/common/dashboardStyles";
 import type { ReceiptAccess } from "../services/receipts";
 export const storageSize = (bytes: number) =>
   bytes >= 1e9
@@ -17,11 +22,18 @@ export default function ReceiptStorage({ access }: { access: ReceiptAccess }) {
         gap: 8,
         padding: 16,
         borderRadius: 12,
-        backgroundColor: "#E6FAF5",
+        backgroundColor: tokens.card,
+        borderWidth: 1,
+        borderColor: tokens.border,
       }}
     >
-      <Text style={{ fontSize: 20, fontWeight: "700" }}>Receipt Storage</Text>
-      <Text>{access.planName || access.plan} · shared by your family</Text>
+      <Text style={{ fontSize: 18, fontWeight: "700" }}>Receipt storage</Text>
+      <Text>
+        {access.administratorFamily
+          ? "Included access"
+          : access.planName || access.plan}{" "}
+        · shared by your family
+      </Text>
       <Text>
         {storageSize(used)} used / {storageSize(quota)}
       </Text>
@@ -32,7 +44,7 @@ export default function ReceiptStorage({ access }: { access: ReceiptAccess }) {
         style={{
           height: 10,
           borderRadius: 5,
-          backgroundColor: "#D1E8E3",
+          backgroundColor: tokens.border,
           overflow: "hidden",
         }}
       >
@@ -40,7 +52,7 @@ export default function ReceiptStorage({ access }: { access: ReceiptAccess }) {
           style={{
             height: 10,
             width: `${percent}%`,
-            backgroundColor: percent >= 80 ? "#B45309" : "#25C6A6",
+            backgroundColor: percent >= 80 ? "#B45309" : tokens.pressed,
           }}
         />
       </View>
@@ -49,9 +61,8 @@ export default function ReceiptStorage({ access }: { access: ReceiptAccess }) {
         {access.usage.receiptCount} receipts
       </Text>
       {access.usage.reservedBytes > 0 && (
-        <Text>
-          {storageSize(access.usage.reservedBytes)} includes pending uploads or
-          retained copies awaiting cleanup.
+        <Text style={ui.helper}>
+          Space is still reserved for uploads or files being removed.
         </Text>
       )}
       {quota > 0 && percent >= 80 && (
