@@ -15,6 +15,29 @@ import AppTextInput from "../components/common/AppTextInput";
 import PrimaryButton from "../components/common/PrimaryButton";
 
 type Stats = {
+  verifiedSubscribers?: {
+    premium: number;
+    premium_plus: number;
+    premium_pro: number;
+    trials: number;
+  };
+  perFamily?: {
+    familyId: string;
+    plan: string;
+    liveBytes: number;
+    reservedBytes: number;
+    quotaBytes: number;
+    overQuota: boolean;
+  }[];
+  perUploader?: { userId: string; bytes: number; receiptCount: number }[];
+  failedUploads?: {
+    familyId: string;
+    status: number;
+    errorCode: string;
+    createdAt: number;
+  }[];
+  monthlySubscriptionRevenueUSD?: number | null;
+  revenueNotice?: string;
   receiptCount: number;
   liveBytes: number;
   totalStoredBytes: number;
@@ -126,6 +149,46 @@ export default function ReceiptsScreen() {
           />
           {stats && (
             <>
+              {stats.verifiedSubscribers && (
+                <Text>
+                  Store-verified paid families: Premium{" "}
+                  {stats.verifiedSubscribers.premium} · Plus{" "}
+                  {stats.verifiedSubscribers.premium_plus} · Pro{" "}
+                  {stats.verifiedSubscribers.premium_pro}. Verified trials:{" "}
+                  {stats.verifiedSubscribers.trials}.
+                </Text>
+              )}
+              {stats.revenueNotice && <Text>{stats.revenueNotice}</Text>}
+              {stats.perFamily?.map((family) => (
+                <Text key={family.familyId}>
+                  {family.familyId} · {family.plan}:{" "}
+                  {((family.liveBytes + family.reservedBytes) / 1e9).toFixed(3)}{" "}
+                  / {(family.quotaBytes / 1e9).toFixed(2)} GB
+                  {family.overQuota ? " · Over allowance" : ""}
+                </Text>
+              ))}
+              {stats.perUploader && (
+                <Text>
+                  Live originals by uploader (shared family storage, not
+                  individual quotas)
+                </Text>
+              )}
+              {stats.perUploader?.map((user) => (
+                <Text key={user.userId}>
+                  {user.userId}: {(user.bytes / 1e6).toFixed(1)} MB ·{" "}
+                  {user.receiptCount} receipts
+                </Text>
+              ))}
+              {stats.failedUploads && (
+                <Text>
+                  Recent failed upload attempts: {stats.failedUploads.length}
+                </Text>
+              )}
+              {stats.failedUploads?.map((failure, index) => (
+                <Text key={index}>
+                  {failure.familyId}: {failure.errorCode} ({failure.status})
+                </Text>
+              ))}
               <Text>Receipt records: {stats.receiptCount}</Text>
               <Text>
                 Stored originals: {(stats.liveBytes / 1024 / 1024).toFixed(2)}{" "}
@@ -203,7 +266,7 @@ export default function ReceiptsScreen() {
             autoCapitalize="none"
           />
           <PrimaryButton
-            title="Activate family Premium access"
+            title="Grant family Premium access (no payment)"
             onPress={() => void adminAction("activate-premium")}
             disabled={working || !familyTarget.trim()}
           />
@@ -213,7 +276,7 @@ export default function ReceiptsScreen() {
             disabled={working || !familyTarget.trim()}
           />
           <PrimaryButton
-            title="Cancel plan and start 30-day grace"
+            title="End a manual grant and start 30-day grace"
             onPress={() => void adminAction("cancel")}
             disabled={working || !familyTarget.trim()}
           />

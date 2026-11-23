@@ -1,5 +1,9 @@
 # DailyBudget Roadmap
 
+## Active: family plans and visual polish — November 23, 2026
+
+The owner supplied configurable three-tier family prices/quotas, one-month Premium trial and 15% annual proposals, and chose direct Google Play/Apple billing. Trusted verification/quota/downgrade support is prepared with isolated tests; actual store setup, native/device purchases and live deployment remain open. See `docs/SUBSCRIPTIONS_ADMIN.md`. The incoming visual-only brief is a separate UI pass, preserving existing services/accounting/deletion guards. No paid checkout or real invitation email delivery is claimed.
+
 ## Milestone 2 checkpoint — v0.2
 
 [Milestone 2 release](https://github.com/atashVibe/DailyBudgetApp/releases/tag/v0.2) is the versioned web/source checkpoint for family receipts, corrected accounting/status rules, the reference dashboard/category icons and mobile sign-in/Edit recovery. Publication follows checks and the matching GitHub Pages deployment; the release page records the published tag. It does not stand for App Store/Google Play delivery or completion of every device/production gate below.

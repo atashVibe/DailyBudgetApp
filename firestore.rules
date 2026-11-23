@@ -19,6 +19,12 @@ service cloud.firestore {
       allow write: if false;
     }
     match /receiptConfig/{id} { allow read, write: if false; }
+    // Store proofs, account bindings and audit records are server-only.
+    match /familySubscriptions/{id} { allow read, write: if false; }
+    match /subscriptionBindings/{id} { allow read, write: if false; }
+    match /subscriptionPayers/{id} { allow read, write: if false; }
+    match /subscriptionProofs/{id} { allow read, write: if false; }
+    match /subscriptionAudit/{id} { allow read, write: if false; }
     match /receiptEntryDrafts/{id} { allow read, write: if false; }
     match /receiptLocks/{id} { allow read, write: if false; }
     match /receiptOperations/{id} { allow read, write: if false; }
