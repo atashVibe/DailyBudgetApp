@@ -1,14 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "expo-router";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { uiStyles as ui, uiTokens as tokens } from "../common/dashboardStyles";
 import {
   ActivityIndicator,
   Modal,
   ScrollView,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import Text from "../common/AppText";
 import type { AccountReauthenticationMethod } from "../../../services/accountDeletion";
 import AppTextInput from "../common/AppTextInput";
 
@@ -149,14 +151,9 @@ export default function AccountSection({
 
   return (
     <View style={styles.section}>
-      <Text style={styles.heading}>Account</Text>
-      <Text style={styles.description}>
-        Permanently delete your sign-in and personal profile. Shared family
-        budget entries are preserved without your identity.
-      </Text>
       <TouchableOpacity
         accessibilityRole="button"
-        accessibilityLabel="Delete Account"
+        accessibilityLabel="Delete account"
         style={styles.openButton}
         onPress={() => {
           setMessage("");
@@ -164,7 +161,9 @@ export default function AccountSection({
           setIsOpen(true);
         }}
       >
-        <Text style={styles.openButtonText}>Delete Account</Text>
+        <Ionicons name="trash-outline" size={21} color={tokens.danger} />
+        <Text style={[styles.openButtonText, { flex: 1 }]}>Delete account</Text>
+        <Ionicons name="chevron-forward" size={20} color={tokens.muted} />
       </TouchableOpacity>
 
       <Modal
@@ -179,7 +178,13 @@ export default function AccountSection({
             contentContainerStyle={{ alignItems: "center" }}
             keyboardShouldPersistTaps="handled"
           >
-            <View style={styles.modalCard}>
+            <View
+              role="dialog"
+              aria-modal={true}
+              accessibilityViewIsModal
+              accessibilityLabel="Delete account confirmation"
+              style={styles.modalCard}
+            >
               <Text style={styles.modalTitle}>Delete your account?</Text>
               <Text style={styles.warning}>
                 This permanently deletes your DailyBudget account and cannot be
@@ -253,7 +258,7 @@ export default function AccountSection({
 
               <TouchableOpacity
                 accessibilityRole="button"
-                accessibilityLabel="Permanently Delete Account"
+                accessibilityLabel="Delete account permanently"
                 accessibilityState={{
                   disabled: !canDelete || working,
                   busy: working,
@@ -268,9 +273,7 @@ export default function AccountSection({
                 {working ? (
                   <ActivityIndicator color="#FFFFFF" />
                 ) : (
-                  <Text style={styles.deleteButtonText}>
-                    Permanently Delete Account
-                  </Text>
+                  <Text style={styles.deleteButtonText}>Delete account</Text>
                 )}
               </TouchableOpacity>
               <TouchableOpacity
@@ -292,10 +295,7 @@ export default function AccountSection({
 
 const styles = StyleSheet.create({
   section: {
-    marginTop: 36,
-    borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
-    paddingTop: 24,
+    ...ui.card,
   },
   heading: { fontSize: 22, fontWeight: "700", marginBottom: 8 },
   description: {
@@ -305,14 +305,17 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   openButton: {
-    height: 52,
-    borderWidth: 1,
-    borderColor: "#DC2626",
-    borderRadius: 12,
+    minHeight: 48,
+    flexDirection: "row",
+    gap: 12,
     alignItems: "center",
-    justifyContent: "center",
   },
-  openButtonText: { color: "#DC2626", fontSize: 16, fontWeight: "700" },
+  openButtonText: {
+    color: tokens.danger,
+    fontFamily: tokens.font,
+    fontSize: 15,
+    fontWeight: "600",
+  },
   overlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.45)",
@@ -322,12 +325,12 @@ const styles = StyleSheet.create({
   },
   modalCard: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 22,
+    borderRadius: 12,
+    padding: 16,
     width: "100%",
     maxWidth: 480,
   },
-  modalTitle: { fontSize: 24, fontWeight: "700", marginBottom: 12 },
+  modalTitle: { ...ui.heading, marginBottom: 12 },
   warning: {
     color: "#4B5563",
     fontSize: 15,

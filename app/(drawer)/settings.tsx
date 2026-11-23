@@ -4,7 +4,17 @@ import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { useCallback, useEffect, useState } from "react";
 import { getReceiptAccess } from "../../services/receipts";
-import { Text } from "react-native";
+import { View, Pressable } from "react-native";
+import Text from "../components/common/AppText";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import {
+  uiStyles as ui,
+  uiTokens as tokens,
+} from "../components/common/dashboardStyles";
+import PrimaryButton from "../components/common/PrimaryButton";
+import SettingsSheet from "../components/common/SettingsSheet";
+import Toast from "../components/common/Toast";
+import { useRequestSignOut } from "../../components/SignOutConfirmation";
 import { useBudgetAreas } from "../../hooks/useBudgetAreas";
 import { auth, db } from "../../services/auth";
 import {
@@ -41,7 +51,14 @@ import ProfileNameSection from "../components/settings/ProfileNameSection";
 import { saveUserDisplayName } from "../../services/profile";
 import PolicyLinks from "../../components/PolicyLinks";
 
-export default function SettingsScreen() {
+export default function SettingsScreen({
+  accountOnly = false,
+}: { accountOnly?: boolean } = {}) {
+  const requestSignOut = useRequestSignOut();
+  const [nameDialog, setNameDialog] = useState(false);
+  const [profileBeforeEdit, setProfileBeforeEdit] = useState("");
+  const [toast, setToast] = useState("");
+  const dismissToast = useCallback(() => setToast(""), []);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const [dailyBudget, setDailyBudget] = useState(0);
@@ -95,12 +112,12 @@ export default function SettingsScreen() {
     categoryId: string,
     required: boolean,
   ) => {
-    if (!isAdmin || !familyId) return;
+    if (!isAdmin || !familyId) return false;
     if (required && !canRequireReceipts) {
       setCategoryMessage(
         "Your family needs Premium receipt upload access before receipts can be required.",
       );
-      return;
+      return false;
     }
     setCategoryMessage("");
     const previous =
@@ -115,7 +132,9 @@ export default function SettingsScreen() {
     );
     try {
       await setCategoryReceiptRequired(categoryId, required, familyId);
-      setCategoryMessage("Receipt requirement updated.");
+      setCategoryMessage("");
+      setToast("Saved");
+      return true;
     } catch {
       setCategories((current) =>
         current.map((category) =>
@@ -127,6 +146,7 @@ export default function SettingsScreen() {
       setCategoryMessage(
         "Could not update the receipt requirement. Please retry.",
       );
+      return false;
     }
   };
 
@@ -165,6 +185,7 @@ export default function SettingsScreen() {
       );
     } catch (error) {
       console.error("Failed to set default category:", error);
+      throw error;
     }
   };
 
@@ -279,12 +300,14 @@ export default function SettingsScreen() {
     try {
       const savedName = await saveUserDisplayName(user, familyId, profileName);
       setProfileName(savedName);
+      setProfileBeforeEdit(savedName);
       setAdmins((currentAdmins) =>
         currentAdmins.map((admin) =>
           admin.isCurrentUser ? { ...admin, name: savedName } : admin,
         ),
       );
       setProfileMessage("Name saved");
+      setToast("Name saved");
     } catch (error) {
       console.error("Failed to save profile name:", error);
       setProfileMessage("The name could not be saved. Please try again.");
@@ -324,16 +347,18 @@ export default function SettingsScreen() {
   };
 
   const handleAddBudgetArea = async () => {
-    if (!isAdmin || !familyId || !auth.currentUser) return;
+    if (!isAdmin || !familyId || !auth.currentUser) return false;
 
     const name = newBudgetAreaName.trim();
 
-    if (!name) return;
+    if (!name) return false;
 
     await addBudgetArea(familyId, auth.currentUser.uid, name);
 
     await refreshBudgetAreas();
     setNewBudgetAreaName("");
+    setToast("Area added");
+    return true;
   };
 
   const handleArchiveBudgetArea = async (budgetAreaId: string) => {
@@ -346,29 +371,26 @@ export default function SettingsScreen() {
 
   const handleEditBudgetArea = async (
     budgetAreaId: string,
-    currentName: string,
+    newName: string,
   ) => {
-    const newName = window.prompt("Edit budget area name", currentName);
-
-    if (!newName || newName.trim() === "") return;
-
+    if (!isAdmin || !familyId || !newName.trim()) return;
     await updateBudgetAreaName(budgetAreaId, newName.trim());
-
     await refreshBudgetAreas();
+    setToast("Area updated");
   };
 
   const handleAddCategory = async () => {
-    if (!isAdmin || !familyId || !auth.currentUser) return;
+    if (!isAdmin || !familyId || !auth.currentUser) return false;
 
     const name = newCategoryName.trim();
 
-    if (!name || !selectedCategoryBudgetAreaId) return;
+    if (!name || !selectedCategoryBudgetAreaId) return false;
 
     if (newCategoryRequiresReceipt && !canRequireReceipts) {
       setCategoryMessage(
         "Your family needs Premium receipt upload access before receipts can be required.",
       );
-      return;
+      return false;
     }
     let addedCategory: Category;
     try {
@@ -386,7 +408,7 @@ export default function SettingsScreen() {
           ? error.message
           : "Could not add the category. Please retry.",
       );
-      return;
+      return false;
     }
 
     setCategories((currentCategories) =>
@@ -398,6 +420,8 @@ export default function SettingsScreen() {
     setNewCategoryName("");
     setNewCategoryType("expense");
     setNewCategoryRequiresReceipt(false);
+    setToast("Category added");
+    return true;
   };
 
   const handleArchiveCategory = async (categoryId: string) => {
@@ -415,120 +439,183 @@ export default function SettingsScreen() {
 
   const handleEditCategory = async (
     categoryId: string,
-    currentName: string,
-    currentType: CategoryType,
+    newName: string,
+    type: CategoryType,
   ) => {
-    const newName = window.prompt("Edit category name", currentName);
-
-    if (!newName || newName.trim() === "") return;
-
-    const typeInput = window.prompt(
-      "Category type: expense, income, refund, cashback",
-      currentType,
-    );
-
     if (
-      !typeInput ||
-      !["expense", "income", "refund", "cashback"].includes(typeInput)
-    ) {
-      return;
-    }
-
-    await updateCategory(categoryId, newName.trim(), typeInput as CategoryType);
-
+      !isAdmin ||
+      !familyId ||
+      !selectedCategoryBudgetAreaId ||
+      !newName.trim()
+    )
+      return false;
+    await updateCategory(categoryId, newName.trim(), type);
     const loadedCategories = await getCategories(
-      familyId!,
+      familyId,
       selectedCategoryBudgetAreaId,
     );
-
     setCategories(loadedCategories);
+    setToast("Category updated");
+    return true;
   };
   if (loading) {
     return <LoadingSpinner message="Loading family settings..." />;
   }
-  return (
-    <AppScreen style={{ paddingTop: 80 }}>
-      <Text
-        style={{
-          fontSize: 22,
-          fontWeight: "700",
-          color: "#087F65",
-          marginBottom: 2,
-        }}
-      >
-        {familyName || "Family"} Family
-      </Text>
-      <Text style={{ fontSize: 30, fontWeight: "700", marginBottom: 20 }}>
-        Settings
-      </Text>
-
-      <FamilyBudgetSection
-        dailyBudget={dailyBudget}
-        budgetInput={budgetInput}
-        isAdmin={isAdmin}
-        onBudgetInputChange={setBudgetInput}
-        onUpdateBudget={handleUpdateBudget}
-      />
-
-      <ProfileNameSection
-        name={profileName}
-        message={profileMessage}
-        onNameChange={setProfileName}
-        onSave={handleSaveProfileName}
-      />
-
-      <AdminsSection admins={admins} loading={adminsLoading} />
-
-      <Text style={{ color: "#4B5563", marginBottom: 8 }}>
-        A green checkmark identifies the default budget area or category.
-      </Text>
-
-      <BudgetAreasSection
-        budgetAreas={budgetAreas}
-        newBudgetAreaName={newBudgetAreaName}
-        isAdmin={isAdmin}
-        onNewBudgetAreaNameChange={setNewBudgetAreaName}
-        onAddBudgetArea={handleAddBudgetArea}
-        onArchiveBudgetArea={handleArchiveBudgetArea}
-        onEditBudgetArea={handleEditBudgetArea}
-        onSetDefaultBudgetArea={handleSetDefaultBudgetArea}
-      />
-
-      {categoryMessage ? (
-        <Text accessibilityRole="alert">{categoryMessage}</Text>
-      ) : null}
-      <CategoriesSection
-        budgetAreas={budgetAreas}
-        categories={categories}
-        selectedBudgetAreaId={selectedCategoryBudgetAreaId}
-        newCategoryName={newCategoryName}
-        newCategoryType={newCategoryType}
-        isAdmin={isAdmin}
-        canRequireReceipts={canRequireReceipts}
-        onSelectedBudgetAreaIdChange={setSelectedCategoryBudgetAreaId}
-        onNewCategoryNameChange={setNewCategoryName}
-        onNewCategoryTypeChange={setNewCategoryType}
-        newCategoryRequiresReceipt={newCategoryRequiresReceipt}
-        onNewCategoryRequiresReceiptChange={setNewCategoryRequiresReceipt}
-        onReceiptRequiredChange={handleReceiptRequiredChange}
-        onAddCategory={handleAddCategory}
-        onArchiveCategory={handleArchiveCategory}
-        onEditCategory={handleEditCategory}
-        onSetDefaultCategory={handleSetDefaultCategory}
-      />
-
-      {auth.currentUser ? (
-        <AccountSection
-          key={auth.currentUser.uid}
-          accountId={auth.currentUser.uid}
-          reauthenticationMethod={getAccountReauthenticationMethod(
-            auth.currentUser,
+  const profile = (
+    <ProfileNameSection
+      name={profileName}
+      message={profileMessage}
+      onNameChange={(value) => {
+        setProfileMessage("");
+        setProfileName(value);
+      }}
+      onSave={handleSaveProfileName}
+    />
+  );
+  if (accountOnly)
+    return (
+      <View style={{ flex: 1 }}>
+        <AppScreen>
+          <Text style={ui.pageTitle}>Account</Text>
+          <View style={ui.card}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Edit your name"
+              onPress={() => {
+                const name = auth.currentUser?.displayName || profileName;
+                setProfileName(name);
+                setProfileBeforeEdit(name);
+                setProfileMessage("");
+                setNameDialog(true);
+              }}
+              style={[ui.row, { minHeight: 48 }]}
+            >
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={ui.body}>Your name</Text>
+                <Text style={ui.name}>
+                  {profileName ||
+                    auth.currentUser?.displayName ||
+                    "Add your name"}
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={tokens.muted} />
+            </Pressable>
+            <View style={ui.divider} />
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Sign out"
+              onPress={requestSignOut}
+              style={[ui.row, { minHeight: 48 }]}
+            >
+              <Ionicons name="log-out-outline" size={20} color={tokens.muted} />
+              <Text style={ui.body}>Sign out</Text>
+            </Pressable>
+          </View>
+          {auth.currentUser && (
+            <AccountSection
+              key={auth.currentUser.uid}
+              accountId={auth.currentUser.uid}
+              reauthenticationMethod={getAccountReauthenticationMethod(
+                auth.currentUser,
+              )}
+              onDeleteAccount={handleDeleteAccount}
+              onPrepareAccount={prepareAccountDeletion}
+            />
           )}
-          onDeleteAccount={handleDeleteAccount}
-          onPrepareAccount={prepareAccountDeletion}
+          <PolicyLinks />
+          <SettingsSheet
+            visible={nameDialog}
+            title="Your name"
+            onClose={() => {
+              setProfileName(profileBeforeEdit);
+              setProfileMessage("");
+              setNameDialog(false);
+            }}
+          >
+            {profile}
+            <PrimaryButton
+              variant="text"
+              title="Done"
+              onPress={() => {
+                setProfileName(profileBeforeEdit);
+                setProfileMessage("");
+                setNameDialog(false);
+              }}
+            />
+          </SettingsSheet>
+        </AppScreen>
+        <Toast message={toast} onDismiss={dismissToast} />
+      </View>
+    );
+  return (
+    <View style={{ flex: 1 }}>
+      <AppScreen>
+        <Text
+          style={[ui.helper, { marginBottom: 4, writingDirection: "auto" }]}
+        >
+          {familyName || "Family"}
+        </Text>
+        <Text style={ui.pageTitle}>Family settings</Text>
+        <FamilyBudgetSection
+          dailyBudget={dailyBudget}
+          budgetInput={budgetInput}
+          isAdmin={isAdmin}
+          onBudgetInputChange={setBudgetInput}
+          onUpdateBudget={handleUpdateBudget}
+          onSaved={() => setToast("Budget updated")}
         />
-      ) : null}
-      <PolicyLinks />
-    </AppScreen>
+        {profile}
+        <AdminsSection admins={admins} loading={adminsLoading} />
+        <BudgetAreasSection
+          budgetAreas={budgetAreas}
+          newBudgetAreaName={newBudgetAreaName}
+          isAdmin={isAdmin}
+          onNewBudgetAreaNameChange={setNewBudgetAreaName}
+          onAddBudgetArea={handleAddBudgetArea}
+          onArchiveBudgetArea={handleArchiveBudgetArea}
+          onEditBudgetArea={handleEditBudgetArea}
+          onSetDefaultBudgetArea={handleSetDefaultBudgetArea}
+          selectedAreaId={selectedCategoryBudgetAreaId}
+          onAreaSelect={setSelectedCategoryBudgetAreaId}
+          categoryCount={
+            categories.filter(
+              (c) => c.budgetAreaId === selectedCategoryBudgetAreaId,
+            ).length
+          }
+          renderCategories={() => (
+            <CategoriesSection
+              budgetAreas={budgetAreas}
+              categories={categories}
+              selectedBudgetAreaId={selectedCategoryBudgetAreaId}
+              newCategoryName={newCategoryName}
+              newCategoryType={newCategoryType}
+              isAdmin={isAdmin}
+              canRequireReceipts={canRequireReceipts}
+              onSelectedBudgetAreaIdChange={setSelectedCategoryBudgetAreaId}
+              onNewCategoryNameChange={setNewCategoryName}
+              onNewCategoryTypeChange={setNewCategoryType}
+              newCategoryRequiresReceipt={newCategoryRequiresReceipt}
+              onNewCategoryRequiresReceiptChange={setNewCategoryRequiresReceipt}
+              onReceiptRequiredChange={handleReceiptRequiredChange}
+              onAddCategory={handleAddCategory}
+              onArchiveCategory={handleArchiveCategory}
+              onEditCategory={handleEditCategory}
+              onSetDefaultCategory={handleSetDefaultCategory}
+              onSaved={() => setToast("Saved")}
+            />
+          )}
+        />
+        {categoryMessage ? (
+          <Text
+            accessibilityRole="alert"
+            style={[ui.helper, { color: tokens.danger }]}
+          >
+            {categoryMessage}
+          </Text>
+        ) : null}
+        <PolicyLinks />
+      </AppScreen>
+      <Toast message={toast} onDismiss={dismissToast} />
+    </View>
   );
 }
