@@ -506,7 +506,7 @@ test("360px settings save and cancel the budget, preserve RTL names and validate
     page.getByRole("switch", { name: "Require a receipt", exact: true }),
   ).toBeDisabled();
   await page.screenshot({
-    path: "test-results/polish-category-sheet-360.png",
+    path: test.info().outputPath("polish-category-sheet-360.png"),
     fullPage: true,
   });
   await page.getByRole("button", { name: "Add category", exact: true }).click();
@@ -549,7 +549,7 @@ test("360px settings save and cancel the budget, preserve RTL names and validate
     .getByRole("button", { name: "Edit daily budget", exact: true })
     .scrollIntoViewIfNeeded();
   await page.screenshot({
-    path: "test-results/polish-settings-360.png",
+    path: test.info().outputPath("polish-settings-360.png"),
     fullPage: true,
   });
 });
@@ -582,7 +582,7 @@ test("drawer links to the separate Account screen and preserves the last-adminis
     page.getByRole("button", { name: "Switch User", exact: true }),
   ).toHaveCount(0);
   await page.screenshot({
-    path: "test-results/polish-drawer-360.png",
+    path: test.info().outputPath("polish-drawer-360.png"),
     fullPage: true,
   });
   await page.getByRole("button", { name: "Account", exact: true }).click();
@@ -612,13 +612,19 @@ test("drawer links to the separate Account screen and preserves the last-adminis
   await page
     .getByRole("button", { name: "Cancel account deletion", exact: true })
     .click();
+  await expect(
+    page.getByRole("dialog", {
+      name: "Delete account confirmation",
+      exact: true,
+    }),
+  ).toHaveCount(0);
   expect((await auth.getUser(owner.uid)).uid).toBe(owner.uid);
   expect((await db.doc(`families/${owner.familyId}`).get()).exists).toBe(true);
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth <= 360),
   ).toBe(true);
   await page.screenshot({
-    path: "test-results/polish-account-360.png",
+    path: test.info().outputPath("polish-account-360.png"),
     fullPage: true,
   });
 });
@@ -639,7 +645,7 @@ test("free receipts show the empty state and configurable plan proposals without
     page.getByText(/including pending cleanup|Payments are not enabled yet/),
   ).toHaveCount(0);
   await page.screenshot({
-    path: "test-results/polish-receipts-360.png",
+    path: test.info().outputPath("polish-receipts-360.png"),
     fullPage: true,
   });
   await page
@@ -670,7 +676,7 @@ test("free receipts show the empty state and configurable plan proposals without
     await page.evaluate(() => document.documentElement.scrollWidth <= 360),
   ).toBe(true);
   await page.screenshot({
-    path: "test-results/polish-plans-360.png",
+    path: test.info().outputPath("polish-plans-360.png"),
     fullPage: true,
   });
 });

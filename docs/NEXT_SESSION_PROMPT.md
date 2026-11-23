@@ -1,5 +1,15 @@
 # DailyBudget Next-Session Prompt
 
+## Shared visual refresh — November 23, 2026
+
+The owner's visual brief is implemented on `codex/shared-ui-polish`, stacked above the subscription checkpoint PR #16. See `docs/UI_POLISH.md` for the seven delivery stages, changed files, preview instructions and deliberate exceptions. The existing framework, service calls, financial calculations, database/rules and dependencies are unchanged relative to `2cc60e0`; the requested Account destination reuses the original Settings profile/deletion handlers. Inter uses existing expo-font, with its OFL license bundled. Shared controls, nested budget areas/category sheets, Account, drawer and receipt states use the tokens. Free-family receipt guards and account identity/sole-admin protections remain.
+
+Normal-size white button text uses #0C8573 for AA contrast; #0F9D88 stays the accent. Inputs are now 48px per the latest brief, superseding the earlier 60px preference. Information glyphs remain uniformly 20px with a 48px touch area. Existing Auth photos/initials are used; custom profile-photo storage/avatar persistence is deferred under the explicit no-model/no-storage-change constraint. Unloaded category groups say View categories rather than adding aggregate reads; category defaults and the drawer library's animation remain.
+
+TypeScript/lint, finance14/cloud4/backend-unit20 and web/Android JavaScript exports pass. The initial final Chromium run passed receipts9 and invitation/visual9; account checks passed4 and found one obsolete Family Setup capitalization assertion, corrected to Family setup. Follow-up account and iPhone-configured WebKit checks are in progress. No native binary or physical phone test is claimed.
+
+Keep PR #15 open until owner SMTP secret storage and reviewed Firebase Functions/rules deployment are verified; only the masked secret prompt has been received. PR #16's full GitHub checks passed (run 45237767202), but real store products, native builds, sandbox purchases/notifications and activation are still pending. Payments default disabled. Do not publish this stacked UI independently against old production rules, claim live invitation delivery or move the Milestone 2 tag.
+
 ## Subscription foundation and incoming visual brief — November 23, 2026
 
 The owner supplied the complete subscription specification and selected **direct Google Play / Apple integration**, declining RevenueCat. Proposed USD prices are 4.99/8.99/14.99 monthly, annual 15% discount rounded to 50.90/91.70/152.90; shared family quotas are decimal 2/5/20 GB with a hard 10 MB file cap. Premium alone offers a one-month store-configured trial. No live purchase, price, trial or paid access was activated. The old unanswered pricing question is superseded by this specification.
