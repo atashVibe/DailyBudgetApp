@@ -73,3 +73,24 @@ All automated email tests use local Firebase emulators and a fake mailbox restri
 Local checks passed: TypeScript/lint, finance14/cloud-report4/backend-unit9/rules14/backend-integration52; all 20 Chromium browser flows and the six invitation/Premium cases in iPhone-configured WebKit; production web and Android JavaScript exports. These exports do not establish native binary or physical-device behavior.
 
 Real SMTP delivery, production deployment, physical-device mail-link behavior, checkout and payment lifecycle remain unverified until separately completed.
+
+## Correct sender settings and interrupted-deployment recovery
+
+For the configured Gmail sender, the nonsecret deployment values are `INVITATION_SMTP_USER=dailybudgethub@gmail.com`, `INVITATION_SMTP_HOST=smtp.gmail.com` and `INVITATION_SMTP_PORT=465`. They belong in the ignored `functions/.env.dailybudget-35c26` file; preserve unrelated values when correcting them. The Secret Manager App Password must belong to that sender. Do not print or place it in this file, a command argument or chat.
+
+After an interrupted first function creation, a successful retry can leave the new HTTP service inaccessible. If the live request receives Google's HTML HTTP 403 before the app handler, inspect the function's invocation permissions. The owner can restore the intended HTTP access without rebuilding code:
+
+```bash
+gcloud functions add-invoker-policy-binding familyInvitationsApi --project=dailybudget-35c26 --region=us-west1 --member=allUsers
+gcloud functions add-invoker-policy-binding storeNotifications --project=dailybudget-35c26 --region=us-west1 --member=allUsers
+```
+
+This documented gcloud command handles gen2's underlying Cloud Run service; no `--gen2` flag is needed. It grants invocation only, not access to Firestore, Storage or secrets. The invitation POST still requires the verified Firebase identity/current administrator and email limits; callbacks still require store verification. Source declarations are now explicit so future deployments repair invocation on updates as well. Scheduled maintenance stays separate.
+
+Verify with an empty unauthenticated POST to the invitation endpoint: the expected result is the app's JSON HTTP 401, never a sent email or a successful operation. An actual delivered invitation and phone join still require a separate signed-in test.
+
+Reference: <https://docs.cloud.google.com/sdk/gcloud/reference/functions/add-invoker-policy-binding>.
+
+### Current publication evidence — November 23, 2026
+
+The owner supplied **Deploy complete!** for reviewed `f45d303`, followed by successful invocation-repair bindings on both new services. The invitation unauthenticated POST now returns the app's JSON HTTP 401; receipt access also returns 401, and the store service is reachable (unsupported GET `/` returns Express 404). No probe sent an email or processed a store event. PRs #15/#16/#17 were merged; Pages run 45274648030 succeeded at main `50aa679`, whose source tree matches the reviewed/deployed checkpoint. The actual served bundle contains the new UI and disabled-purchase copy. Real inbox delivery/join and store/native tests remain unverified. No further Cloud Shell setup/deployment is needed solely for this repaired invocation setting; the explicit source declarations preserve it on future deployments.

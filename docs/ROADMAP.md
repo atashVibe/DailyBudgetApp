@@ -2,7 +2,7 @@
 
 ## Active: family plans and visual polish — November 23, 2026
 
-The owner supplied configurable three-tier family prices/quotas, one-month Premium trial and 15% annual proposals, and chose direct Google Play/Apple billing. Trusted verification/quota/downgrade support is prepared with isolated tests; actual store setup, native/device purchases and live deployment remain open. See `docs/SUBSCRIPTIONS_ADMIN.md`. The visual-only brief is implemented in a separate review branch, preserving existing services/accounting/deletion guards; see `docs/UI_POLISH.md` for files, exceptions and previews. No paid checkout or real invitation email delivery is claimed.
+The owner supplied configurable three-tier family prices/quotas, one-month Premium trial and 15% annual proposals, and chose direct Google Play/Apple billing. Trusted verification/quota/downgrade support is deployed with purchasing disabled, and the matching web UI is published. Actual store setup, native/device purchases and payment activation remain open. See `docs/SUBSCRIPTIONS_ADMIN.md`. The visual-only brief is merged and published, preserving existing services/accounting/deletion guards; see `docs/UI_POLISH.md` for files, exceptions and previews. No paid checkout or real invitation email delivery is claimed.
 
 ## Milestone 2 checkpoint — v0.2
 
@@ -71,7 +71,7 @@ The owner supplied the first live report and successful creation of the 14-day d
 
 The `19:21:00Z` follow-up independently confirms the daily/14-day schedule; backup copies are still absent. Both blocked checks report `SERVICE_DISABLED`, but the consumer project was unknown. The corrected report explicitly selects DailyBudget using Google's quota-project header and exposes only a boolean consumer-project match in safe diagnostics. The corrected rerun at `19:26:14Z` verified email privacy as enabled and identified the Budgets API as disabled in DailyBudget. The owner enabled that API; the `19:28:18Z` report reads both configurations. An applicable USD 10 budget already exists with USD 5/9/10 warnings and default billing IAM recipients enabled. Do not create another budget. Budget period/scope, actual email delivery, backup copies and restore remain unverified.
 
-## Premium entry points and emailed invitations — prepared
+## Premium entry points and emailed invitations — published; inbox test pending
 
 - [x] Add visible Upgrade family to Premium actions to family/per-entry receipt viewers and an honest plan page with checkout disabled until payments are implemented.
 - [x] Explain the existing 30-day receipt read/download/export grace period after access ends, subsequent cleanup and preservation of budget entries.
@@ -79,7 +79,7 @@ The `19:21:00Z` follow-up independently confirms the daily/14-day schedule; back
 - [x] Preserve invitation links through Google/email signup/sign-in/recovery; require verified recipient email and explicit joining.
 - [x] Close expired/consumed invite and former-creator membership/deletion gaps; atomically create new families and preserve existing accounts after failed signup.
 - [x] Verify isolated unit/rules/backend and all 20 Chromium browser flows (9 existing receipt/sign-in, 6 invitation/Premium, 5 account-deletion).
-- [ ] Set up the sender credential securely, deploy reviewed Functions/rules, then publish the matching frontend. Coordinate this order because atomic family creation requires matching rules.
+- [x] Set up the sender credential securely, deploy reviewed Functions/rules, then publish the matching frontend (owner confirmed deployment, invocation repaired, Pages run 45274648030 succeeded). Real inbox delivery remains the next separate gate.
 - [ ] Verify real inbox delivery and the emailed join link with spare accounts on actual phones. Automated tests send no real mail.
 
 See `docs/PREMIUM_INVITATIONS.md` for behavior, security, secure activation and remaining limitations. Premium price/period proposals and direct-store billing are now specified. Inclusion in the first public store release still needs confirmation; do not enable charges or claim live checkout works.
