@@ -174,22 +174,20 @@ async function login(page, account, google = true) {
     await page
       .locator('input[placeholder="Enter your password"]:visible')
       .fill(account.password);
-    await page.getByRole("button", { name: "Sign In", exact: true }).click();
+    await page.getByRole("button", { name: "Sign in", exact: true }).click();
   }
-  await expect(page.getByText("Budget Overview", { exact: true })).toBeVisible({
+  await expect(page.getByText("Budget overview", { exact: true })).toBeVisible({
     timeout: 20000,
   });
 }
 async function openDelete(page) {
   await page.getByRole("button", { name: "Show navigation menu" }).click();
+  await page.getByRole("button", { name: "Account", exact: true }).click();
   await page
-    .getByRole("button", { name: "Family Settings", exact: true })
-    .click();
-  await page
-    .getByRole("button", { name: "Delete Account", exact: true })
+    .getByRole("button", { name: "Delete account", exact: true })
     .click();
   const button = page.getByRole("button", {
-    name: "Permanently Delete Account",
+    name: "Delete account permanently",
     exact: true,
   });
   await expect(button).toBeDisabled();
@@ -330,7 +328,7 @@ test("same Google user can delete their profile while another family member keep
   });
   await expect(google).toBeEnabled({ timeout: 30000 });
   await chooseGoogle(await googlePopup(page, () => google.click()), a.email);
-  await expect(page.getByText("Family Setup", { exact: true })).toBeVisible({
+  await expect(page.getByText("Family setup", { exact: true })).toBeVisible({
     timeout: 20000,
   });
   const recreated = await adminAuth.getUserByEmail(a.email);

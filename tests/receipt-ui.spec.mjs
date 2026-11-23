@@ -26,8 +26,8 @@ test("Google popup sign-in can be cancelled, retried and restored without enteri
   await page.goto("/login", { waitUntil: "domcontentloaded" });
   // Navigate once so React has hydrated before invoking the click handler.
   await waitForLoginHandlers(page);
-  await page.getByText("Forgot Password?", { exact: true }).click();
-  await page.getByText("Back to Sign In", { exact: true }).click();
+  await page.getByText("Forgot password?", { exact: true }).click();
+  await page.getByText("Back to sign in", { exact: true }).click();
   const google = page.getByRole("button", {
     name: "Continue with Google",
     exact: true,
@@ -55,11 +55,11 @@ test("Google popup sign-in can be cancelled, retried and restored without enteri
   await popup.locator("#display-name-input").fill("Demo Google User");
   await popup.getByRole("button", { name: "Sign in with Google.com" }).click();
   await expect(
-    page.getByText("Budget Overview", { exact: true }),
+    page.getByText("Budget overview", { exact: true }),
   ).toBeVisible();
   await page.goto("/login");
   await expect(
-    page.getByText("Budget Overview", { exact: true }),
+    page.getByText("Budget overview", { exact: true }),
   ).toBeVisible();
   await expect(page.getByPlaceholder("Enter your email")).toHaveCount(0);
 });
@@ -81,11 +81,11 @@ test("shared family receipts work through the real web interface against isolate
   await page.goto("/login");
   // Confirm client-side navigation is hydrated before filling controlled fields.
   await waitForLoginHandlers(page);
-  await page.getByText("Forgot Password?", { exact: true }).click();
+  await page.getByText("Forgot password?", { exact: true }).click();
   await expect(
     page.getByText("Reset your password", { exact: true }),
   ).toBeVisible();
-  await page.getByText("Back to Sign In", { exact: true }).click();
+  await page.getByText("Back to sign in", { exact: true }).click();
   await page
     .locator('input[placeholder="Enter your email"]:visible')
     .fill("receipts@example.test");
@@ -93,21 +93,21 @@ test("shared family receipts work through the real web interface against isolate
     .locator('input[placeholder="Enter your password"]:visible')
     .fill("EmulatorOnly123!");
   await page
-    .getByText("Sign In", { exact: true })
+    .getByText("Sign in", { exact: true })
     .filter({ visible: true })
     .click();
   await expect(
-    page.getByText("Budget Overview", { exact: true }),
+    page.getByText("Budget overview", { exact: true }),
   ).toBeVisible();
   await page.getByPlaceholder("0.00").fill("12.50");
-  await page.getByText("Save Entry", { exact: true }).click();
+  await page.getByText("Save entry", { exact: true }).click();
   await expect(page.getByLabel(/\$12\.50 - Groceries/).first()).toBeVisible();
   await page
     .getByLabel("Manage family receipts for this entry")
     .first()
     .click();
   await expect(
-    page.getByText("Receipt administrator — family access included", {
+    page.getByText("Receipt uploads are included for your family.", {
       exact: false,
     }),
   ).toBeVisible();
@@ -180,7 +180,7 @@ test("shared family receipts work through the real web interface against isolate
   await page.getByText("Close receipts", { exact: true }).click();
   await page.goto("/receipts");
   await expect(
-    page.getByText("Family Receipts", { exact: true }).last(),
+    page.getByText("Family receipts", { exact: true }).last(),
   ).toBeVisible();
   await page.getByText("Refresh storage overview", { exact: true }).click();
   await expect(
@@ -204,11 +204,11 @@ test("family admins require category receipts and entry-form attachments gate sa
     .toBuffer();
   await page.goto("/login");
   await waitForLoginHandlers(page);
-  await page.getByText("Forgot Password?", { exact: true }).click();
+  await page.getByText("Forgot password?", { exact: true }).click();
   await expect(
     page.getByText("Reset your password", { exact: true }),
   ).toBeVisible();
-  await page.getByText("Back to Sign In", { exact: true }).click();
+  await page.getByText("Back to sign in", { exact: true }).click();
   await page
     .locator('input[placeholder="Enter your email"]:visible')
     .fill("receipts@example.test");
@@ -216,11 +216,11 @@ test("family admins require category receipts and entry-form attachments gate sa
     .locator('input[placeholder="Enter your password"]:visible')
     .fill("EmulatorOnly123!");
   await page
-    .getByText("Sign In", { exact: true })
+    .getByText("Sign in", { exact: true })
     .filter({ visible: true })
     .click();
   await expect(
-    page.getByText("Budget Overview", { exact: true }),
+    page.getByText("Budget overview", { exact: true }),
   ).toBeVisible();
   await page.goto("/settings");
   const requirement = page.getByRole("switch", {
@@ -230,14 +230,10 @@ test("family admins require category receipts and entry-form attachments gate sa
   await expect(requirement).toBeVisible();
   if (await requirement.isChecked()) {
     await requirement.uncheck();
-    await expect(
-      page.getByText("Receipt requirement updated.", { exact: true }),
-    ).toBeVisible();
+    await expect(page.getByText("Saved", { exact: true })).toBeVisible();
   }
   await requirement.check();
-  await expect(
-    page.getByText("Receipt requirement updated.", { exact: true }),
-  ).toBeVisible();
+  await expect(page.getByText("Saved", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Show navigation menu" }).click();
   await page.getByRole("button", { name: "Dashboard", exact: true }).click();
   await expect(
@@ -245,10 +241,10 @@ test("family admins require category receipts and entry-form attachments gate sa
       exact: true,
     }),
   ).toBeVisible();
-  const save = page.getByRole("button", { name: "Save Entry", exact: true });
+  const save = page.getByRole("button", { name: "Save entry", exact: true });
   await page.getByPlaceholder("0.00").fill("7.25");
   await expect(save).toBeDisabled();
-  await expect(save).toHaveCSS("background-color", "rgb(156, 163, 175)");
+  await expect(save).toHaveCSS("background-color", "rgb(229, 231, 235)");
   await page.screenshot({
     path: "test-results/required-receipt-disabled.png",
     fullPage: true,
@@ -316,7 +312,7 @@ test("family admins require category receipts and entry-form attachments gate sa
     }),
   ).toBeVisible();
   const update = page.getByRole("button", {
-    name: "Update Entry",
+    name: "Update entry",
     exact: true,
   });
   await expect(update).toBeEnabled();
@@ -368,11 +364,11 @@ test("free families see Premium information while ordinary Premium-family member
   });
   await page.goto("/login");
   await waitForLoginHandlers(page);
-  await page.getByText("Forgot Password?", { exact: true }).click();
+  await page.getByText("Forgot password?", { exact: true }).click();
   await expect(
     page.getByText("Reset your password", { exact: true }),
   ).toBeVisible();
-  await page.getByText("Back to Sign In", { exact: true }).click();
+  await page.getByText("Back to sign in", { exact: true }).click();
   await page
     .locator('input[placeholder="Enter your email"]:visible')
     .fill("receipts@example.test");
@@ -380,11 +376,11 @@ test("free families see Premium information while ordinary Premium-family member
     .locator('input[placeholder="Enter your password"]:visible')
     .fill("EmulatorOnly123!");
   await page
-    .getByText("Sign In", { exact: true })
+    .getByText("Sign in", { exact: true })
     .filter({ visible: true })
     .click();
   await expect(
-    page.getByText("Budget Overview", { exact: true }),
+    page.getByText("Budget overview", { exact: true }),
   ).toBeVisible();
   const info = page.getByRole("button", {
     name: "About Premium receipt attachments",
@@ -401,7 +397,7 @@ test("free families see Premium information while ordinary Premium-family member
     }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "Save Entry", exact: true }),
+    page.getByRole("button", { name: "Save entry", exact: true }),
   ).toBeEnabled();
   await page.screenshot({
     path: "test-results/free-family-receipt-info.png",
@@ -409,21 +405,23 @@ test("free families see Premium information while ordinary Premium-family member
   });
   await page.getByRole("button", { name: "Show navigation menu" }).click();
   await page
-    .getByRole("button", { name: "Family Settings", exact: true })
+    .getByRole("button", { name: "Family settings", exact: true })
     .click();
-  await expect(page.getByText("Categories", { exact: true })).toBeVisible();
+  await expect(page.getByText("Budget areas", { exact: true })).toBeVisible();
   await expect(
     page.getByRole("switch", {
       name: "Require receipt for Groceries",
       exact: true,
     }),
   ).toBeDisabled();
+  await page.getByRole("button", { name: /Add category to / }).click();
   await expect(
-    page.getByRole("switch", {
-      name: "Require receipt for new category",
-      exact: true,
-    }),
+    page.getByRole("switch", { name: "Require a receipt", exact: true }),
   ).toBeDisabled();
+  await page
+    .getByRole("button", { name: "Cancel", exact: true })
+    .last()
+    .click();
   premiumFamily = true;
   await page.getByRole("button", { name: "Show navigation menu" }).click();
   await page.getByRole("button", { name: "Dashboard", exact: true }).click();
@@ -446,11 +444,11 @@ test("long receipt filenames keep Remove inside a narrow form and dashboard Back
   await page.setViewportSize({ width: 320, height: 850 });
   await page.goto("/login");
   await waitForLoginHandlers(page);
-  await page.getByText("Forgot Password?", { exact: true }).click();
+  await page.getByText("Forgot password?", { exact: true }).click();
   await expect(
     page.getByText("Reset your password", { exact: true }),
   ).toBeVisible();
-  await page.getByText("Back to Sign In", { exact: true }).click();
+  await page.getByText("Back to sign in", { exact: true }).click();
   await page
     .locator('input[placeholder="Enter your email"]:visible')
     .fill("receipts@example.test");
@@ -458,11 +456,11 @@ test("long receipt filenames keep Remove inside a narrow form and dashboard Back
     .locator('input[placeholder="Enter your password"]:visible')
     .fill("EmulatorOnly123!");
   await page
-    .getByText("Sign In", { exact: true })
+    .getByText("Sign in", { exact: true })
     .filter({ visible: true })
     .click();
   await expect(
-    page.getByText("Budget Overview", { exact: true }),
+    page.getByText("Budget overview", { exact: true }),
   ).toBeVisible();
   await page.getByPlaceholder("0.00").fill("8.50");
   await page.getByPlaceholder("Optional note").fill("Keep this unsaved entry");
@@ -506,32 +504,39 @@ test("long receipt filenames keep Remove inside a narrow form and dashboard Back
   // Reload also preserves the authenticated session.
   await page.reload();
   await expect(
-    page.getByText("Budget Overview", { exact: true }),
+    page.getByText("Budget overview", { exact: true }),
   ).toBeVisible();
   // Back from Settings returns normally, without signing out or showing this dialog.
   await page.getByRole("button", { name: "Show navigation menu" }).click();
   await page
-    .getByRole("button", { name: "Family Settings", exact: true })
+    .getByRole("button", { name: "Family settings", exact: true })
     .click();
-  await expect(page.getByText("Categories", { exact: true })).toBeVisible();
+  await expect(page.getByText("Budget areas", { exact: true })).toBeVisible();
   await page.goBack();
   await expect(
-    page.getByText("Budget Overview", { exact: true }),
+    page.getByText("Budget overview", { exact: true }),
   ).toBeVisible();
   await expect(
     page.getByText("Sign out of DailyBudget?", { exact: true }),
   ).toHaveCount(0);
   await page.goForward();
-  await expect(page.getByText("Categories", { exact: true })).toBeVisible();
+  await expect(page.getByText("Budget areas", { exact: true })).toBeVisible();
   await page.goBack();
   await expect(
-    page.getByText("Budget Overview", { exact: true }),
+    page.getByText("Budget overview", { exact: true }),
   ).toBeVisible();
   await expect(
     page.getByText("Sign out of DailyBudget?", { exact: true }),
   ).toHaveCount(0);
   await page.goBack();
-  await page.getByRole("button", { name: "Sign out", exact: true }).click();
+  const signOutDialog = page.getByRole("dialog", {
+    name: "Sign out confirmation",
+    exact: true,
+  });
+  await expect(signOutDialog).toBeVisible();
+  await signOutDialog
+    .getByRole("button", { name: "Sign out", exact: true })
+    .click();
   await expect(
     page.locator('input[placeholder="Enter your email"]:visible'),
   ).toBeVisible();
@@ -548,11 +553,11 @@ test("compact paperclip opens one system picker for photos and PDFs, cancels saf
   expect(baseURL).toMatch(/^http:\/\/localhost:809[134]$/);
   await page.goto("/login");
   await waitForLoginHandlers(page);
-  await page.getByText("Forgot Password?", { exact: true }).click();
+  await page.getByText("Forgot password?", { exact: true }).click();
   await expect(
     page.getByText("Reset your password", { exact: true }),
   ).toBeVisible();
-  await page.getByText("Back to Sign In", { exact: true }).click();
+  await page.getByText("Back to sign in", { exact: true }).click();
   await page
     .locator('input[placeholder="Enter your email"]:visible')
     .fill("receipts@example.test");
@@ -560,11 +565,11 @@ test("compact paperclip opens one system picker for photos and PDFs, cancels saf
     .locator('input[placeholder="Enter your password"]:visible')
     .fill("EmulatorOnly123!");
   await page
-    .getByText("Sign In", { exact: true })
+    .getByText("Sign in", { exact: true })
     .filter({ visible: true })
     .click();
   await expect(
-    page.getByText("Budget Overview", { exact: true }),
+    page.getByText("Budget overview", { exact: true }),
   ).toBeVisible();
   await page.getByPlaceholder("0.00").fill("6.00");
   const clip = page.getByRole("button", {
@@ -611,7 +616,7 @@ test("compact paperclip opens one system picker for photos and PDFs, cancels saf
     path: "test-results/compact-paperclip.png",
     fullPage: true,
   });
-  await page.getByRole("button", { name: "Save Entry", exact: true }).click();
+  await page.getByRole("button", { name: "Save entry", exact: true }).click();
   await expect(page.getByLabel(/\$6\.00 - Groceries/)).toHaveCount(1);
   await page
     .getByLabel("Manage family receipts for this entry")
@@ -632,37 +637,40 @@ test("reference dashboard has tall fields, editable category icons and restores 
   expect(baseURL).toMatch(/^http:\/\/localhost:809[134]$/);
   await page.goto("/login");
   await waitForLoginHandlers(page);
-  await page.getByText("Forgot Password?", { exact: true }).click();
-  await page.getByText("Back to Sign In", { exact: true }).click();
+  await page.getByText("Forgot password?", { exact: true }).click();
+  await page.getByText("Back to sign in", { exact: true }).click();
   await page
     .locator('input[placeholder="Enter your email"]:visible')
     .fill("receipts@example.test");
   await page
     .locator('input[placeholder="Enter your password"]:visible')
     .fill("EmulatorOnly123!");
-  await page.getByRole("button", { name: "Sign In", exact: true }).click();
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(
-    page.getByText("Budget Overview", { exact: true }),
+    page.getByText("Budget overview", { exact: true }),
   ).toBeVisible();
   expect(
     (await page.getByPlaceholder("0.00").boundingBox()).height,
-  ).toBeGreaterThanOrEqual(60);
+  ).toBeGreaterThanOrEqual(48);
   await page.getByRole("button", { name: "Budget period" }).click();
-  await page.getByRole("button", { name: "This Year", exact: true }).click();
+  await page.getByRole("button", { name: "This year", exact: true }).click();
   await expect(
     page.getByText("Whole year budget", { exact: false }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Budget period" }).click();
-  await page.getByRole("button", { name: "This Month", exact: true }).click();
+  await page.getByRole("button", { name: "This month", exact: true }).click();
   await page.getByRole("button", { name: "Toggle entry form" }).click();
   await expect(page.getByPlaceholder("0.00")).toHaveCount(0);
   await page.getByRole("button", { name: "Toggle entry form" }).click();
   await expect(page.getByPlaceholder("0.00")).toBeVisible();
   await page.getByRole("button", { name: "Show navigation menu" }).click();
   await page
-    .getByRole("button", { name: "Family Settings", exact: true })
+    .getByRole("button", { name: "Family settings", exact: true })
     .click();
-  await page.getByText("Choose icon", { exact: true }).first().click();
+  await page
+    .getByRole("button", { name: /Change icon for / })
+    .first()
+    .click();
   await page.getByLabel("Search category icons").fill("cart");
   await page
     .getByRole("button", { name: "Choose cart-outline", exact: true })
@@ -671,7 +679,7 @@ test("reference dashboard has tall fields, editable category icons and restores 
     page.getByText("Choose a category icon", { exact: true }),
   ).toHaveCount(0);
   await page.goto("/login"); // A saved Android home-screen link must restore, not demand another password.
-  await expect(page.getByText("Budget Overview", { exact: true })).toBeVisible({
+  await expect(page.getByText("Budget overview", { exact: true })).toBeVisible({
     timeout: 20000,
   });
   await expect(
@@ -696,7 +704,7 @@ test("reference dashboard has tall fields, editable category icons and restores 
   await page
     .getByRole("button", { name: "Retry loading account", exact: true })
     .click();
-  await expect(page.getByText("Budget Overview", { exact: true })).toBeVisible({
+  await expect(page.getByText("Budget overview", { exact: true })).toBeVisible({
     timeout: 22000,
   });
 });
@@ -722,24 +730,24 @@ test("phone controls stay aligned and Edit reveals the expanded form", async ({
   });
   await page.goto("/login");
   await waitForLoginHandlers(page);
-  await page.getByText("Forgot Password?", { exact: true }).click();
-  await page.getByText("Back to Sign In", { exact: true }).click();
+  await page.getByText("Forgot password?", { exact: true }).click();
+  await page.getByText("Back to sign in", { exact: true }).click();
   await page
     .locator('input[placeholder="Enter your email"]:visible')
     .fill("receipts@example.test");
   await page
     .locator('input[placeholder="Enter your password"]:visible')
     .fill("EmulatorOnly123!");
-  await page.getByRole("button", { name: "Sign In", exact: true }).click();
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(
-    page.getByText("Budget Overview", { exact: true }),
+    page.getByText("Budget overview", { exact: true }),
   ).toBeVisible();
   const date = page.getByLabel("Entry date", { exact: true });
   const amount = page.getByPlaceholder("0.00");
   await expect(date).toBeVisible();
   const dateBox = await date.boundingBox(),
     amountBox = await amount.boundingBox();
-  expect(Math.abs(dateBox.height - 60)).toBeLessThanOrEqual(1);
+  expect(Math.abs(dateBox.height - 48)).toBeLessThanOrEqual(1);
   expect(Math.abs(dateBox.height - amountBox.height)).toBeLessThanOrEqual(1);
   expect(Math.abs(dateBox.y - amountBox.y)).toBeLessThanOrEqual(1);
   const assertSameLine = async (left, right) => {
@@ -800,12 +808,12 @@ test("phone controls stay aligned and Edit reveals the expanded form", async ({
   await expect(info).toHaveAttribute("aria-expanded", "false");
   const monthRow = page.getByTestId("month-progress-row");
   await assertSameLine(
-    monthRow.getByText("Month Progress", { exact: true }),
+    monthRow.getByText("Month progress", { exact: true }),
     monthRow.getByText(/\d+ of \d+ days/),
   );
   const yearRow = page.getByTestId("yearly-spending-row");
   await assertSameLine(
-    yearRow.getByText("Yearly Spending", { exact: true }),
+    yearRow.getByText("Yearly spending", { exact: true }),
     yearRow.getByText(/\$/),
   );
   const view = await page.evaluate(() => ({
@@ -819,7 +827,7 @@ test("phone controls stay aligned and Edit reveals the expanded form", async ({
   expect(view.overflowing).toBe(false);
   await amount.fill("7.45");
   await page.getByPlaceholder("Optional note").fill("Phone edit regression");
-  await page.getByRole("button", { name: "Save Entry", exact: true }).click();
+  await page.getByRole("button", { name: "Save entry", exact: true }).click();
   // Collapse first: Edit must both expand the card and scroll the actual page.
   await page.getByRole("button", { name: "Toggle entry form" }).click();
   const entry = page.getByLabel(/\$7\.45 -/).first();
@@ -835,7 +843,7 @@ test("phone controls stay aligned and Edit reveals the expanded form", async ({
         (await page.getByText("Edit Entry", { exact: true }).boundingBox()).y,
     )
     .toBeLessThan(160);
-  await page.getByText("Cancel Edit", { exact: true }).click();
+  await page.getByText("Cancel edit", { exact: true }).click();
   premium = true;
   await page.reload();
   const attach = page.getByRole("button", {
@@ -860,17 +868,17 @@ test("a brief mobile cloud interruption recovers without reporting a sign-in fai
   expect(baseURL).toMatch(/^http:\/\/localhost:809[134]$/);
   await page.goto("/login");
   await waitForLoginHandlers(page);
-  await page.getByText("Forgot Password?", { exact: true }).click();
-  await page.getByText("Back to Sign In", { exact: true }).click();
+  await page.getByText("Forgot password?", { exact: true }).click();
+  await page.getByText("Back to sign in", { exact: true }).click();
   await page
     .locator('input[placeholder="Enter your email"]:visible')
     .fill("receipts@example.test");
   await page
     .locator('input[placeholder="Enter your password"]:visible')
     .fill("EmulatorOnly123!");
-  await page.getByRole("button", { name: "Sign In", exact: true }).click();
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(
-    page.getByText("Budget Overview", { exact: true }),
+    page.getByText("Budget overview", { exact: true }),
   ).toBeVisible();
   await page.route("**/google.firestore.v1.Firestore/**", (route) =>
     route.abort(),
@@ -897,7 +905,7 @@ test("a brief mobile cloud interruption recovers without reporting a sign-in fai
   }, 12000);
   try {
     await expect(
-      page.getByText("Budget Overview", { exact: true }),
+      page.getByText("Budget overview", { exact: true }),
     ).toBeVisible({ timeout: 40000 });
     expect(await page.evaluate(() => window.connectionErrorShown)).toBe(false);
     await expect(

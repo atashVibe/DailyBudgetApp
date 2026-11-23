@@ -87,9 +87,9 @@ async function login(page, account, inviteCode) {
   await page
     .getByPlaceholder("Enter your password", { exact: true })
     .fill(account.password);
-  await page.getByRole("button", { name: "Sign In", exact: true }).click();
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(
-    page.getByText(inviteCode ? "Join a family" : "Budget Overview", {
+    page.getByText(inviteCode ? "Join a family" : "Budget overview", {
       exact: true,
     }),
   ).toBeVisible({ timeout: 30000 });
@@ -210,7 +210,7 @@ test("emailed code and link survive Google sign-in; joining is explicit and emai
       .getByRole("button", { name: "Join this family", exact: true })
       .click();
     await expect(
-      invited.getByText("Budget Overview", { exact: true }),
+      invited.getByText("Budget overview", { exact: true }),
     ).toBeVisible();
     const profile = (await db.doc(`users/${user.uid}`).get()).data();
     expect(profile.activeFamilyId).toBe(owner.familyId);
@@ -252,7 +252,7 @@ test("password signup from an invitation grants no family access until email is 
       .getByPlaceholder("Confirm your password", { exact: true })
       .fill("EmulatorOnly123!");
     await invited
-      .getByRole("button", { name: "Create Account", exact: true })
+      .getByRole("button", { name: "Create account", exact: true })
       .click();
     await expect(
       invited.getByRole("button", {
@@ -299,7 +299,7 @@ test("password signup from an invitation grants no family access until email is 
       .getByRole("button", { name: "Join this family", exact: true })
       .click();
     await expect(
-      invited.getByText("Budget Overview", { exact: true }),
+      invited.getByText("Budget overview", { exact: true }),
     ).toBeVisible();
     expect(
       (await db.doc(`users/${user.uid}`).get()).data().activeFamilyId,
@@ -336,7 +336,7 @@ test("new-family creation is atomic and a failed signup cannot delete an existin
   const owner = await seed("signup-protection");
   await login(page, owner);
   await page.goto("/signup", { waitUntil: "load" });
-  await page.getByText("Start Family", { exact: true }).click();
+  await page.getByText("Start family", { exact: true }).click();
   await page
     .getByPlaceholder("Example: Smith Family")
     .fill("Must not be created");
@@ -350,7 +350,7 @@ test("new-family creation is atomic and a failed signup cannot delete an existin
     .getByPlaceholder("Confirm your password", { exact: true })
     .fill(owner.password);
   await page
-    .getByRole("button", { name: "Create Account", exact: true })
+    .getByRole("button", { name: "Create account", exact: true })
     .click();
   await expect(
     page.getByText(/already.*use|already.*registered/i),
@@ -362,7 +362,7 @@ test("new-family creation is atomic and a failed signup cannot delete an existin
   try {
     const recipient = `new-family-${run}@example.test`;
     await fresh.goto("/signup", { waitUntil: "load" });
-    await fresh.getByText("Start Family", { exact: true }).click();
+    await fresh.getByText("Start family", { exact: true }).click();
     await fresh
       .getByPlaceholder("Example: Smith Family")
       .fill("Atomic signup family");
@@ -376,10 +376,10 @@ test("new-family creation is atomic and a failed signup cannot delete an existin
       .getByPlaceholder("Confirm your password", { exact: true })
       .fill(owner.password);
     await fresh
-      .getByRole("button", { name: "Create Account", exact: true })
+      .getByRole("button", { name: "Create account", exact: true })
       .click();
     await expect(
-      fresh.getByText("Budget Overview", { exact: true }),
+      fresh.getByText("Budget overview", { exact: true }),
     ).toBeVisible({ timeout: 30000 });
     const user = await auth.getUserByEmail(recipient);
     const profile = (await db.doc(`users/${user.uid}`).get()).data();
@@ -413,17 +413,17 @@ test("a signed-in account without a profile can create its initial family atomic
   await page
     .getByPlaceholder("Enter your password", { exact: true })
     .fill(account.password);
-  await page.getByRole("button", { name: "Sign In", exact: true }).click();
-  await expect(page.getByText("Family Setup", { exact: true })).toBeVisible();
-  await page.getByText("Start Family", { exact: true }).click();
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page.getByText("Family setup", { exact: true })).toBeVisible();
+  await page.getByText("Start family", { exact: true }).click();
   await page
     .getByPlaceholder("Example: Smith Family")
     .fill("Atomic setup family");
   await page
-    .getByRole("button", { name: "Create Family", exact: true })
+    .getByRole("button", { name: "Create family", exact: true })
     .click();
   await expect(
-    page.getByText("Budget Overview", { exact: true }),
+    page.getByText("Budget overview", { exact: true }),
   ).toBeVisible();
   const profile = (await db.doc(`users/${account.uid}`).get()).data();
   expect(
@@ -437,4 +437,240 @@ test("a signed-in account without a profile can create its initial family atomic
         .get()
     ).size,
   ).toBe(1);
+});
+
+test("360px settings save and cancel the budget, preserve RTL names and validate nested category sheets", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  const owner = await seed("polish-settings");
+  await login(page, owner);
+  await page.goto("/settings", { waitUntil: "domcontentloaded" });
+  await expect(
+    page.getByRole("button", { name: "Edit daily budget", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Delete account", exact: true }),
+  ).toHaveCount(0);
+  await page
+    .getByRole("button", { name: "Edit daily budget", exact: true })
+    .click();
+  await page.getByLabel("Daily budget amount", { exact: true }).fill("45");
+  await page.getByRole("button", { name: "Cancel", exact: true }).click();
+  expect(
+    (await db.doc(`families/${owner.familyId}`).get()).data().dailyBudget,
+  ).toBe(30);
+  await page
+    .getByRole("button", { name: "Edit daily budget", exact: true })
+    .click();
+  await page.getByLabel("Daily budget amount", { exact: true }).fill("45");
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(page.getByText("Budget updated", { exact: true })).toBeVisible();
+  expect(
+    (await db.doc(`families/${owner.familyId}`).get()).data().dailyBudget,
+  ).toBe(45);
+  await page.getByLabel("Your name", { exact: true }).fill("علی تهرانی");
+  await page.getByRole("button", { name: "Save name", exact: true }).click();
+  await expect(page.getByText("Name saved", { exact: true })).toBeVisible();
+  expect((await auth.getUser(owner.uid)).displayName).toBe("علی تهرانی");
+  await expect(
+    page.getByRole("switch", {
+      name: "Require receipt for Grocery",
+      exact: true,
+    }),
+  ).toBeDisabled();
+  await page.getByRole("button", { name: /Add category to / }).click();
+  for (const type of ["Income", "Expense", "Refund", "Cashback"])
+    await expect(
+      page.getByRole("radio", { name: type, exact: true }),
+    ).toBeVisible();
+  await expect(
+    page.getByRole("radio", { name: "Expense", exact: true }),
+  ).toBeChecked();
+  await page.getByRole("button", { name: "Add category", exact: true }).click();
+  await expect(
+    page.getByText("Enter a category name.", { exact: true }),
+  ).toBeVisible();
+  await page.getByLabel("Category name", { exact: true }).fill("Grocery");
+  await page.getByRole("button", { name: "Add category", exact: true }).click();
+  await expect(
+    page.getByText("A category with this name already exists in this area.", {
+      exact: true,
+    }),
+  ).toBeVisible();
+  await page
+    .getByLabel("Category name", { exact: true })
+    .fill("Refund credits");
+  await page.getByRole("radio", { name: "Refund", exact: true }).click();
+  await expect(
+    page.getByRole("switch", { name: "Require a receipt", exact: true }),
+  ).toBeDisabled();
+  await page.screenshot({
+    path: "test-results/polish-category-sheet-360.png",
+    fullPage: true,
+  });
+  await page.getByRole("button", { name: "Add category", exact: true }).click();
+  await expect(page.getByText("New category", { exact: true })).toHaveCount(0);
+  const added = await db
+    .collection("categories")
+    .where("familyId", "==", owner.familyId)
+    .where("name", "==", "Refund credits")
+    .get();
+  expect(added.size).toBe(1);
+  expect(added.docs[0].data().type).toBe("refund");
+  await page
+    .getByRole("button", {
+      name: "Category actions for Refund credits",
+      exact: true,
+    })
+    .click();
+  await page
+    .getByRole("button", { name: "Set as default", exact: true })
+    .click();
+  await expect
+    .poll(async () => (await added.docs[0].ref.get()).data().isDefault)
+    .toBe(true);
+  await page.getByRole("button", { name: "+ Add area", exact: true }).click();
+  await page.getByLabel("Area name", { exact: true }).fill("Travel");
+  await page.getByRole("button", { name: "Add area", exact: true }).click();
+  await expect(
+    page.getByRole("button", {
+      name: "Toggle budget area Travel",
+      exact: true,
+    }),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth <= 360),
+  ).toBe(true);
+  await expect(page.getByText("New budget area", { exact: true })).toHaveCount(
+    0,
+  );
+  await page
+    .getByRole("button", { name: "Edit daily budget", exact: true })
+    .scrollIntoViewIfNeeded();
+  await page.screenshot({
+    path: "test-results/polish-settings-360.png",
+    fullPage: true,
+  });
+});
+test("drawer links to the separate Account screen and preserves the last-administrator deletion guard", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  const owner = await seed("polish-account"),
+    member = await seed("polish-account-member", false);
+  await db.doc(`familyMembers/${owner.familyId}_${member.uid}`).set({
+    familyId: owner.familyId,
+    userId: member.uid,
+    email: member.email,
+    status: "active",
+    role: "member",
+  });
+  await db.doc(`users/${member.uid}`).set({
+    activeFamilyId: owner.familyId,
+    email: member.email,
+    role: "member",
+  });
+  await login(page, owner);
+  await page
+    .getByRole("button", { name: "Show navigation menu", exact: true })
+    .click();
+  await expect(
+    page.getByText("Invitation polish-account", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Switch User", exact: true }),
+  ).toHaveCount(0);
+  await page.screenshot({
+    path: "test-results/polish-drawer-360.png",
+    fullPage: true,
+  });
+  await page.getByRole("button", { name: "Account", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Edit your name", exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Delete account", exact: true })
+    .click();
+  await page.getByPlaceholder("DELETE", { exact: true }).fill("DELETE");
+  await page
+    .getByPlaceholder("Enter your password", { exact: true })
+    .filter({ visible: true })
+    .fill(owner.password);
+  await expect(
+    page.getByText(
+      "You are the only administrator of a family that still has members. Invite one of them as an administrator before deleting your account.",
+      { exact: true },
+    ),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", {
+      name: "Delete account permanently",
+      exact: true,
+    }),
+  ).toBeDisabled();
+  await page
+    .getByRole("button", { name: "Cancel account deletion", exact: true })
+    .click();
+  expect((await auth.getUser(owner.uid)).uid).toBe(owner.uid);
+  expect((await db.doc(`families/${owner.familyId}`).get()).exists).toBe(true);
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth <= 360),
+  ).toBe(true);
+  await page.screenshot({
+    path: "test-results/polish-account-360.png",
+    fullPage: true,
+  });
+});
+test("free receipts show the empty state and configurable plan proposals without activating paid access", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  const owner = await seed("polish-receipts");
+  await login(page, owner);
+  await page.goto("/receipts", { waitUntil: "domcontentloaded" });
+  await expect(
+    page.getByText("No receipts yet", { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText("Receipt storage", { exact: true })).toHaveCount(
+    0,
+  );
+  await expect(
+    page.getByText(/including pending cleanup|Payments are not enabled yet/),
+  ).toHaveCount(0);
+  await page.screenshot({
+    path: "test-results/polish-receipts-360.png",
+    fullPage: true,
+  });
+  await page
+    .getByRole("button", { name: "Upgrade family to Premium", exact: true })
+    .click();
+  await expect(page.getByText("Premium Plus", { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Choose Premium Pro", exact: true }),
+  ).toBeDisabled();
+  await page.getByRole("button", { name: "Yearly", exact: true }).click();
+  await expect(
+    page.getByText("Proposed: $50.90 USD / year", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Proposed: $91.70 USD / year", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Proposed: $152.90 USD / year", { exact: true }),
+  ).toBeVisible();
+  expect(
+    (await db.doc(`familySubscriptions/${owner.familyId}`).get()).exists,
+  ).toBe(false);
+  expect(
+    (await db.doc(`receiptFamilyAccess/${owner.familyId}`).get()).data().plan ||
+      "free",
+  ).toBe("free");
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth <= 360),
+  ).toBe(true);
+  await page.screenshot({
+    path: "test-results/polish-plans-360.png",
+    fullPage: true,
+  });
 });
