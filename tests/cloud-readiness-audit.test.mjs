@@ -2,8 +2,116 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   collectCloudReadiness,
+  collectInvitationMailAudit,
   createGoogleReader,
 } from "../functions/scripts/cloud-readiness-audit.mjs";
+
+test("mail diagnostics project only delivery outcomes and never reveal sender values, recipients, codes or tokens", async () => {
+  const hidden = "PRIVATE_VALUE_MUST_NOT_APPEAR";
+  const calls = [];
+  const report = await collectInvitationMailAudit(
+    createGoogleReader(hidden, async (url, options) => {
+      calls.push(url);
+      assert.equal(options.method, "GET");
+      assert.equal(options.headers["x-goog-user-project"], "dailybudget-35c26");
+      assert.equal(options.headers.Authorization, `Bearer ${hidden}`);
+      if (url.includes("cloudfunctions.googleapis.com")) {
+        return Response.json({
+          serviceConfig: {
+            environmentVariables: {
+              INVITATION_SMTP_USER: hidden,
+              INVITATION_SMTP_HOST: "smtp.gmail.com",
+              INVITATION_SMTP_PORT: "465",
+              INVITATION_SMTP_PASSWORD: hidden,
+            },
+            secretEnvironmentVariables: [
+              {
+                key: "INVITATION_SMTP_PASSWORD",
+                secret: "INVITATION_SMTP_PASSWORD",
+                version: hidden,
+              },
+            ],
+          },
+        });
+      }
+      const query = new URL(url);
+      assert.ok(query.pathname.endsWith("/documents/invitationDeliveries"));
+      assert.equal(query.searchParams.get("pageSize"), "5");
+      assert.equal(query.searchParams.get("orderBy"), "createdAt desc");
+      assert.deepEqual(query.searchParams.getAll("mask.fieldPaths"), [
+        "state",
+        "failure",
+        "createdAt",
+      ]);
+      return Response.json({
+        documents: [
+          {
+            name: hidden,
+            fields: {
+              state: { stringValue: "failed" },
+              failure: { stringValue: "email-setup" },
+              email: { stringValue: hidden },
+              code: { stringValue: hidden },
+              createdAt: { timestampValue: "2026-11-23T21:00:00Z" },
+            },
+          },
+          {
+            name: hidden,
+            fields: {
+              state: { stringValue: "accepted" },
+              secret: { stringValue: hidden },
+            },
+          },
+          {
+            name: hidden,
+            fields: {
+              state: { stringValue: hidden },
+              failure: { stringValue: hidden },
+              createdAt: { timestampValue: hidden },
+            },
+          },
+        ],
+      });
+    }),
+  );
+  assert.equal(calls.length, 2);
+  assert.deepEqual(report.senderSetup.details, {
+    senderMatches: false,
+    hostMatches: true,
+    portMatches: true,
+    passwordSecretAttached: true,
+  });
+  assert.deepEqual(report.recentAttempts.details, [
+    {
+      state: "failed",
+      failure: "email-setup",
+      createdAt: "2026-11-23T21:00:00.000Z",
+    },
+    { state: "accepted" },
+    { state: "unknown" },
+  ]);
+  assert.ok(!JSON.stringify(report).includes(hidden));
+});
+
+test("mail audit distinguishes blocked reads from an actually empty automatic delivery history", async () => {
+  const blocked = await collectInvitationMailAudit(
+    createGoogleReader("TOKEN", async () =>
+      Response.json(
+        { error: { message: "SECRET_PROVIDER_TEXT" } },
+        { status: 403 },
+      ),
+    ),
+  );
+  assert.equal(blocked.senderSetup.status, "blocked");
+  assert.equal(blocked.recentAttempts.status, "blocked");
+  assert.ok(!JSON.stringify(blocked).includes("SECRET_PROVIDER_TEXT"));
+  const empty = await collectInvitationMailAudit(
+    createGoogleReader("TOKEN", async () => Response.json({})),
+  );
+  assert.equal(empty.recentAttempts.status, "checked");
+  assert.deepEqual(empty.recentAttempts.details, []);
+  assert.equal(empty.senderSetup.details.passwordSecretAttached, false);
+});
 
 test("cloud report sends GET only to Google, excludes unrelated budgets and never prints credentials or function secrets", async () => {
   const calls = [];
