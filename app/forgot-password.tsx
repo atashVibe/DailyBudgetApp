@@ -1,7 +1,8 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { sendPasswordResetEmail } from "firebase/auth";
 import { useRef, useState } from "react";
-import { Text, TouchableOpacity } from "react-native";
+import { TouchableOpacity } from "react-native";
+import Text from "./components/common/AppText";
 import { auth } from "../services/auth";
 import { validInvitationCode } from "../services/invitations";
 import AppScreen from "./components/common/AppScreen";
@@ -71,7 +72,7 @@ export default function ForgotPasswordScreen() {
     <AppScreen
       style={{ padding: 24, justifyContent: "center", backgroundColor: "#fff" }}
     >
-      <Text style={{ fontSize: 28, fontWeight: "700", marginBottom: 16 }}>
+      <Text style={{ fontSize: 24, fontWeight: "700", marginBottom: 16 }}>
         Reset your password
       </Text>
       <Text style={{ fontSize: 16, color: "#374151", marginBottom: 24 }}>
@@ -130,7 +131,7 @@ export default function ForgotPasswordScreen() {
         }
         style={{ padding: 16, alignItems: "center", marginTop: 12 }}
       >
-        <Text style={{ fontSize: 16, color: "#155E50" }}>Back to Sign In</Text>
+        <Text style={{ fontSize: 16, color: "#155E50" }}>Back to sign in</Text>
       </TouchableOpacity>
     </AppScreen>
   );

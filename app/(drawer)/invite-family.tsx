@@ -1,7 +1,8 @@
 import * as Crypto from "expo-crypto";
 import { onAuthStateChanged, sendEmailVerification } from "firebase/auth";
 import { useEffect, useRef, useState } from "react";
-import { Platform, Share, Text, View } from "react-native";
+import { Platform, Share, View } from "react-native";
+import Text from "../components/common/AppText";
 import { auth } from "../../services/auth";
 import { getFamilyContext, type FamilyRole } from "../../services/families";
 import {
@@ -124,7 +125,7 @@ export default function InviteFamilyScreen() {
   return (
     <AppScreen>
       <View style={{ gap: 14 }}>
-        <Text style={{ fontSize: 26, fontWeight: "700" }}>
+        <Text style={{ fontSize: 24, fontWeight: "700" }}>
           Invite a family member
         </Text>
         {canInvite === null ? (
@@ -174,6 +175,7 @@ export default function InviteFamilyScreen() {
                   automatically. You can still create a share link.
                 </Text>
                 <PrimaryButton
+                  variant="outline"
                   title="Verify my email address"
                   disabled={working}
                   onPress={() =>
@@ -190,6 +192,7 @@ export default function InviteFamilyScreen() {
                   }
                 />
                 <PrimaryButton
+                  variant="outline"
                   title="Check my email verification"
                   disabled={working}
                   onPress={() =>
@@ -216,6 +219,7 @@ export default function InviteFamilyScreen() {
               onPress={() => void create(true)}
             />
             <PrimaryButton
+              variant="outline"
               title="Create a share link instead"
               disabled={working || !validInvitationEmail(email)}
               onPress={() => void create(false)}
@@ -239,7 +243,7 @@ export default function InviteFamilyScreen() {
             <Text style={{ fontWeight: "700" }}>
               Invitation for {result.email}
             </Text>
-            <Text selectable style={{ fontSize: 26, fontWeight: "700" }}>
+            <Text selectable style={{ fontSize: 24, fontWeight: "700" }}>
               {result.code}
             </Text>
             <Text selectable style={{ lineHeight: 23 }}>
@@ -261,6 +265,7 @@ export default function InviteFamilyScreen() {
         )}
         {result && (
           <PrimaryButton
+            variant="outline"
             title="Start another invitation"
             disabled={working}
             onPress={() => {

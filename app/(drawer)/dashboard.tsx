@@ -9,7 +9,8 @@ import {
   where,
 } from "firebase/firestore";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Platform, ScrollView, Text, View } from "react-native";
+import { Platform, ScrollView, View } from "react-native";
+import Text from "../components/common/AppText";
 import { useDashboardBack } from "../../hooks/useDashboardBack";
 import {
   withTimeout,

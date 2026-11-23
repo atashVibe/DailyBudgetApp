@@ -1,6 +1,7 @@
 import { Link } from "expo-router";
 import type { ReactNode } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
+import Text from "../app/components/common/AppText";
 import AppScreen from "../app/components/common/AppScreen";
 import PolicyLinks from "./PolicyLinks";
 
@@ -29,7 +30,7 @@ export default function PublicInfoPage({
           {title}
         </Text>
         {dated && (
-          <Text style={styles.date}>Last updated: November 14, 2026</Text>
+          <Text style={styles.date}>Last updated: November 23, 2026</Text>
         )}
         <Text selectable style={styles.body}>
           {introduction}
@@ -73,7 +74,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   title: {
-    fontSize: 30,
+    fontSize: 24,
     fontWeight: "700",
     color: "#111827",
     marginBottom: 12,
@@ -81,7 +82,7 @@ const styles = StyleSheet.create({
   date: { fontSize: 14, color: "#4B5563", marginBottom: 16 },
   section: { marginTop: 24 },
   heading: {
-    fontSize: 21,
+    fontSize: 18,
     fontWeight: "600",
     color: "#111827",
     marginBottom: 8,

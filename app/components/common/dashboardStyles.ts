@@ -1,17 +1,111 @@
-import { StyleSheet } from "react-native";
+import { StyleSheet, Platform } from "react-native";
+export const uiTokens = Object.freeze({
+  font:
+    Platform.OS === "web"
+      ? "Inter, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif"
+      : "Inter",
+  primary: "#0F9D88",
+  pressed: "#0C8573",
+  button: "#0C8573",
+  tint: "#E1F5EE",
+  tealText: "#085041",
+  page: "#F7F8FA",
+  card: "#FFFFFF",
+  border: "#E5E7EB",
+  text: "#111827",
+  muted: "#6B7280",
+  danger: "#DC2626",
+  radius: 12,
+  spacing: { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 },
+});
+export const uiStyles = StyleSheet.create({
+  card: {
+    backgroundColor: uiTokens.card,
+    borderWidth: 1,
+    borderColor: uiTokens.border,
+    borderRadius: 12,
+    padding: 16,
+    gap: 12,
+    marginBottom: 24,
+  },
+  pageTitle: {
+    fontFamily: uiTokens.font,
+    fontSize: 24,
+    fontWeight: "700",
+    color: uiTokens.text,
+    marginBottom: 24,
+  },
+  heading: {
+    fontFamily: uiTokens.font,
+    fontSize: 18,
+    fontWeight: "600",
+    color: uiTokens.text,
+  },
+  body: {
+    fontFamily: uiTokens.font,
+    fontSize: 15,
+    lineHeight: 22,
+    color: uiTokens.text,
+  },
+  helper: {
+    fontFamily: uiTokens.font,
+    fontSize: 13,
+    lineHeight: 19,
+    color: uiTokens.muted,
+  },
+  name: {
+    fontFamily: uiTokens.font,
+    fontSize: 15,
+    color: uiTokens.text,
+    writingDirection: "auto",
+    textAlign: "auto",
+    flexShrink: 1,
+  },
+  row: { flexDirection: "row", alignItems: "center", gap: 12 },
+  iconTile: {
+    height: 44,
+    width: 44,
+    borderRadius: 12,
+    backgroundColor: uiTokens.tint,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  badge: {
+    backgroundColor: uiTokens.tint,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  badgeText: {
+    fontFamily: uiTokens.font,
+    color: uiTokens.tealText,
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  divider: { height: 1, backgroundColor: uiTokens.border },
+});
 export const dashboardStyles = StyleSheet.create({
   card: {
     width: "100%",
-    backgroundColor: "#F8FBFF",
-    borderRadius: 22,
-    padding: 18,
-    marginBottom: 16,
+    backgroundColor: uiTokens.card,
+    borderRadius: uiTokens.radius,
+    padding: 16,
+    marginBottom: 24,
     borderWidth: 1,
-    borderColor: "#E0EAF5",
-    boxShadow: "0px 5px 16px rgba(24,73,124,0.12)",
+    borderColor: uiTokens.border,
   },
-  title: { fontSize: 21, fontWeight: "800", color: "#0E172B" },
-  detail: { fontSize: 12, color: "#40516B", lineHeight: 18 },
+  title: {
+    fontFamily: uiTokens.font,
+    fontSize: 18,
+    fontWeight: "600",
+    color: uiTokens.text,
+  },
+  detail: {
+    fontFamily: uiTokens.font,
+    fontSize: 13,
+    color: uiTokens.muted,
+    lineHeight: 19,
+  },
   period: {
     flexDirection: "row",
     alignItems: "center",

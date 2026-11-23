@@ -4,10 +4,10 @@ import {
   Alert,
   Platform,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import Text from "../components/common/AppText";
 import { auth } from "../../services/auth";
 import {
   deleteFamily,
@@ -171,7 +171,7 @@ export default function JoinFamilyScreen() {
   return (
     <AppScreen style={styles.screen}>
       <Text style={styles.title}>
-        {isLastAdmin ? "Before You Leave" : "Switch Family"}
+        {isLastAdmin ? "Before You Leave" : "Switch family"}
       </Text>
 
       {isLastAdmin ? (
@@ -189,7 +189,7 @@ export default function JoinFamilyScreen() {
           </View>
 
           <PrimaryButton
-            title="Invite Another Administrator"
+            title="Invite another administrator"
             onPress={() => router.push("/(drawer)/invite-family")}
           />
 
@@ -223,7 +223,7 @@ export default function JoinFamilyScreen() {
 
           <View style={styles.buttonGap}>
             <PrimaryButton
-              title="Export Selected Budget Areas"
+              title="Export selected budget areas"
               onPress={() => void handleExport(true)}
               disabled={selectedAreaIds.length === 0}
               loading={working}
@@ -231,7 +231,7 @@ export default function JoinFamilyScreen() {
           </View>
           <View style={styles.buttonGap}>
             <PrimaryButton
-              title="Export All Entries"
+              title="Export all entries"
               onPress={() => void handleExport(false)}
               loading={working}
             />
@@ -262,7 +262,7 @@ export default function JoinFamilyScreen() {
             maxLength={8}
           />
           <PrimaryButton
-            title="Switch Family"
+            title="Switch family"
             onPress={() => void handleJoinFamily()}
             disabled={code.length !== 8}
             loading={working}
@@ -277,7 +277,7 @@ export default function JoinFamilyScreen() {
 
 const styles = StyleSheet.create({
   screen: { paddingTop: 56 },
-  title: { fontSize: 28, fontWeight: "700", marginBottom: 16 },
+  title: { fontSize: 24, fontWeight: "700", marginBottom: 16 },
   body: { color: "#4B5563", fontSize: 16, lineHeight: 24, marginBottom: 20 },
   label: { fontSize: 16, fontWeight: "600", marginBottom: 8 },
   warningCard: {
@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "700",
     marginTop: 32,
     marginBottom: 8,

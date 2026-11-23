@@ -4,13 +4,8 @@ import * as AppleAuthentication from "expo-apple-authentication";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { onAuthStateChanged, signInWithEmailAndPassword } from "firebase/auth";
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  Platform,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Platform, StyleSheet, TouchableOpacity, View } from "react-native";
+import Text from "./components/common/AppText";
 import { auth } from "../services/auth";
 import PolicyLinks from "../components/PolicyLinks";
 import { validInvitationCode } from "../services/invitations";
@@ -254,7 +249,7 @@ export default function LoginScreen() {
       >
         <Text
           style={{
-            fontSize: 32,
+            fontSize: 24,
             fontWeight: "700",
             textAlign: "center",
             marginBottom: 12,
@@ -306,13 +301,13 @@ export default function LoginScreen() {
           style={{ alignSelf: "flex-end", padding: 12, marginBottom: 12 }}
         >
           <Text style={{ color: "#155E50", fontSize: 16 }}>
-            Forgot Password?
+            Forgot password?
           </Text>
         </TouchableOpacity>
 
         <View style={{ marginBottom: 12 }}>
           <PrimaryButton
-            title="Sign In"
+            title="Sign in"
             onPress={handleLogin}
             loading={loading}
           />
@@ -388,7 +383,8 @@ export default function LoginScreen() {
         ) : null}
 
         <PrimaryButton
-          title="Create Account"
+          variant="text"
+          title="Create account"
           onPress={() =>
             router.push(
               inviteCode

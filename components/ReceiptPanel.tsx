@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Alert, Platform, Text, View } from "react-native";
+import { Alert, Platform, View } from "react-native";
+import Text from "../app/components/common/AppText";
 import { useRouter } from "expo-router";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import {
+  uiStyles as ui,
+  uiTokens as tokens,
+} from "../app/components/common/dashboardStyles";
 import {
   receiptsConfigured,
   getReceiptAccess,
@@ -113,7 +119,7 @@ export default function ReceiptPanel({
         await deleteReceipt(receipt.receiptId);
         await refresh();
         setMessage(
-          "Deletion requested. Retained copies are tracked until cleanup is verified.",
+          "Receipt removal requested. Your budget entry is unchanged.",
         );
       });
     const warning =
@@ -128,40 +134,42 @@ export default function ReceiptPanel({
   };
   if (!receiptsConfigured)
     return (
-      <Text style={{ fontSize: 16, lineHeight: 24 }}>
-        Receipt storage is not set up yet. Your budget entries are available as
-        usual.
+      <Text style={ui.body}>
+        Receipts are currently unavailable. Your budget entries are still
+        available.
       </Text>
     );
   return (
     <View style={{ gap: 12 }}>
-      <Text style={{ fontSize: 16, lineHeight: 24 }}>
-        These receipts are shared with current family members. Uploads,
-        replacements and downloads depend on the family plan. Other families
-        cannot access them.
-      </Text>
+      {!access && !message && (
+        <View
+          accessibilityLabel="Loading receipts"
+          accessibilityState={{ busy: true }}
+          style={[ui.card, { height: 112, backgroundColor: tokens.border }]}
+        />
+      )}
+      <Text style={ui.body}>Receipts are shared with your current family.</Text>
       {access && (
         <>
-          <Text>
-            {access.familyName} · Family access:{" "}
-            {access.administrator
-              ? "Receipt administrator — family access included"
-              : access.administratorFamily
-                ? "Included through a receipt administrator"
-                : access.tier}
+          <Text style={ui.helper}>
+            {access.canUpload
+              ? "Receipt uploads are included for your family."
+              : "Receipt uploads are available with Premium."}
           </Text>
-          {!transactionId && <ReceiptStorage access={access} />}
+          {!transactionId &&
+            (access.limits.maxStorageBytes > 0 ||
+              access.usage.liveBytes + access.usage.reservedBytes > 0) && (
+              <ReceiptStorage access={access} />
+            )}
           {access.deletionScheduledAt && (
             <Text
               accessibilityLiveRegion="polite"
               style={{ color: "#9A3412", fontSize: 16, lineHeight: 24 }}
             >
-              Family receipt deletion is scheduled for{" "}
-              {new Date(access.deletionScheduledAt).toLocaleString()}. Download
-              or export the family originals before then. Renewing family
-              Premium or activating family Archive before that deadline
-              preserves existing files. Files already deleted cannot be
-              recovered through the app.
+              Download your family receipts before{" "}
+              {new Date(access.deletionScheduledAt).toLocaleDateString()}.
+              Renewing the plan preserves receipts that have not already been
+              removed. Budget entries remain.
             </Text>
           )}
           {transactionId && access.canUpload && (
@@ -172,16 +180,19 @@ export default function ReceiptPanel({
                 entry.
               </Text>
               <PrimaryButton
+                variant="outline"
                 title="Photograph a receipt"
                 onPress={() => void choose("camera")}
                 disabled={working}
               />
               <PrimaryButton
+                variant="outline"
                 title="Choose a photo"
                 onPress={() => void choose("photo")}
                 disabled={working}
               />
               <PrimaryButton
+                variant="outline"
                 title="Choose a PDF"
                 onPress={() => void choose("pdf")}
                 disabled={working}
@@ -199,28 +210,22 @@ export default function ReceiptPanel({
               access.limits.maxStorageBytes ||
             access.downgradeUploadBlocked) && (
             <View style={{ gap: 8 }}>
-              <Text>
-                {access.canUpload
-                  ? "Your family already has sponsored receipt access. View family Premium details below."
-                  : "Enable receipt uploads for your family with Premium."}
-              </Text>
               <PrimaryButton
                 title="Upgrade family to Premium"
                 onPress={() => router.push("/(drawer)/premium")}
               />
-              <Text>
-                View plans, billing availability and cancellation rules.
-              </Text>
             </View>
           )}
           {access.plan.startsWith("premium") && access.active && (
             <PrimaryButton
+              variant="text"
               title="Manage family subscription"
               onPress={() => router.push("/(drawer)/premium")}
             />
           )}
           {access.canRead && (
             <PrimaryButton
+              variant="outline"
               title="Export family receipts (ZIP)"
               onPress={() => void run(exportAllReceipts)}
               disabled={working}
@@ -240,7 +245,21 @@ export default function ReceiptPanel({
           onPress={() => void run(() => send(retry.file, retry.replaceId))}
         />
       )}
-      {receipts.length === 0 && access && <Text>No receipts here yet.</Text>}
+      {receipts.length === 0 && access && (
+        <View style={[ui.card, { alignItems: "center", paddingVertical: 32 }]}>
+          <View style={ui.iconTile}>
+            <Ionicons
+              name="receipt-outline"
+              size={28}
+              color={tokens.tealText}
+            />
+          </View>
+          <Text style={ui.heading}>No receipts yet</Text>
+          <Text style={ui.helper}>
+            Your family’s receipts will appear here.
+          </Text>
+        </View>
+      )}
       {receipts.map((receipt) => (
         <View
           key={receipt.receiptId}
@@ -248,7 +267,12 @@ export default function ReceiptPanel({
             gap: 10,
             paddingVertical: 16,
             borderTopWidth: 1,
-            borderTopColor: "#D1D5DB",
+            borderTopColor: tokens.border,
+            backgroundColor: tokens.card,
+            borderWidth: 1,
+            borderColor: tokens.border,
+            borderRadius: 12,
+            paddingHorizontal: 16,
           }}
         >
           <Text style={{ fontSize: 16, fontWeight: "600" }}>
@@ -258,7 +282,7 @@ export default function ReceiptPanel({
             {receipt.transactionDate || "Undated"} ·{" "}
             {(receipt.fileSize / 1024).toFixed(0)} KB ·{" "}
             {receipt.status === "deleting"
-              ? "Deletion pending verification (retained copies may remain)"
+              ? "Removing receipt…"
               : "Original saved"}
           </Text>
           {receipt.status === "ready" && (
@@ -271,6 +295,7 @@ export default function ReceiptPanel({
                     disabled={working}
                   />
                   <PrimaryButton
+                    variant="outline"
                     title="Download original"
                     onPress={() => void run(() => openReceipt(receipt))}
                     disabled={working}
@@ -280,11 +305,13 @@ export default function ReceiptPanel({
               {transactionId && access?.canReplace && (
                 <>
                   <PrimaryButton
+                    variant="outline"
                     title="Replace with photo"
                     onPress={() => void choose("photo", receipt.receiptId)}
                     disabled={working}
                   />
                   <PrimaryButton
+                    variant="outline"
                     title="Replace with PDF"
                     onPress={() => void choose("pdf", receipt.receiptId)}
                     disabled={working}
@@ -292,6 +319,7 @@ export default function ReceiptPanel({
                 </>
               )}
               <PrimaryButton
+                variant="outline"
                 title="Delete receipt"
                 onPress={() => remove(receipt)}
                 disabled={working}
@@ -309,6 +337,7 @@ export default function ReceiptPanel({
         </Text>
       ) : null}
       <PrimaryButton
+        variant="outline"
         title="Refresh receipts"
         onPress={() => void run(refresh)}
         disabled={working}

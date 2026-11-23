@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
-import { Platform, Alert, Text, View } from "react-native";
+import { Platform, Alert, View } from "react-native";
+import Text from "../components/common/AppText";
 import { useRouter } from "expo-router";
 import {
   subscriptionRequest,
@@ -71,7 +72,7 @@ export default function ReceiptStorageReview() {
   return (
     <AppScreen>
       <View style={{ gap: 14 }}>
-        <Text style={{ fontSize: 26, fontWeight: "700" }}>
+        <Text style={{ fontSize: 24, fontWeight: "700" }}>
           Review receipts after downgrade
         </Text>
         <Text>

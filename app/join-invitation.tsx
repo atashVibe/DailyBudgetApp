@@ -6,7 +6,8 @@ import {
   type User,
 } from "firebase/auth";
 import { useEffect, useRef, useState } from "react";
-import { Platform, Text, View } from "react-native";
+import { Platform, View } from "react-native";
+import Text from "./components/common/AppText";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { auth } from "../services/auth";
 import { joinFamilyWithCode } from "../services/families";
@@ -70,7 +71,7 @@ export default function JoinInvitationScreen() {
   return (
     <AppScreen>
       <View style={{ gap: 16 }}>
-        <Text style={{ fontSize: 28, fontWeight: "700" }}>Join a family</Text>
+        <Text style={{ fontSize: 24, fontWeight: "700" }}>Join a family</Text>
         {!ready ? (
           <Text>Loading invitation…</Text>
         ) : !code ? (

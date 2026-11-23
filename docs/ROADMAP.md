@@ -2,7 +2,7 @@
 
 ## Active: family plans and visual polish — November 23, 2026
 
-The owner supplied configurable three-tier family prices/quotas, one-month Premium trial and 15% annual proposals, and chose direct Google Play/Apple billing. Trusted verification/quota/downgrade support is prepared with isolated tests; actual store setup, native/device purchases and live deployment remain open. See `docs/SUBSCRIPTIONS_ADMIN.md`. The incoming visual-only brief is a separate UI pass, preserving existing services/accounting/deletion guards. No paid checkout or real invitation email delivery is claimed.
+The owner supplied configurable three-tier family prices/quotas, one-month Premium trial and 15% annual proposals, and chose direct Google Play/Apple billing. Trusted verification/quota/downgrade support is prepared with isolated tests; actual store setup, native/device purchases and live deployment remain open. See `docs/SUBSCRIPTIONS_ADMIN.md`. The visual-only brief is implemented in a separate review branch, preserving existing services/accounting/deletion guards; see `docs/UI_POLISH.md` for files, exceptions and previews. No paid checkout or real invitation email delivery is claimed.
 
 ## Milestone 2 checkpoint — v0.2
 
@@ -16,7 +16,7 @@ The owner confirmed a **personal Play Console developer account** on November 22
 
 - [x] Owner has a personal Play Console developer account.
 - [ ] Confirm account verification, create/inspect the DailyBudget app record, and check the account's production-access requirements.
-- [ ] Decide whether purchasable family Premium is included in the first release. If included, choose price/billing period, implement a policy-compliant Android purchase flow with backend verification and family-wide access, and test renewal/cancellation/refund/restore behavior in a sandbox. Google Play Billing is the standard path for these digital features; any market-specific alternative requires reviewing eligibility and applicable rules. No checkout is implemented yet.
+- [ ] Decide whether purchasable family Premium is included in the first release. Prices/periods and direct Google Play/Apple integration are now specified, with a disabled purchase foundation prepared. If included, finish store setup and test native purchase/renewal/cancellation/refund/restore behavior in a sandbox. Google Play Billing is the standard path for these digital features; any market-specific alternative requires reviewing eligibility and applicable rules. No live checkout is enabled.
 - [ ] Build a signed Android App Bundle for `com.atashvibe.dailybudget`, configure Play App Signing and the correct Firebase/Google login signing fingerprints, and upload to Internal Testing. Verify current target-API and native-library compatibility in the built artifact, including Android 16/API 36 and 16 KB compatibility; the source configuration alone is not evidence.
 - [ ] Install through Google Play on real Android phones and test Google/email login, reopening, family invitations/roles, accounting/refunds/income/cashback, shared receipts, camera/PDF permissions, editing, Back/keyboard behavior and slow/offline recovery. Finish account-deletion cleanup for previous family memberships and verify deletion/reset behavior on spare accounts. Apple-specific work remains deferred for this Android-first scope.
 - [ ] Finish our operational launch safeguards: an actual database backup and isolated restore, independently protected cloud receipt-original recovery, billing recipients/delivery, effective IAM and real retained-copy expiry. These are project readiness criteria, separate from Play's forms.
@@ -34,7 +34,7 @@ Google requirements checked November 22, 2026: [personal-account testing](https:
 2. **Two-person real-device family rehearsal.** On iPhone and Android, verify Google/email login and reopen, invitations/joining, synchronized entries, and shared receipt view/download/replace/delete. Verify that removing/leaving a family stops access and that an unrelated family cannot see its data. Existing emulator tests are evidence for the code, not proof of the live two-person/device path.
 3. **Cloud operations before a wider beta.** Verify billing/usage alerts, choose an independent backup and demonstrate a restore, and check actual shared-storage permissions and scheduled receipt cleanup/retention. Storage soft deletion and receipt export alone are not a tested independent recovery plan.
 
-The owner has authorized progressing through this roadmap. Complete independent code/tests and record device or production checks only when verified. After readiness checks, follow the private-beta/device distribution plan. Family Premium purchase is now an explicit requested feature below; implementing checkout still needs pricing/payment decisions. Keep reports/charts and Apple-specific work deferred.
+The owner has authorized progressing through this roadmap. Complete independent code/tests and record device or production checks only when verified. After readiness checks, follow the private-beta/device distribution plan. Family Premium purchase is now an explicit requested feature below; the price proposals and direct-store approach are now specified, while store setup and real purchase evidence remain pending. Keep reports/charts and Apple-specific work deferred.
 
 ## Roadmap execution after Milestone 2
 
@@ -82,13 +82,13 @@ The `19:21:00Z` follow-up independently confirms the daily/14-day schedule; back
 - [ ] Set up the sender credential securely, deploy reviewed Functions/rules, then publish the matching frontend. Coordinate this order because atomic family creation requires matching rules.
 - [ ] Verify real inbox delivery and the emailed join link with spare accounts on actual phones. Automated tests send no real mail.
 
-See `docs/PREMIUM_INVITATIONS.md` for behavior, security, secure activation and remaining limitations. Premium price/billing period and inclusion in the first public store release remain unanswered; do not enable charges or claim checkout works.
+See `docs/PREMIUM_INVITATIONS.md` for behavior, security, secure activation and remaining limitations. Premium price/period proposals and direct-store billing are now specified. Inclusion in the first public store release still needs confirmation; do not enable charges or claim live checkout works.
 
 ## Family Premium purchase — requested
 
-A family administrator must be able to purchase Premium in the app to enable receipt uploads for the family. This is a requested feature, not just a possible paid idea. Checkout implementation follows the current readiness work and the owner's pricing/payment decisions.
+A family administrator must be able to purchase Premium in the app to enable receipt uploads for the family. This is a requested feature, not just a possible paid idea. The owner's prices/periods and direct-store approach are now specified; the purchase foundation in PR #16 remains disabled pending store setup and real sandbox/device evidence.
 
-- [ ] Decide the family price, billing period and payment provider/store approach with the owner.
+- [x] Record configurable monthly/yearly USD proposals, family-wide 2/5/20 GB plans, Premium trial and direct Google Play/Apple approach; see `docs/SUBSCRIPTIONS_ADMIN.md`.
 - [x] Prepare the visible Upgrade family to Premium action and plan page; other members see how to ask their admin. Checkout is explicitly unavailable, not activated by this action.
 - [ ] Create checkout on the trusted backend, bound to the authorized admin and the correct family. Prevent duplicate purchases/charges.
 - [ ] Activate Premium only after server verification of a real payment/store purchase; never trust a browser success screen or allow client writes to paid access.
@@ -97,7 +97,7 @@ A family administrator must be able to purchase Premium in the app to enable rec
 - [ ] Define what happens when the payer leaves, loses admin status or switches families; keep billing ownership separate from file permissions.
 - [ ] Review Apple/Google payment rules for native distribution and test the full purchase lifecycle in a payment sandbox before taking real payments.
 
-No checkout or price is enabled by adding this roadmap item. Existing manually granted/sponsored receipt access is not proof that payments work.
+No checkout or live price is enabled by the prepared subscription foundation. Existing manually granted/sponsored receipt access is not proof that payments work.
 
 ## iPhone field sizing, Edit and sign-in recovery
 
