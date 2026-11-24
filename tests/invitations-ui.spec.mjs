@@ -99,7 +99,11 @@ async function login(page, account, inviteCode, destination) {
 }
 async function emailInvitation(page, owner, recipient) {
   await login(page, owner);
-  await page.goto("/invite-family", { waitUntil: "domcontentloaded" });
+  await page.goto("/settings", { waitUntil: "domcontentloaded" });
+  await page
+    .getByTestId("family-invitation-action")
+    .getByRole("button", { name: "Invite family member", exact: true })
+    .click();
   await page.getByLabel("Invitation email", { exact: true }).fill(recipient);
   const sent = page.waitForResponse(
     (response) =>
