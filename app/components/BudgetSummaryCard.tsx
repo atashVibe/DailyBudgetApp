@@ -1,6 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import React, { useState } from "react";
-import { Platform, Pressable, View } from "react-native";
+import { useState } from "react";
+import { Pressable, StyleSheet, View } from "react-native";
 import Text from "./common/AppText";
 import { calculateBudgetSummary } from "../../services/financeCalculations";
 import {
@@ -14,123 +14,29 @@ type Props = {
   spentThisMonth?: number;
   spentThisYear?: number;
 };
-const money = (value: number) => `$${value.toFixed(2)}`;
-const compactMoney = (value: number) =>
-  new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(value);
-function Progress({
-  value,
-  label,
-  color,
-}: {
-  value: number;
-  label: string;
-  color: string;
-}) {
+const money = (value: number) =>
+  new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(
+    value,
+  );
+function Progress({ value, label }: { value: number; label: string }) {
   return (
     <View
       accessibilityRole="progressbar"
       accessibilityLabel={label}
       accessibilityValue={{ min: 0, max: 100, now: value }}
-      style={{
-        height: 9,
-        backgroundColor: tokens.border,
-        borderRadius: 20,
-        overflow: "hidden",
-        marginTop: 5,
-      }}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={value}
+      style={styles.track}
     >
       <View
         style={{
           height: "100%",
           width: `${value}%`,
-          backgroundColor: color,
-          borderRadius: 20,
+          backgroundColor: tokens.pressed,
+          borderRadius: 10,
         }}
       />
-    </View>
-  );
-}
-function Ring({ percent, negative }: { percent: number; negative: boolean }) {
-  const value = Math.max(0, Math.min(100, percent));
-  const color = negative ? tokens.danger : tokens.pressed;
-  return (
-    <View
-      style={{
-        width: 108,
-        height: 108,
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      {Platform.OS === "web" ? (
-        React.createElement(
-          "svg",
-          {
-            width: 108,
-            height: 108,
-            viewBox: "0 0 124 124",
-            "aria-hidden": true,
-            style: { position: "absolute" },
-          },
-          React.createElement("circle", {
-            cx: 62,
-            cy: 62,
-            r: 54,
-            fill: "none",
-            stroke: "#CEEFE1",
-            strokeWidth: 11,
-          }),
-          React.createElement("circle", {
-            cx: 62,
-            cy: 62,
-            r: 54,
-            fill: "none",
-            stroke: color,
-            strokeWidth: 11,
-            strokeLinecap: value ? "round" : "butt",
-            strokeDasharray: `${(339.292 * value) / 100} 339.292`,
-            transform: "rotate(-90 62 62)",
-          }),
-        )
-      ) : (
-        <>
-          <View
-            style={{
-              position: "absolute",
-              inset: 2,
-              borderWidth: 11,
-              borderColor: "#CEEFE1",
-              borderRadius: 62,
-            }}
-          />
-          {Array.from({ length: Math.round(value) }, (_, i) => {
-            const angle = ((i * 3.6 - 90) * Math.PI) / 180;
-            return (
-              <View
-                key={i}
-                style={{
-                  position: "absolute",
-                  width: 11,
-                  height: 11,
-                  borderRadius: 6,
-                  backgroundColor: color,
-                  left: 48.5 + 46 * Math.cos(angle),
-                  top: 48.5 + 46 * Math.sin(angle),
-                }}
-              />
-            );
-          })}
-        </>
-      )}
-      <Text style={{ fontSize: 26, fontWeight: "800", color: "#10182B" }}>
-        {value.toFixed(0)}%
-      </Text>
-      <Text style={{ fontSize: 13, color: "#334155" }}>Remaining</Text>
     </View>
   );
 }
@@ -142,39 +48,55 @@ export default function BudgetSummaryCard({
   const [showInfo, setShowInfo] = useState(false);
   const [yearly, setYearly] = useState(false);
   const [showPeriods, setShowPeriods] = useState(false);
-  const now = new Date();
+  const [details, setDetails] = useState(false);
+  const now = new Date(),
+    year = now.getFullYear();
   const summary = calculateBudgetSummary(
     dailyBudget,
     spentThisMonth,
     spentThisYear,
     now,
   );
-  const days = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-  const year = now.getFullYear();
+  const monthDays = new Date(year, now.getMonth() + 1, 0).getDate();
   const yearDays =
     year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0) ? 366 : 365;
-  const allowance =
-    (Math.round(dailyBudget * 100) * (yearly ? yearDays : now.getDate())) / 100;
+  const elapsed = yearly
+    ? Math.round(
+        (Date.UTC(year, now.getMonth(), now.getDate()) - Date.UTC(year, 0, 1)) /
+          86400000,
+      ) + 1
+    : now.getDate();
+  const periodDays = yearly ? yearDays : monthDays;
+  const daysLeft = periodDays - elapsed + 1;
+  const budget = (Math.round(dailyBudget * 100) * periodDays) / 100;
+  const yearlyBudget = (Math.round(dailyBudget * 100) * yearDays) / 100;
   const spending = yearly ? spentThisYear : spentThisMonth;
+  // Preserve the existing earned monthly allowance and full-year remaining values.
   const remaining = yearly
-    ? (Math.round(allowance * 100) - Math.round(spending * 100)) / 100
+    ? (Math.round(budget * 100) - Math.round(spending * 100)) / 100
     : summary.remainingToday;
-  const percent = allowance > 0 ? (remaining / allowance) * 100 : 0;
-  const status = yearly ? summary.yearlyStatus : summary.status;
+  const used = yearly ? summary.yearlyUsedPercent : summary.usedPercent;
+  const fill = yearly ? summary.yearlyProgressPercent : summary.progressPercent;
+  const today = (elapsed / periodDays) * 100;
+  // Same budget × elapsed share, using the existing daily-budget cent precision.
+  const pace = (Math.round(dailyBudget * 100) * elapsed) / 100;
+  const over = spending > budget;
+  const ahead = spending > pace;
+  const status = over
+    ? "Over budget"
+    : ahead
+      ? "Spending ahead of pace"
+      : `On track, ${money(pace - spending)} under pace`;
+  const statusText = over
+    ? tokens.dangerText
+    : ahead
+      ? tokens.amberText
+      : tokens.tealText;
   return (
-    <View style={ui.card}>
-      <View
-        style={{
-          flexDirection: "row",
-          flexWrap: "wrap",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 8,
-          marginBottom: 15,
-        }}
-      >
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
-          <Text style={[ui.title, { fontSize: 18 }]}>Budget overview</Text>
+    <View style={ui.card} testID="budget-overview-card">
+      <View style={styles.header}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+          <Text style={ui.title}>Budget overview</Text>
           <InfoButton
             label="Spending calculation"
             expanded={showInfo}
@@ -188,200 +110,221 @@ export default function BudgetSummaryCard({
           onPress={() => setShowPeriods(!showPeriods)}
           style={ui.period}
         >
-          <Text style={{ color: "#17243A", fontSize: 13 }}>
+          <Text style={{ fontSize: 13, color: tokens.text }}>
             {yearly ? "This year" : "This month"}
           </Text>
-          <Ionicons name="chevron-down" size={15} />
+          <Ionicons name="chevron-down" size={14} color={tokens.muted} />
         </Pressable>
       </View>
       {showPeriods && (
-        <View style={{ flexDirection: "row", gap: 10, marginBottom: 12 }}>
+        <View style={{ flexDirection: "row", gap: 8, marginBottom: 12 }}>
           {[false, true].map((value) => (
             <Pressable
               key={String(value)}
               accessibilityRole="button"
+              accessibilityState={{ selected: yearly === value }}
               onPress={() => {
                 setYearly(value);
                 setShowPeriods(false);
               }}
               style={ui.period}
             >
-              <Text>{value ? "This year" : "This month"}</Text>
+              <Text style={ui.detail}>
+                {value ? "This year" : "This month"}
+              </Text>
             </Pressable>
           ))}
         </View>
       )}
       {showInfo && (
-        <Text style={ui.detail}>
+        <Text style={[ui.detail, { marginBottom: 12 }]}>
           Monthly allowance is earned through today; Remaining is that allowance
-          minus expenses and refunds. Status compares spending with the full
-          month or year. Income and cashback do not affect these figures.
+          minus expenses and refunds. The yearly amount uses the full year. The
+          bar compares spending with the whole month or year budget; Today marks
+          the elapsed days. The pace badge is a daily comparison. The daily
+          guide divides the existing remaining amount by days left, including
+          today. Income and cashback do not affect these figures.
         </Text>
       )}
       <View
         style={{
           flexDirection: "row",
-          alignItems: "center",
-          gap: 14,
+          alignItems: "baseline",
+          gap: 6,
           flexWrap: "wrap",
         }}
       >
-        <View style={{ alignItems: "center", flexGrow: 1 }}>
-          <Ring percent={percent} negative={remaining < 0} />
-        </View>
-        <View style={{ flexGrow: 2, flexBasis: 165, minWidth: 0, gap: 8 }}>
-          <Metric
-            icon="wallet-outline"
-            label="Allowance"
-            value={money(allowance)}
-          />
-          <Metric
-            icon="pricetag-outline"
-            label="Total expenses"
-            value={money(spending)}
-          />
-          <Metric
-            icon="cash-outline"
-            label="Remaining"
-            value={money(remaining)}
-            highlighted
-            negative={remaining < 0}
-          />
-          <Text
-            style={{
-              fontSize: 13,
-              color: status.text === "Over budget" ? "#B91C1C" : "#486175",
-            }}
-          >
-            {status.text === "On The Border! Be careful!"
-              ? "Near limit"
-              : status.text}{" "}
-            · {yearly ? "Whole year" : "Whole month"} budget
-          </Text>
-          {!yearly && (
-            <Progress
-              value={summary.progressPercent}
-              label="Monthly budget used"
-              color={tokens.pressed}
-            />
-          )}
+        <Text
+          style={[
+            styles.numbers,
+            {
+              fontSize: 30,
+              fontWeight: "600",
+              color: remaining < 0 ? tokens.danger : tokens.text,
+            },
+          ]}
+        >
+          {money(remaining)}
+        </Text>
+        <Text style={{ fontSize: 15, color: tokens.muted }}>left</Text>
+      </View>
+      <Text style={[ui.detail, { marginTop: 4, marginBottom: 20 }]}>
+        {daysLeft} day{daysLeft === 1 ? "" : "s"} left, about{" "}
+        <Text style={{ color: tokens.tealText, fontWeight: "600" }}>
+          {money(remaining / daysLeft)} a day
+        </Text>
+      </Text>
+      <View style={{ position: "relative" }}>
+        <Progress
+          value={fill}
+          label={yearly ? "Yearly budget used" : "Monthly budget used"}
+        />
+        <View
+          pointerEvents="none"
+          style={{
+            position: "absolute",
+            left: `${Math.max(1, Math.min(99, today))}%`,
+            top: -3,
+            height: 16,
+            width: 2,
+            backgroundColor: tokens.text,
+          }}
+        />
+        <View
+          style={{
+            alignSelf: "flex-start",
+            marginLeft: `${Math.max(0, Math.min(84, today - 5))}%`,
+            marginTop: 5,
+          }}
+        >
+          <Text style={{ fontSize: 12, color: tokens.muted }}>Today</Text>
         </View>
       </View>
+      <Text style={[ui.detail, styles.numbers, { marginTop: 6 }]}>
+        {money(spending)} spent ({used.toFixed(0)}%)
+      </Text>
+      <View
+        accessibilityRole="text"
+        style={{
+          alignSelf: "flex-start",
+          borderRadius: 6,
+          paddingHorizontal: 8,
+          paddingVertical: 5,
+          marginTop: 12,
+          borderWidth: 1,
+          borderColor: over
+            ? tokens.danger
+            : ahead
+              ? tokens.amber
+              : "transparent",
+          backgroundColor: over
+            ? tokens.dangerTint
+            : ahead
+              ? tokens.amberTint
+              : tokens.tint,
+        }}
+      >
+        <Text style={{ fontSize: 13, fontWeight: "500", color: statusText }}>
+          {status}
+        </Text>
+      </View>
       {summary.recoveryDays > 0 && !yearly && (
-        <Text style={{ marginTop: 10, color: "#B91C1C", fontSize: 13 }}>
+        <Text style={[ui.detail, { color: tokens.danger, marginTop: 8 }]}>
           Recovery plan: No extra spending for {summary.recoveryDays} day
           {summary.recoveryDays === 1 ? "" : "s"}.
         </Text>
       )}
-      <View
-        style={{
-          backgroundColor: "#F7FAFF",
-          borderRadius: 14,
-          marginTop: 16,
-          padding: 12,
-          gap: 13,
-        }}
-      >
-        <View testID="month-progress-row">
-          <View style={ui.progressRow}>
-            <View style={ui.progressLabel}>
-              <Ionicons name="calendar-outline" size={19} color="#009F62" />
-              <Text style={ui.progressTitle}>Month progress</Text>
-            </View>
-            <Text style={[ui.detail, { flexShrink: 1, textAlign: "right" }]}>
-              {now.getDate()} of {days} days (
-              {summary.monthPassedPercent.toFixed(0)}%)
+      <View style={styles.divider} />
+      <View style={{ flexDirection: "row", gap: 8 }}>
+        {[
+          ["Budget", budget],
+          ["Spent", spending],
+          ["Daily budget", dailyBudget],
+        ].map(([label, value]) => (
+          <View key={String(label)} style={{ flex: 1, minWidth: 0, gap: 4 }}>
+            <Text style={{ fontSize: 12, color: tokens.muted }}>{label}</Text>
+            <Text style={[styles.numbers, { fontSize: 15, fontWeight: "500" }]}>
+              {money(Number(value))}
             </Text>
           </View>
-          <Progress
-            value={summary.monthPassedPercent}
-            label="Month progress"
-            color={tokens.pressed}
-          />
-        </View>
-        <View testID="yearly-spending-row">
-          <View style={ui.progressRow}>
-            <View style={ui.progressLabel}>
-              <Ionicons
-                name="calendar-number-outline"
-                size={19}
-                color="#009F62"
-              />
-              <Text style={ui.progressTitle}>Yearly spending</Text>
-            </View>
-            <Text
-              accessibilityLabel={`${money(spentThisYear)} of ${money((Math.round(dailyBudget * 100) * yearDays) / 100)} (${summary.yearlyUsedPercent.toFixed(0)}%)`}
-              style={[ui.detail, { flexShrink: 1, textAlign: "right" }]}
-            >
-              {compactMoney(spentThisYear)} /{" "}
-              {compactMoney((Math.round(dailyBudget * 100) * yearDays) / 100)} (
-              {summary.yearlyUsedPercent.toFixed(0)}%)
-            </Text>
-          </View>
-          <Progress
-            value={summary.yearlyProgressPercent}
-            label="Yearly budget used"
-            color="#0589DD"
-          />
-        </View>
+        ))}
       </View>
+      <View style={styles.divider} />
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+        <Text style={[ui.detail, styles.numbers, { flex: 1, minWidth: 0 }]}>
+          Yearly: {money(spentThisYear)} of {money(yearlyBudget)}
+        </Text>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Budget details"
+          accessibilityState={{ expanded: details }}
+          onPress={() => setDetails(!details)}
+          style={styles.textButton}
+        >
+          <Text style={{ fontSize: 13, color: tokens.tealText }}>Details</Text>
+          <Ionicons
+            name={details ? "chevron-up" : "chevron-forward"}
+            size={14}
+            color={tokens.tealText}
+          />
+        </Pressable>
+      </View>
+      {details && (
+        <View style={{ gap: 16, marginTop: 12 }}>
+          <View testID="month-progress-row">
+            <View style={ui.progressRow}>
+              <Text style={ui.progressTitle}>Month progress</Text>
+              <Text style={ui.detail}>
+                {now.getDate()} of {monthDays} days (
+                {summary.monthPassedPercent.toFixed(0)}%)
+              </Text>
+            </View>
+            <Progress
+              value={summary.monthPassedPercent}
+              label="Month progress"
+            />
+          </View>
+          <View testID="yearly-spending-row">
+            <View style={ui.progressRow}>
+              <Text style={ui.progressTitle}>Yearly spending</Text>
+              <Text style={[ui.detail, { flexShrink: 1, textAlign: "right" }]}>
+                {money(spentThisYear)} / {money(yearlyBudget)} (
+                {summary.yearlyUsedPercent.toFixed(0)}%)
+              </Text>
+            </View>
+            <Progress
+              value={summary.yearlyProgressPercent}
+              label="Yearly budget used"
+            />
+          </View>
+        </View>
+      )}
     </View>
   );
 }
-function Metric({
-  icon,
-  label,
-  value,
-  highlighted,
-  negative,
-}: {
-  icon: React.ComponentProps<typeof Ionicons>["name"];
-  label: string;
-  value: string;
-  highlighted?: boolean;
-  negative?: boolean;
-}) {
-  return (
-    <View
-      style={{
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 6,
-        padding: 8,
-        borderRadius: 12,
-        backgroundColor: highlighted
-          ? negative
-            ? "#FEE2E2"
-            : tokens.tint
-          : "transparent",
-      }}
-    >
-      <Ionicons
-        name={icon}
-        size={20}
-        color={highlighted ? tokens.tealText : "#17243A"}
-      />
-      <Text
-        style={{
-          flex: 1,
-          fontSize: 14,
-          fontWeight: highlighted ? "700" : "400",
-          color: "#17243A",
-        }}
-      >
-        {label}
-      </Text>
-      <Text
-        style={{
-          fontSize: 16,
-          fontWeight: "700",
-          color: negative ? "#B91C1C" : highlighted ? "#007D43" : "#10182B",
-          flexShrink: 1,
-        }}
-      >
-        {value}
-      </Text>
-    </View>
-  );
-}
+const styles = StyleSheet.create({
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+    flexWrap: "wrap",
+    marginBottom: 16,
+  },
+  track: {
+    height: 10,
+    backgroundColor: tokens.border,
+    borderRadius: 10,
+    overflow: "hidden",
+    marginTop: 5,
+  },
+  numbers: { fontVariant: ["tabular-nums"], color: tokens.text },
+  divider: { height: 1, backgroundColor: tokens.border, marginVertical: 12 },
+  textButton: {
+    minHeight: 48,
+    paddingLeft: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+  },
+});

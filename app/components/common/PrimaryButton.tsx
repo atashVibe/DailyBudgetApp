@@ -20,10 +20,13 @@ export default function PrimaryButton({
 }: Props) {
   const isDisabled = disabled || loading;
   const [hovered, setHovered] = useState(false);
+  const [focused, setFocused] = useState(false);
 
   return (
     <Pressable
       onPress={onPress}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
       onHoverIn={() => setHovered(true)}
       onHoverOut={() => setHovered(false)}
       disabled={isDisabled}
@@ -31,6 +34,7 @@ export default function PrimaryButton({
       accessibilityState={{ disabled: isDisabled, busy: loading }}
       style={({ pressed }) => [
         styles.button,
+        focused && styles.focused,
         variant === "text"
           ? styles.textButton
           : variant === "outline"
@@ -89,6 +93,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 
+  focused: {
+    outlineColor: uiTokens.pressed,
+    outlineStyle: "solid",
+    outlineWidth: 2,
+    outlineOffset: 2,
+  },
   disabledButton: {
     backgroundColor: "#E5E7EB",
   },
