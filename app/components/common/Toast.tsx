@@ -5,9 +5,11 @@ import { uiTokens as t, uiStyles as s } from "./dashboardStyles";
 export default function Toast({
   message,
   onDismiss,
+  inline = false,
 }: {
   message: string;
   onDismiss: () => void;
+  inline?: boolean;
 }) {
   useEffect(() => {
     if (!message) return;
@@ -20,10 +22,11 @@ export default function Toast({
       accessibilityLiveRegion="polite"
       pointerEvents="none"
       style={{
-        position: "absolute",
-        bottom: 24,
-        start: 16,
-        end: 16,
+        position: inline ? "relative" : "absolute",
+        bottom: inline ? undefined : 24,
+        start: inline ? undefined : 16,
+        end: inline ? undefined : 16,
+        marginTop: inline ? 12 : undefined,
         padding: 12,
         borderRadius: 12,
         backgroundColor: t.tealText,

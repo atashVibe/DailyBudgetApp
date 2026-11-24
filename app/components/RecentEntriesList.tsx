@@ -1,13 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useEffect, useState } from "react";
-import {
-  Alert,
-  Modal,
-  Platform,
-  View,
-  Pressable,
-  useWindowDimensions,
-} from "react-native";
+import { Alert, Modal, Platform, View, Pressable } from "react-native";
 import Text from "./common/AppText";
 import {
   dashboardStyles as ui,
@@ -48,7 +41,8 @@ export default function RecentEntriesList({
   refreshSignal,
   onEntryDeleted,
 }: Props) {
-  const wide = useWindowDimensions().width >= 600;
+  const [deleteError, setDeleteError] = useState("");
+  const [openEntry, setOpenEntry] = useState<string | null>(null);
   const [iconMap, setIconMap] = useState<Record<string, string>>({});
   const [categoryMap, setCategoryMap] = useState<Record<string, string>>({});
   const [visibleCount, setVisibleCount] = useState(3);
@@ -103,11 +97,13 @@ export default function RecentEntriesList({
 
   const handleDeleteEntry = async (entryId: string) => {
     const runDelete = async () => {
+      setDeleteError("");
       try {
         await deleteEntry(entryId);
         onEntryDeleted?.(entryId);
       } catch (error) {
         console.error("Delete failed", error);
+        setDeleteError("The entry could not be deleted. Please try again.");
       }
     };
 
@@ -128,38 +124,61 @@ export default function RecentEntriesList({
   };
 
   return (
-    <View style={ui.card}>
+    <View style={ui.card} testID="recent-entries-card">
       <View
         style={{
           flexDirection: "row",
           alignItems: "center",
-          gap: 10,
-          marginBottom: 12,
+          gap: 8,
+          marginBottom: 8,
         }}
       >
-        <View
-          style={{ backgroundColor: "#DFEAFE", borderRadius: 12, padding: 7 }}
-        >
-          <Ionicons name="list" size={24} color="#173963" />
-        </View>
         <Text style={[ui.title, { flex: 1 }]}>Recent entries</Text>
-        {entries.length > 3 && (
+        {entries.length > 3 ? (
           <Pressable
             accessibilityRole="button"
+            accessibilityLabel="View all recent entries"
+            accessibilityState={{ expanded: visibleCount > 3 }}
             onPress={() =>
               setVisibleCount(visibleCount === 3 ? entries.length : 3)
             }
+            style={{
+              minHeight: 48,
+              paddingLeft: 8,
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 4,
+            }}
           >
-            <Text style={{ color: "#183F70", fontWeight: "600" }}>
-              {visibleCount === 3 ? "View All ›" : "Show Less"}
+            <Text
+              style={{
+                fontSize: 13,
+                color: tokens.tealText,
+                fontWeight: "500",
+              }}
+            >
+              View all
             </Text>
+            <Ionicons
+              name="chevron-forward"
+              size={14}
+              color={tokens.tealText}
+            />
           </Pressable>
-        )}
+        ) : null}
       </View>
+      {deleteError ? (
+        <Text
+          accessibilityRole="alert"
+          style={{ color: tokens.danger, fontSize: 13 }}
+        >
+          {deleteError}
+        </Text>
+      ) : null}
       <Modal
         visible={receiptTransactionId !== null}
         onRequestClose={() => setReceiptTransactionId(null)}
-        animationType="slide"
+        animationType="fade"
       >
         <AppScreen>
           <Text style={{ fontSize: 24, fontWeight: "700", marginBottom: 16 }}>
@@ -181,168 +200,216 @@ export default function RecentEntriesList({
       </Modal>
 
       {entries.length === 0 ? (
-        <Text style={{ color: "#666" }}>No entries yet.</Text>
+        <View style={{ paddingVertical: 20, alignItems: "center", gap: 5 }}>
+          <Ionicons name="receipt-outline" size={24} color={tokens.muted} />
+          <Text style={{ fontSize: 15, fontWeight: "500" }}>
+            No entries yet
+          </Text>
+          <Text style={ui.detail}>Add your first entry above.</Text>
+        </View>
       ) : (
         <>
-          {entries.slice(0, visibleCount).map((entry) => (
-            <View
-              key={entry.id}
-              accessibilityLabel={`$${Number(entry.amount || 0).toFixed(2)} - ${categoryMap[entry.categoryId ?? ""] ?? "Unknown Category"}`}
-              style={{
-                paddingVertical: 10,
-                borderBottomWidth: 1,
-                borderBottomColor: "#eee",
-                flexDirection: "row",
-                flexWrap: "wrap",
-                justifyContent: "space-between",
-                alignItems: "center",
-                backgroundColor:
-                  entry.id === editingEntryId ? tokens.tint : tokens.card,
-                borderRadius: 8,
-                paddingHorizontal: 6,
-              }}
-            >
-              <View
-                style={{
-                  width: 32,
-                  height: 36,
-                  marginRight: 8,
-                  borderRadius: 10,
-                  backgroundColor: "#DDF5E9",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Ionicons
-                  name={
-                    (iconMap[entry.categoryId || ""] ||
-                      "pricetag-outline") as React.ComponentProps<
-                      typeof Ionicons
-                    >["name"]
-                  }
-                  size={22}
-                  color="#118762"
-                />
-              </View>
-              <View style={{ flex: 1, minWidth: 0, paddingRight: 6 }}>
-                <Text
-                  numberOfLines={1}
-                  style={{ fontSize: 14, fontWeight: "700", color: "#15263E" }}
-                >
-                  {categoryMap[entry.categoryId ?? ""] ?? "Unknown Category"}
-                </Text>
-                <Text
-                  style={{ fontSize: 13, color: tokens.muted, marginTop: 3 }}
-                >
-                  {typeof entry.date === "string" && entry.date
-                    ? new Date(
-                        `${entry.date.split("T")[0]}T12:00:00`,
-                      ).toLocaleDateString(undefined, {
+          {entries.slice(0, visibleCount).map((entry, index) => {
+            const incoming = ["income", "refund", "cashback"].includes(
+              entry.type.toLowerCase(),
+            );
+            const category =
+              categoryMap[entry.categoryId ?? ""] ||
+              entry.category ||
+              "Unknown category";
+            const date = entry.date
+              ? new Date(`${entry.date.split("T")[0]}T12:00:00`)
+              : null;
+            const now = new Date(),
+              yesterday = new Date(
+                now.getFullYear(),
+                now.getMonth(),
+                now.getDate() - 1,
+              );
+            const dateLabel =
+              !date || Number.isNaN(date.getTime())
+                ? "Undated"
+                : date.toDateString() === now.toDateString()
+                  ? "Today"
+                  : date.toDateString() === yesterday.toDateString()
+                    ? "Yesterday"
+                    : date.toLocaleDateString(undefined, {
                         month: "short",
                         day: "numeric",
-                        year: "numeric",
-                      })
-                    : "Undated"}
-                </Text>
-                {entry.note ? (
-                  <Text
-                    numberOfLines={2}
-                    style={{ fontSize: 13, color: tokens.muted }}
-                  >
-                    {entry.note}
-                  </Text>
-                ) : null}
-                {entry.type !== "expense" && (
-                  <Text style={{ fontSize: 13, color: tokens.muted }}>
-                    {entry.type}
-                  </Text>
-                )}
-              </View>
-              <Text
-                style={{
-                  fontSize: wide ? 17 : 14,
-                  fontWeight: "700",
-                  color: "#101D32",
-                  marginRight: 8,
-                }}
-              >
-                ${Number(entry.amount || 0).toFixed(2)}
-              </Text>
-              {/* RIGHT SIDE */}
+                      });
+            const expanded = openEntry === entry.id;
+            return (
               <View
+                key={entry.id}
+                accessibilityLabel={`$${Number(entry.amount || 0).toFixed(2)} - ${category}`}
                 style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 4,
-                  width: wide ? undefined : "100%",
-                  justifyContent: "flex-end",
-                  marginTop: wide ? 0 : 8,
+                  borderBottomWidth:
+                    index < Math.min(visibleCount, entries.length) - 1 ? 1 : 0,
+                  borderBottomColor: tokens.border,
+                  backgroundColor:
+                    entry.id === editingEntryId ? tokens.tint : tokens.card,
                 }}
               >
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Manage family receipts for this entry"
-                  onPress={() => setReceiptTransactionId(entry.id)}
+                <View
                   style={{
-                    width: 48,
-                    height: 48,
+                    minHeight: 56,
+                    flexDirection: "row",
                     alignItems: "center",
-                    justifyContent: "center",
+                    gap: 8,
                   }}
                 >
-                  <Ionicons
-                    name="attach-outline"
-                    size={21}
-                    color={tokens.tealText}
-                  />
-                </Pressable>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Edit this entry"
-                  onPress={() => onEditEntry?.(entry)}
-                  style={{
-                    width: 48,
-                    height: 48,
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Ionicons
-                    name="create-outline"
-                    size={21}
-                    color={tokens.tealText}
-                  />
-                </Pressable>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Delete this entry"
-                  onPress={() => handleDeleteEntry(entry.id)}
-                  style={{
-                    width: 48,
-                    height: 48,
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Ionicons
-                    name="trash-outline"
-                    size={21}
-                    color={tokens.danger}
-                  />
-                </Pressable>
+                  <View
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: 8,
+                      backgroundColor: tokens.tint,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Ionicons
+                      name={
+                        (iconMap[entry.categoryId || ""] ||
+                          "pricetag-outline") as React.ComponentProps<
+                          typeof Ionicons
+                        >["name"]
+                      }
+                      size={19}
+                      color={tokens.tealText}
+                    />
+                  </View>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text
+                      numberOfLines={1}
+                      style={{
+                        fontSize: 15,
+                        fontWeight: "500",
+                        writingDirection: "auto",
+                        textAlign: "auto",
+                      }}
+                    >
+                      {category}
+                    </Text>
+                    <Text style={{ fontSize: 12, color: tokens.muted }}>
+                      {dateLabel}
+                    </Text>
+                  </View>
+                  <Text
+                    style={{
+                      fontSize: 15,
+                      fontWeight: "500",
+                      fontVariant: ["tabular-nums"],
+                      color: incoming ? tokens.tealText : tokens.text,
+                    }}
+                  >
+                    {incoming ? "+" : "-"}$
+                    {Number(entry.amount || 0).toFixed(2)}
+                  </Text>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Entry actions"
+                    accessibilityHint={`Receipt, edit and delete actions for ${category}`}
+                    accessibilityState={{ expanded }}
+                    onPress={() => setOpenEntry(expanded ? null : entry.id)}
+                    style={{
+                      width: 48,
+                      height: 48,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Ionicons
+                      name={expanded ? "close-outline" : "ellipsis-horizontal"}
+                      size={20}
+                      color={tokens.muted}
+                    />
+                  </Pressable>
+                </View>
+                {expanded ? (
+                  <View style={{ paddingBottom: 8, gap: 4 }}>
+                    {entry.note ? (
+                      <Text style={ui.detail}>{entry.note}</Text>
+                    ) : null}
+                    <Text style={ui.detail}>
+                      {entry.type.charAt(0).toUpperCase() + entry.type.slice(1)}
+                    </Text>
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        justifyContent: "flex-end",
+                        gap: 8,
+                      }}
+                    >
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel="Manage family receipts for this entry"
+                        onPress={() => setReceiptTransactionId(entry.id)}
+                        style={actionStyle}
+                      >
+                        <Ionicons
+                          name="attach-outline"
+                          size={20}
+                          color={tokens.tealText}
+                        />
+                        <Text style={{ fontSize: 12, color: tokens.tealText }}>
+                          Receipts
+                        </Text>
+                      </Pressable>
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel="Edit this entry"
+                        onPress={() => onEditEntry?.(entry)}
+                        style={actionStyle}
+                      >
+                        <Ionicons
+                          name="create-outline"
+                          size={20}
+                          color={tokens.tealText}
+                        />
+                        <Text style={{ fontSize: 12, color: tokens.tealText }}>
+                          Edit
+                        </Text>
+                      </Pressable>
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel="Delete this entry"
+                        onPress={() => handleDeleteEntry(entry.id)}
+                        style={actionStyle}
+                      >
+                        <Ionicons
+                          name="trash-outline"
+                          size={20}
+                          color={tokens.danger}
+                        />
+                        <Text style={{ fontSize: 12, color: tokens.danger }}>
+                          Delete
+                        </Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                ) : null}
               </View>
-            </View>
-          ))}
-          {visibleCount < entries.length && (
-            <View style={{ marginTop: 16 }}>
+            );
+          })}
+          {visibleCount < entries.length ? (
+            <View style={{ marginTop: 12 }}>
               <PrimaryButton
                 title="Load more"
+                variant="text"
                 onPress={() => setVisibleCount((prev) => prev + 10)}
               />
             </View>
-          )}
+          ) : null}
         </>
       )}
     </View>
   );
 }
+const actionStyle = {
+  minWidth: 72,
+  minHeight: 48,
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 2,
+} as const;

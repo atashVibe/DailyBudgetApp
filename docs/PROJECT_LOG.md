@@ -1,5 +1,12 @@
 # DailyBudget Project Log
 
+## Dashboard visual/UX polish — November 24, 2026
+
+Owner supplied an explicit dashboard-only visual/UX brief. Shared UI changes are on `codex/dashboard-ux-polish`; follow `docs/DASHBOARD_UX_POLISH.md` for work order, financial-display boundaries and preview instructions. Keep data/services/routing and accounting calculations unchanged. The old ring used remaining earned allowance while its bar used full-month spending; the new bar preserves that spending percentage. Pace and daily guide are display-only derivations. Required receipts, uploads/retries, current defaults, edit/delete actions and access rules remain intact. No dependency or cloud deployment is needed for this UI-only update. Publish through the existing Pages workflow after validation.
+
+Previous feature checkpoint: PR #21 merged at `651d9bb`; owner reported successful targeted receipt API deployment, Pages run `45481581677` succeeded, and live branded handler/recovery forms were checked at 360px. Owner then confirmed saving the Firebase Authentication custom action URL. Do not request that setting or SMTP deployment again. Fresh real-email appearance and real leave-family tests have not yet been reported. Store purchasing stays disabled and the existing Milestone 2 release tag must not move.
+
+
 ## Active: Leave family and branded verification — November 23, 2026
 
 The owner confirms invitation email delivery, signup, verification and joining now work after `INVITATION_SMTP_PASSWORD` version 2 was attached to `familyInvitationsApi`. The older mail-failure sections below are historical; do not repeat sender/password setup.

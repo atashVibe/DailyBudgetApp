@@ -26,7 +26,10 @@ import {
 } from "../../services/reports";
 import BudgetSummaryCard from "../components/BudgetSummaryCard";
 import AppScreen from "../components/common/AppScreen";
-import LoadingSpinner from "../components/common/LoadingSpinner";
+import {
+  dashboardStyles as ui,
+  uiTokens as tokens,
+} from "../components/common/dashboardStyles";
 import ExpenseEntryForm from "../components/ExpenseEntryForm";
 import RecentEntriesList from "../components/RecentEntriesList";
 
@@ -66,13 +69,13 @@ export default function DashboardScreen() {
       // Web can scroll the document or an ancestor ScrollView. Let the browser
       // reveal the actual form in either case instead of guessing an offset.
       (formRef.current as unknown as HTMLElement | null)?.scrollIntoView({
-        behavior: "smooth",
+        behavior: "auto",
         block: "start",
       });
     } else {
       scrollRef.current?.scrollTo({
         y: Math.max(0, formPosition.current - 8),
-        animated: true,
+        animated: false,
       });
     }
   }, []);
@@ -267,7 +270,13 @@ export default function DashboardScreen() {
   }, [refreshSignal, familyId]);
 
   if (loading) {
-    return <LoadingSpinner message="Loading dashboard..." />;
+    return (
+      <AppScreen style={{ padding: 16 }}>
+        <DashboardLoadingCard label="Budget overview" rows={3} />
+        <DashboardLoadingCard label="New entry" rows={4} />
+        <DashboardLoadingCard label="Recent entries" rows={3} />
+      </AppScreen>
+    );
   }
 
   if (loadError) {
@@ -292,9 +301,9 @@ export default function DashboardScreen() {
     <AppScreen
       ref={scrollRef}
       style={{
-        padding: 14,
+        padding: 16,
         paddingTop: 18,
-        backgroundColor: "#EAF2FE",
+        backgroundColor: tokens.page,
         justifyContent: "flex-start",
         alignItems: "stretch",
       }}
@@ -306,7 +315,7 @@ export default function DashboardScreen() {
           spentThisYear={spentThisYear}
         />
       ) : !entriesError ? (
-        <Text style={{ padding: 16 }}>Loading spending…</Text>
+        <DashboardLoadingCard label="Budget overview" rows={3} />
       ) : null}
       {entriesError && (
         <View style={{ gap: 8, marginBottom: 12 }}>
@@ -336,27 +345,31 @@ export default function DashboardScreen() {
         )}
       </View>
 
-      {familyId && (
-        <RecentEntriesList
-          familyId={familyId}
-          entries={entries}
-          editingEntryId={editingEntry?.id ?? null}
-          refreshSignal={refreshSignal}
-          onEntryDeleted={(entryId) => {
-            setEntries((current) =>
-              current.filter((entry) => entry.id !== entryId),
-            );
-            setRefreshSignal((prev) => prev + 1);
-          }}
-          onEditEntry={(entry) => {
-            setEditingEntry(entry);
-          }}
-        />
+      {!entriesLoaded && !entriesError ? (
+        <DashboardLoadingCard label="Recent entries" rows={3} />
+      ) : (
+        familyId && (
+          <RecentEntriesList
+            familyId={familyId}
+            entries={entries}
+            editingEntryId={editingEntry?.id ?? null}
+            refreshSignal={refreshSignal}
+            onEntryDeleted={(entryId) => {
+              setEntries((current) =>
+                current.filter((entry) => entry.id !== entryId),
+              );
+              setRefreshSignal((prev) => prev + 1);
+            }}
+            onEditEntry={(entry) => {
+              setEditingEntry(entry);
+            }}
+          />
+        )
       )}
       <Text
         style={{
           fontSize: 18,
-          color: "#009f65",
+          color: tokens.muted,
           textAlign: "center",
           marginBottom: 8,
         }}
@@ -364,7 +377,7 @@ export default function DashboardScreen() {
         <Text
           style={{
             fontSize: 14,
-            color: isAdmin ? "#009f65" : "#666",
+            color: tokens.muted,
             textAlign: "center",
             marginBottom: 8,
           }}
@@ -376,7 +389,7 @@ export default function DashboardScreen() {
       <Text
         style={{
           fontSize: 16,
-          color: "#009f65",
+          color: tokens.muted,
           textAlign: "center",
           marginBottom: 24,
         }}
@@ -398,5 +411,37 @@ export default function DashboardScreen() {
         </Text>
       )}
     </AppScreen>
+  );
+}
+
+function DashboardLoadingCard({
+  label,
+  rows,
+}: {
+  label: string;
+  rows: number;
+}) {
+  return (
+    <View
+      style={ui.card}
+      accessibilityRole="progressbar"
+      accessibilityLabel={`Loading ${label.toLowerCase()}`}
+      accessibilityState={{ busy: true }}
+    >
+      <Text style={ui.title}>{label}</Text>
+      <View accessible={false} style={{ gap: 12, marginTop: 16 }}>
+        {Array.from({ length: rows }, (_, index) => (
+          <View
+            key={index}
+            style={{
+              height: index === 0 ? 32 : 16,
+              width: index === rows - 1 ? "65%" : "100%",
+              backgroundColor: tokens.border,
+              borderRadius: 6,
+            }}
+          />
+        ))}
+      </View>
+    </View>
   );
 }

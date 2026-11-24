@@ -264,6 +264,10 @@ test("same Google user can delete their profile while another family member keep
     .png()
     .toBuffer();
   await page
+    .getByRole("button", { name: "Entry actions", exact: true })
+    .first()
+    .click();
+  await page
     .getByRole("button", { name: "Manage family receipts for this entry" })
     .first()
     .click();
@@ -312,6 +316,10 @@ test("same Google user can delete their profile while another family member keep
     const member = await peer.newPage();
     await login(member, { email: a.otherEmail, password: a.password }, false);
     await expect(member.getByLabel(/\$12\.50 -/).first()).toBeVisible();
+    await member
+      .getByRole("button", { name: "Entry actions", exact: true })
+      .first()
+      .click();
     await member
       .getByRole("button", { name: "Manage family receipts for this entry" })
       .first()

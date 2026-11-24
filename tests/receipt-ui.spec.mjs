@@ -8,6 +8,14 @@ const sharp = backend("sharp");
 const { PDFDocument } = backend("pdf-lib");
 const { unzipSync } = backend("fflate");
 
+async function openFirstEntryActions(page) {
+  const toggle = page
+    .getByRole("button", { name: "Entry actions", exact: true })
+    .first();
+  if ((await toggle.getAttribute("aria-expanded")) !== "true")
+    await toggle.click();
+}
+
 async function waitForLoginHandlers(page) {
   // Google is enabled by a client effect, so it also proves SSR hydration has
   // attached the navigation handlers before a fast automated tap.
@@ -100,8 +108,9 @@ test("shared family receipts work through the real web interface against isolate
     page.getByText("Budget overview", { exact: true }),
   ).toBeVisible();
   await page.getByPlaceholder("0.00").fill("12.50");
-  await page.getByText("Save entry", { exact: true }).click();
+  await page.getByText("Add entry", { exact: true }).click();
   await expect(page.getByLabel(/\$12\.50 - Groceries/).first()).toBeVisible();
+  await openFirstEntryActions(page);
   await page
     .getByLabel("Manage family receipts for this entry")
     .first()
@@ -241,7 +250,7 @@ test("family admins require category receipts and entry-form attachments gate sa
       exact: true,
     }),
   ).toBeVisible();
-  const save = page.getByRole("button", { name: "Save entry", exact: true });
+  const save = page.getByRole("button", { name: "Add entry", exact: true });
   await page.getByPlaceholder("0.00").fill("7.25");
   await expect(save).toBeDisabled();
   await expect(save).toHaveCSS("background-color", "rgb(229, 231, 235)");
@@ -294,6 +303,7 @@ test("family admins require category receipts and entry-form attachments gate sa
   await save.click();
   await expect(page.getByLabel(/\$7\.25 - Groceries/)).toHaveCount(1);
   await expect(save).toBeDisabled(); // Next required entry starts with no file.
+  await openFirstEntryActions(page);
   await page
     .getByLabel("Manage family receipts for this entry")
     .first()
@@ -397,7 +407,7 @@ test("free families see Premium information while ordinary Premium-family member
     }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "Save entry", exact: true }),
+    page.getByRole("button", { name: "Add entry", exact: true }),
   ).toBeEnabled();
   await page.screenshot({
     path: "test-results/free-family-receipt-info.png",
@@ -546,7 +556,7 @@ test("long receipt filenames keep Remove inside a narrow form and dashboard Back
   ).toBeVisible();
 });
 
-test("compact paperclip opens one system picker for photos and PDFs, cancels safely and saves an original PDF", async ({
+test("receipt attachment field opens one system picker for photos and PDFs, cancels safely and saves an original PDF", async ({
   page,
   baseURL,
 }) => {
@@ -578,7 +588,9 @@ test("compact paperclip opens one system picker for photos and PDFs, cancels saf
   });
   await expect(clip).toBeEnabled();
   const bounds = await clip.boundingBox();
-  expect(bounds.width).toBeLessThanOrEqual(48);
+  expect(bounds.x + bounds.width).toBeLessThanOrEqual(
+    page.viewportSize().width,
+  );
   expect(bounds.height).toBeLessThanOrEqual(48);
   await expect(
     page.getByRole("button", { name: "Choose a receipt photo", exact: true }),
@@ -616,8 +628,9 @@ test("compact paperclip opens one system picker for photos and PDFs, cancels saf
     path: "test-results/compact-paperclip.png",
     fullPage: true,
   });
-  await page.getByRole("button", { name: "Save entry", exact: true }).click();
+  await page.getByRole("button", { name: "Add entry", exact: true }).click();
   await expect(page.getByLabel(/\$6\.00 - Groceries/)).toHaveCount(1);
+  await openFirstEntryActions(page);
   await page
     .getByLabel("Manage family receipts for this entry")
     .first()
@@ -655,13 +668,15 @@ test("reference dashboard has tall fields, editable category icons and restores 
   await page.getByRole("button", { name: "Budget period" }).click();
   await page.getByRole("button", { name: "This year", exact: true }).click();
   await expect(
-    page.getByText("Whole year budget", { exact: false }),
+    page
+      .getByRole("progressbar", { name: "Yearly budget used", exact: true })
+      .first(),
   ).toBeVisible();
   await page.getByRole("button", { name: "Budget period" }).click();
   await page.getByRole("button", { name: "This month", exact: true }).click();
-  await page.getByRole("button", { name: "Toggle entry form" }).click();
-  await expect(page.getByPlaceholder("0.00")).toHaveCount(0);
-  await page.getByRole("button", { name: "Toggle entry form" }).click();
+  await expect(
+    page.getByRole("button", { name: "Toggle entry form" }),
+  ).toHaveCount(0);
   await expect(page.getByPlaceholder("0.00")).toBeVisible();
   await page.getByRole("button", { name: "Show navigation menu" }).click();
   await page
@@ -748,8 +763,8 @@ test("phone controls stay aligned and Edit reveals the expanded form", async ({
   const dateBox = await date.boundingBox(),
     amountBox = await amount.boundingBox();
   expect(Math.abs(dateBox.height - 48)).toBeLessThanOrEqual(1);
-  expect(Math.abs(dateBox.height - amountBox.height)).toBeLessThanOrEqual(1);
-  expect(Math.abs(dateBox.y - amountBox.y)).toBeLessThanOrEqual(1);
+  expect(amountBox.y).toBeLessThan(dateBox.y);
+  expect(amountBox.height).toBeGreaterThanOrEqual(48);
   const assertSameLine = async (left, right) => {
     const a = await left.boundingBox(),
       b = await right.boundingBox();
@@ -794,10 +809,7 @@ test("phone controls stay aligned and Edit reveals the expanded form", async ({
   ).toBeVisible();
   await budgetInfo.click();
   await expect(budgetInfo).toHaveAttribute("aria-expanded", "false");
-  await assertSameLine(
-    page.getByText("Receipt (optional)", { exact: true }),
-    info,
-  );
+  await assertSameLine(page.getByText("Receipt", { exact: true }), info);
   await info.click();
   await expect(
     page.getByText("To attach a receipt, upgrade your family to Premium.", {
@@ -806,6 +818,10 @@ test("phone controls stay aligned and Edit reveals the expanded form", async ({
   ).toBeVisible();
   await info.click();
   await expect(info).toHaveAttribute("aria-expanded", "false");
+  await expect(page.getByTestId("month-progress-row")).toHaveCount(0);
+  await page
+    .getByRole("button", { name: "Budget details", exact: true })
+    .click();
   const monthRow = page.getByTestId("month-progress-row");
   await assertSameLine(
     monthRow.getByText("Month progress", { exact: true }),
@@ -827,11 +843,13 @@ test("phone controls stay aligned and Edit reveals the expanded form", async ({
   expect(view.overflowing).toBe(false);
   await amount.fill("7.45");
   await page.getByPlaceholder("Optional note").fill("Phone edit regression");
-  await page.getByRole("button", { name: "Save entry", exact: true }).click();
-  // Collapse first: Edit must both expand the card and scroll the actual page.
-  await page.getByRole("button", { name: "Toggle entry form" }).click();
+  await page.getByRole("button", { name: "Add entry", exact: true }).click();
+  // Edit must reveal the always-visible form without changing the entry defaults.
   const entry = page.getByLabel(/\$7\.45 -/).first();
   await entry.scrollIntoViewIfNeeded();
+  await entry
+    .getByRole("button", { name: "Entry actions", exact: true })
+    .click();
   await entry
     .getByRole("button", { name: "Edit this entry", exact: true })
     .click();
@@ -851,10 +869,7 @@ test("phone controls stay aligned and Edit reveals the expanded form", async ({
     exact: true,
   });
   await expect(attach).toBeVisible();
-  await assertSameLine(
-    page.getByText("Receipt (optional)", { exact: true }),
-    attach,
-  );
+  await assertSameLine(page.getByLabel("Entry date", { exact: true }), attach);
   await page.screenshot({
     path: "test-results/phone-entry-layout.png",
     fullPage: true,
@@ -913,5 +928,214 @@ test("a brief mobile cloud interruption recovers without reporting a sign-in fai
     ).toHaveCount(0);
   } finally {
     clearTimeout(reconnect);
+  }
+});
+
+test("dashboard polish keeps earned allowance, whole-period spending and every entry type intact at 360px", async ({
+  page,
+}) => {
+  expect(process.env.GCLOUD_PROJECT).toBe("demo-dailybudget-receipts");
+  const { initializeApp, deleteApp } = backend("firebase-admin/app");
+  const { getAuth } = backend("firebase-admin/auth");
+  const { getFirestore, Timestamp } = backend("firebase-admin/firestore");
+  const fixture = initializeApp(
+    { projectId: "demo-dailybudget-receipts" },
+    `polish-${Date.now()}`,
+  );
+  const admin = getAuth(fixture),
+    db = getFirestore(fixture);
+  const uid = `polish-${Date.now()}`,
+    familyId = `${uid}-family`,
+    email = `${uid}@example.test`;
+  try {
+    await page.setViewportSize({ width: 360, height: 800 });
+    await page.clock.setFixedTime(new Date("2026-11-15T12:00:00"));
+    await admin.createUser({
+      uid,
+      email,
+      password: "EmulatorOnly123!",
+      emailVerified: true,
+    });
+    const batch = db.batch();
+    batch.set(db.doc(`users/${uid}`), {
+      email,
+      activeFamilyId: familyId,
+      role: "admin",
+    });
+    batch.set(db.doc(`families/${familyId}`), {
+      name: "Polish family",
+      dailyBudget: 30,
+      createdBy: uid,
+      status: "active",
+    });
+    batch.set(db.doc(`familyMembers/${familyId}_${uid}`), {
+      familyId,
+      userId: uid,
+      email,
+      role: "admin",
+      status: "active",
+    });
+    batch.set(db.doc(`budgetAreas/${uid}-area`), {
+      familyId,
+      name: "مصروف المنزل",
+      isDefault: true,
+      isArchived: false,
+    });
+    for (const [index, type, amount, date] of [
+      [1, "expense", 300, "2026-11-15"],
+      [2, "income", 100, "2026-11-14"],
+      [3, "refund", 40, "2026-11-11"],
+      [4, "cashback", 10, "2026-11-15"],
+    ]) {
+      batch.set(db.doc(`categories/${uid}-${type}`), {
+        familyId,
+        budgetAreaId: `${uid}-area`,
+        name: type === "expense" ? "Groceries" : type,
+        type,
+        isDefault: type === "expense",
+        isArchived: false,
+      });
+      batch.set(db.doc(`entries/${uid}-${type}`), {
+        familyId,
+        userId: uid,
+        amount,
+        type,
+        categoryId: `${uid}-${type}`,
+        budgetAreaId: `${uid}-area`,
+        date,
+        note: "Preserved note",
+        createdAt: Timestamp.fromMillis(Date.now() + index),
+      });
+    }
+    await batch.commit();
+    await page.goto("/login");
+    await waitForLoginHandlers(page);
+    await page
+      .getByPlaceholder("Enter your email", { exact: true })
+      .fill(email);
+    await page
+      .getByPlaceholder("Enter your password", { exact: true })
+      .fill("EmulatorOnly123!");
+    await page.getByRole("button", { name: "Sign in", exact: true }).click();
+    const overview = page.getByTestId("budget-overview-card");
+    await expect(overview.getByText("$190.00", { exact: true })).toBeVisible();
+    await expect(
+      overview.getByText("$11.88 a day", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      overview.getByText("$260.00 spent (29%)", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      overview.getByText("On track, $190.00 under pace", { exact: true }),
+    ).toBeVisible();
+    await expect(overview.getByRole("progressbar")).toHaveCount(1);
+    const progress = overview.getByRole("progressbar", {
+      name: "Monthly budget used",
+      exact: true,
+    });
+    expect(Number(await progress.getAttribute("aria-valuenow"))).toBeCloseTo(
+      (260 / 900) * 100,
+      5,
+    );
+    await expect(page.getByTestId("month-progress-row")).toHaveCount(0);
+    await expect(
+      page.getByRole("button", { name: "Toggle entry form" }),
+    ).toHaveCount(0);
+    await expect(page.getByLabel("Budget area", { exact: true })).toHaveValue(
+      `${uid}-area`,
+    );
+    await expect(
+      page.getByLabel("Entry category", { exact: true }),
+    ).toHaveValue(`${uid}-expense`);
+    await expect(
+      page
+        .getByLabel("Entry category", { exact: true })
+        .locator("option")
+        .filter({ hasText: "+ Income" }),
+    ).toHaveCount(1);
+    await expect(
+      page
+        .getByLabel("Entry category", { exact: true })
+        .locator("option")
+        .filter({ hasText: "+ Refund" }),
+    ).toHaveCount(1);
+    await expect(
+      page
+        .getByLabel("Entry category", { exact: true })
+        .locator("option")
+        .filter({ hasText: "+ Cashback" }),
+    ).toHaveCount(1);
+    await page
+      .getByRole("button", { name: "View all recent entries", exact: true })
+      .click();
+    await expect(page.getByText("-$300.00", { exact: true })).toBeVisible();
+    for (const amount of ["+$100.00", "+$40.00", "+$10.00"])
+      await expect(page.getByText(amount, { exact: true })).toBeVisible();
+    await expect(page.getByText("Today", { exact: true }).last()).toBeVisible();
+    await expect(page.getByText("Yesterday", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Add entry", exact: true }).click();
+    await expect(page.getByRole("alert")).toContainText("greater than zero");
+    await page.getByPlaceholder("0.00").fill("0");
+    await page.getByRole("button", { name: "Add entry", exact: true }).click();
+    await expect(page.getByRole("alert")).toContainText("greater than zero");
+    expect(
+      (await db.collection("entries").where("familyId", "==", familyId).get())
+        .size,
+    ).toBe(4);
+    await page.getByPlaceholder("0.00").fill("12.50");
+    await page
+      .getByLabel("Entry category", { exact: true })
+      .selectOption(`${uid}-income`);
+    await expect(
+      page.getByRole("button", { name: "Add entry", exact: true }),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Add entry", exact: true }).click();
+    await expect(page.getByText("Entry added", { exact: true })).toBeVisible();
+    await expect(page.getByText("+$12.50", { exact: true })).toBeVisible();
+    await expect(
+      overview.getByText("$260.00 spent (29%)", { exact: true }),
+    ).toBeVisible();
+    await page.getByTestId("budget-overview-card").scrollIntoViewIfNeeded();
+    await page.screenshot({
+      path: test.info().outputPath("dashboard-overview-360.png"),
+      fullPage: true,
+    });
+    await page
+      .getByTestId("new-entry-card")
+      .screenshot({ path: test.info().outputPath("dashboard-entry-360.png") });
+    await page
+      .getByTestId("recent-entries-card")
+      .screenshot({ path: test.info().outputPath("dashboard-recent-360.png") });
+    const screen = await page.evaluate(() => ({
+      width: innerWidth,
+      content: document.documentElement.scrollWidth,
+      focus: document.activeElement?.getAttribute("aria-label"),
+    }));
+    expect(screen.content).toBeLessThanOrEqual(screen.width);
+    await page.screenshot({
+      path: test.info().outputPath("dashboard-polish-360.png"),
+      fullPage: true,
+    });
+    await db.doc(`entries/${uid}-expense`).update({ amount: 600 });
+    await page.reload();
+    await expect(
+      page.getByText("Spending ahead of pace", { exact: true }),
+    ).toBeVisible();
+    await db.doc(`entries/${uid}-expense`).update({ amount: 1000 });
+    await page.reload();
+    await expect(page.getByText("Over budget", { exact: true })).toBeVisible();
+    await db.doc(`entries/${uid}-expense`).update({ amount: 10 });
+    await page.reload();
+    await expect(
+      page.getByRole("progressbar", {
+        name: "Monthly budget used",
+        exact: true,
+      }),
+    ).toHaveAttribute("aria-valuenow", "0");
+    await expect(
+      page.getByText("-$30.00 spent (-3%)", { exact: true }),
+    ).toBeVisible();
+  } finally {
+    await deleteApp(fixture);
   }
 });
