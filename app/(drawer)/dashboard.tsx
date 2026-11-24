@@ -423,7 +423,10 @@ function DashboardLoadingCard({
 }) {
   return (
     <View
-      style={ui.card}
+      style={[
+        ui.card,
+        { minHeight: label === "Budget overview" ? 430 : undefined },
+      ]}
       accessibilityRole="progressbar"
       accessibilityLabel={`Loading ${label.toLowerCase()}`}
       accessibilityState={{ busy: true }}

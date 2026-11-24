@@ -724,7 +724,7 @@ test("reference dashboard has tall fields, editable category icons and restores 
   });
 });
 
-test("phone controls stay aligned and Edit reveals the expanded form", async ({
+test("phone controls stay aligned and Edit reveals the entry form", async ({
   page,
   baseURL,
 }) => {
@@ -757,6 +757,8 @@ test("phone controls stay aligned and Edit reveals the expanded form", async ({
   await expect(
     page.getByText("Budget overview", { exact: true }),
   ).toBeVisible();
+  // The form can render while the spending read still shows a skeleton.
+  await expect(page.getByTestId("budget-overview-card")).toBeVisible();
   const date = page.getByLabel("Entry date", { exact: true });
   const amount = page.getByPlaceholder("0.00");
   await expect(date).toBeVisible();
