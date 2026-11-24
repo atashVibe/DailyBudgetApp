@@ -1,7 +1,7 @@
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { useRouter, useFocusEffect } from "expo-router";
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, getDocFromServer, updateDoc } from "firebase/firestore";
 import { useCallback, useEffect, useState } from "react";
 import { getReceiptAccess } from "../../services/receipts";
 import { View, Pressable } from "react-native";
@@ -47,9 +47,11 @@ import CategoriesSection from "../components/settings/CategoriesSection";
 import FamilyBudgetSection from "../components/settings/FamilyBudgetSection";
 import AdminsSection from "../components/settings/AdminsSection";
 import AccountSection from "../components/settings/AccountSection";
+import LeaveFamilySection from "../components/settings/LeaveFamilySection";
 import ProfileNameSection from "../components/settings/ProfileNameSection";
 import { saveUserDisplayName } from "../../services/profile";
 import PolicyLinks from "../../components/PolicyLinks";
+import { withTimeout } from "../../services/loading";
 
 export default function SettingsScreen({
   accountOnly = false,
@@ -60,6 +62,8 @@ export default function SettingsScreen({
   const [toast, setToast] = useState("");
   const dismissToast = useCallback(() => setToast(""), []);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const router = useRouter();
   const [dailyBudget, setDailyBudget] = useState(0);
   const [familyName, setFamilyName] = useState("");
@@ -89,7 +93,7 @@ export default function SettingsScreen({
     useCallback(() => {
       let current = true;
       setCanRequireReceipts(false);
-      if (familyId)
+      if (familyId && !accountOnly)
         getReceiptAccess()
           .then((access) => {
             if (current)
@@ -103,7 +107,7 @@ export default function SettingsScreen({
       return () => {
         current = false;
       };
-    }, [familyId]),
+    }, [familyId, accountOnly]),
   );
   useEffect(() => {
     if (!canRequireReceipts) setNewCategoryRequiresReceipt(false);
@@ -191,6 +195,8 @@ export default function SettingsScreen({
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setLoading(true);
+      setLoadError(false);
       if (!user) {
         setLoading(false);
         return;
@@ -198,7 +204,27 @@ export default function SettingsScreen({
 
       // 🔹 1. Get user's account
       const userRef = doc(db, "users", user.uid);
-      const userSnap = await getDoc(userRef);
+      let userSnap;
+      try {
+        userSnap = await withTimeout(
+          accountOnly ? getDocFromServer(userRef) : getDoc(userRef),
+          15000,
+        );
+      } catch {
+        if (auth.currentUser?.uid === user.uid) {
+          setLoadError(true);
+          setLoading(false);
+        }
+        return;
+      }
+
+      if (auth.currentUser?.uid !== user.uid) return;
+      if (accountOnly) {
+        setFamilyId(userSnap.data()?.activeFamilyId || null);
+        setProfileName(user.displayName || userSnap.data()?.displayName || "");
+        setLoading(false);
+        return;
+      }
 
       if (!userSnap.exists()) {
         setLoading(false);
@@ -246,11 +272,11 @@ export default function SettingsScreen({
     });
 
     return unsubscribe;
-  }, []);
+  }, [accountOnly, loadAttempt]);
 
   useEffect(() => {
     const loadCategories = async () => {
-      if (!familyId || !selectedCategoryBudgetAreaId) return;
+      if (accountOnly || !familyId || !selectedCategoryBudgetAreaId) return;
 
       const loadedCategories = await getCategories(
         familyId,
@@ -261,12 +287,12 @@ export default function SettingsScreen({
     };
 
     loadCategories();
-  }, [familyId, selectedCategoryBudgetAreaId]);
+  }, [familyId, selectedCategoryBudgetAreaId, accountOnly]);
 
   useEffect(() => {
     const loadAdmins = async () => {
       const user = auth.currentUser;
-      if (!familyId || !user) {
+      if (accountOnly || !familyId || !user) {
         setAdmins([]);
         return;
       }
@@ -290,11 +316,11 @@ export default function SettingsScreen({
     };
 
     void loadAdmins();
-  }, [familyId]);
+  }, [familyId, accountOnly]);
 
   const handleSaveProfileName = async () => {
     const user = auth.currentUser;
-    if (!user || !familyId) return;
+    if (!user) return;
 
     setProfileMessage("");
     try {
@@ -472,6 +498,21 @@ export default function SettingsScreen({
       onSave={handleSaveProfileName}
     />
   );
+  if (loadError)
+    return (
+      <AppScreen>
+        <View style={ui.card}>
+          <Text style={ui.body}>
+            Your account could not be loaded. Check your connection and try
+            again.
+          </Text>
+          <PrimaryButton
+            title="Retry loading"
+            onPress={() => setLoadAttempt((value) => value + 1)}
+          />
+        </View>
+      </AppScreen>
+    );
   if (accountOnly)
     return (
       <View style={{ flex: 1 }}>
@@ -511,6 +552,18 @@ export default function SettingsScreen({
               <Text style={ui.body}>Sign out</Text>
             </Pressable>
           </View>
+          {familyId ? (
+            <LeaveFamilySection />
+          ) : (
+            <View style={ui.card}>
+              <Text style={ui.heading}>No current family</Text>
+              <PrimaryButton
+                title="Start or join a family"
+                variant="outline"
+                onPress={() => router.replace("/family-setup")}
+              />
+            </View>
+          )}
           {auth.currentUser && (
             <AccountSection
               key={auth.currentUser.uid}

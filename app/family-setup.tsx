@@ -229,6 +229,11 @@ export default function FamilySetupScreen() {
           />
         </>
       )}
+      <PrimaryButton
+        title="Account"
+        variant="text"
+        onPress={() => router.push("/(drawer)/account")}
+      />
     </AppScreen>
   );
 }

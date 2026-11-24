@@ -15,6 +15,7 @@ import AppScreen from "../components/common/AppScreen";
 import AppTextInput from "../components/common/AppTextInput";
 import PrimaryButton from "../components/common/PrimaryButton";
 import { uiTokens } from "../components/common/dashboardStyles";
+import { emailActionSettings } from "../../services/appLinks";
 
 export default function InviteFamilyScreen() {
   const [email, setEmail] = useState("");
@@ -193,9 +194,7 @@ export default function InviteFamilyScreen() {
                     void run(async () => {
                       const user = auth.currentUser;
                       if (!user) return;
-                      await sendEmailVerification(user, {
-                        url: "https://atashvibe.github.io/DailyBudgetApp/login",
-                      });
+                      await sendEmailVerification(user, emailActionSettings());
                       setMessage(
                         "Verification email sent. Open it, then check verification below.",
                       );

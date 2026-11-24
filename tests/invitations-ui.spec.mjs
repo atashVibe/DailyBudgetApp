@@ -74,7 +74,7 @@ async function seed(tag, withFamily = true) {
   }
   return { uid, email, password, familyId };
 }
-async function login(page, account, inviteCode) {
+async function login(page, account, inviteCode, destination) {
   await page.goto(inviteCode ? `/login?inviteCode=${inviteCode}` : "/login", {
     waitUntil: "domcontentloaded",
   });
@@ -89,9 +89,12 @@ async function login(page, account, inviteCode) {
     .fill(account.password);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(
-    page.getByText(inviteCode ? "Join a family" : "Budget overview", {
-      exact: true,
-    }),
+    page.getByText(
+      destination || (inviteCode ? "Join a family" : "Budget overview"),
+      {
+        exact: true,
+      },
+    ),
   ).toBeVisible({ timeout: 30000 });
 }
 async function emailInvitation(page, owner, recipient) {
@@ -730,4 +733,376 @@ test("free receipts show the empty state and configurable plan proposals without
     path: test.info().outputPath("polish-plans-360.png"),
     fullPage: true,
   });
+});
+
+test("branded verification requires confirmation, preserves joining and lets a member leave without losing shared data", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  const owner = await seed("verify-and-leave"),
+    recipient = await seed("verified-leaver", false);
+  await auth.updateUser(recipient.uid, { emailVerified: false });
+  const code = "86420135";
+  await db.doc(`invites/${owner.familyId}-branded`).set({
+    familyId: owner.familyId,
+    email: recipient.email,
+    role: "member",
+    code,
+    status: "pending",
+    createdBy: owner.uid,
+    expiresAt: new Date(Date.now() + 600000),
+  });
+  await db.doc(`entries/${owner.familyId}-kept`).set({
+    familyId: owner.familyId,
+    categoryId: `${owner.familyId}-category`,
+    budgetAreaId: `${owner.familyId}-area`,
+    userId: owner.uid,
+    type: "expense",
+    amount: 12.5,
+    date: "2026-11-23",
+    note: "Keep shared history",
+  });
+  const link = new URL(
+    await auth.generateEmailVerificationLink(recipient.email, {
+      url: `https://atashvibe.github.io/DailyBudgetApp/join-invitation?code=${code}`,
+    }),
+  );
+  link.searchParams.set("apiKey", "untrusted-query-key");
+  await page.goto(`/auth-action?${link.searchParams}`, {
+    waitUntil: "domcontentloaded",
+  });
+  await expect(
+    page.getByRole("button", { name: "Verify email", exact: true }),
+  ).toBeVisible();
+  expect((await auth.getUser(recipient.uid)).emailVerified).toBe(false);
+  await expect(page.locator('meta[name="referrer"]').first()).toHaveAttribute(
+    "content",
+    "no-referrer",
+  );
+  await page.screenshot({
+    path: test.info().outputPath("verify-email-360.png"),
+    fullPage: true,
+  });
+  await page.getByRole("button", { name: "Verify email", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Email verified", exact: true }),
+  ).toBeVisible();
+  expect((await auth.getUser(recipient.uid)).emailVerified).toBe(true);
+  expect(
+    (await db.doc(`familyMembers/${owner.familyId}_${recipient.uid}`).get())
+      .exists,
+  ).toBe(false);
+  await page
+    .getByRole("button", { name: "Return to DailyBudget", exact: true })
+    .click();
+  await expect(page).toHaveURL(new RegExp(`/join-invitation\\?code=${code}$`));
+  await login(page, recipient, code);
+  await page
+    .getByRole("button", { name: "Join this family", exact: true })
+    .click();
+  await expect(
+    page.getByText("Budget overview", { exact: true }),
+  ).toBeVisible();
+  await page.goto("/account", { waitUntil: "domcontentloaded" });
+  await page.getByRole("button", { name: "Leave family", exact: true }).click();
+  let dialog = page.getByRole("dialog", { name: "Leave family?", exact: true });
+  await expect(
+    dialog.getByRole("button", { name: "Leave family", exact: true }),
+  ).toBeVisible();
+  await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  expect(
+    (
+      await db.doc(`familyMembers/${owner.familyId}_${recipient.uid}`).get()
+    ).data().status,
+  ).toBe("active");
+  await page.getByRole("button", { name: "Leave family", exact: true }).click();
+  dialog = page.getByRole("dialog", { name: "Leave family?", exact: true });
+  await expect(
+    dialog.getByRole("button", { name: "Leave family", exact: true }),
+  ).toBeVisible();
+  await page.screenshot({
+    path: test.info().outputPath("leave-family-360.png"),
+    fullPage: true,
+  });
+  await dialog
+    .getByRole("button", { name: "Leave family", exact: true })
+    .click();
+  await expect(page.getByText("Family setup", { exact: true })).toBeVisible();
+  expect(
+    (await db.doc(`users/${recipient.uid}`).get()).data().activeFamilyId,
+  ).toBe(null);
+  expect(
+    (
+      await db.doc(`familyMembers/${owner.familyId}_${recipient.uid}`).get()
+    ).data().status,
+  ).toBe("inactive");
+  expect(
+    (await db.doc(`entries/${owner.familyId}-kept`).get()).data().amount,
+  ).toBe(12.5);
+  expect((await db.doc(`families/${owner.familyId}`).get()).data().status).toBe(
+    "active",
+  );
+  expect((await auth.getUser(recipient.uid)).uid).toBe(recipient.uid);
+  await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+  await expect(page.getByText("Family setup", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Account", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Delete account", exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Edit your name", exact: true })
+    .click();
+  const nameDialog = page.getByRole("dialog", {
+    name: "Your name",
+    exact: true,
+  });
+  await nameDialog
+    .getByLabel("Your name", { exact: true })
+    .fill("Independent User");
+  await nameDialog
+    .getByRole("button", { name: "Save name", exact: true })
+    .click();
+  await expect
+    .poll(async () => (await auth.getUser(recipient.uid)).displayName)
+    .toBe("Independent User");
+  await expect(
+    nameDialog.getByRole("button", { name: "Save name", exact: true }),
+  ).toHaveCount(0);
+  expect(
+    (await db.doc(`users/${recipient.uid}`).get()).data().activeFamilyId,
+  ).toBe(null);
+  await nameDialog.getByRole("button", { name: "Done", exact: true }).click();
+  await expect(nameDialog).toHaveCount(0);
+  await page
+    .getByRole("button", { name: "Start or join a family", exact: true })
+    .click();
+  // The outgoing setup screen remains mounted during the stack transition.
+  const startFamily = page
+    .getByText("Start family", { exact: true })
+    .filter({ visible: true });
+  await expect(startFamily).toHaveCount(1);
+  await startFamily.click();
+  await page
+    .getByPlaceholder("Example: Smith Family", { exact: true })
+    .filter({ visible: true })
+    .fill("My independent family");
+  await page
+    .getByRole("button", { name: "Create family", exact: true })
+    .click();
+  await expect(
+    page.getByText("Budget overview", { exact: true }),
+  ).toBeVisible();
+  expect(
+    (await db.doc(`users/${recipient.uid}`).get()).data().activeFamilyId,
+  ).not.toBe(owner.familyId);
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth <= 360),
+  ).toBe(true);
+});
+
+test("leaving a family is blocked for the last administrator with shared standard controls", async ({
+  page,
+}) => {
+  const owner = await seed("last-admin-leave");
+  await login(page, owner);
+  await page.goto("/join-family", { waitUntil: "domcontentloaded" });
+  await page.getByRole("button", { name: "Leave family", exact: true }).click();
+  const dialog = page.getByRole("dialog", {
+    name: "Leave family?",
+    exact: true,
+  });
+  await expect(dialog.getByRole("alert")).toContainText("only administrator");
+  await expect(
+    dialog.getByRole("button", { name: "Leave family", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    dialog.getByRole("button", {
+      name: "Invite another administrator",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
+  expect(
+    (await db.doc(`familyMembers/${owner.familyId}_${owner.uid}`).get()).data()
+      .status,
+  ).toBe("active");
+});
+
+test("branded password reset validates the form, updates only the intended account and rejects reused codes", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  const user = await seed("branded-password", false);
+  const generated = new URL(
+    await auth.generatePasswordResetLink(user.email, {
+      url: "https://atashvibe.github.io/DailyBudgetApp/login",
+    }),
+  );
+  generated.searchParams.set("apiKey", "untrusted-query-key");
+  generated.searchParams.set(
+    "continueUrl",
+    "https://attacker.example.test/leave-this-site",
+  );
+  await page.goto(`/auth-action?${generated.searchParams}`, {
+    waitUntil: "domcontentloaded",
+  });
+  await expect(page.getByLabel("New password", { exact: true })).toBeVisible();
+  await page
+    .getByLabel("New password", { exact: true })
+    .fill("UpdatedPassword123!");
+  await page
+    .getByLabel("Confirm new password", { exact: true })
+    .fill("DifferentPassword123!");
+  await page
+    .getByRole("button", { name: "Save new password", exact: true })
+    .click();
+  await expect(page.getByRole("alert")).toHaveText(
+    "The passwords do not match.",
+  );
+  await page
+    .getByLabel("Confirm new password", { exact: true })
+    .fill("UpdatedPassword123!");
+  await page.screenshot({
+    path: test.info().outputPath("reset-password-360.png"),
+    fullPage: true,
+  });
+  await page
+    .getByRole("button", { name: "Save new password", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Password updated", exact: true }),
+  ).toBeVisible();
+  const signin = async (password) =>
+    fetch(
+      "http://localhost:9099/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=demo-only-key",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: user.email,
+          password,
+          returnSecureToken: true,
+        }),
+      },
+    );
+  expect((await signin(user.password)).status).toBe(400);
+  const changed = await signin("UpdatedPassword123!");
+  expect(changed.status).toBe(200);
+  expect((await changed.json()).localId).toBe(user.uid);
+  await page
+    .getByRole("button", { name: "Return to DailyBudget", exact: true })
+    .click();
+  await expect(page).toHaveURL(/\/login$/);
+  await page.goto(`/auth-action?${generated.searchParams}`, {
+    waitUntil: "domcontentloaded",
+  });
+  await expect(
+    page.getByRole("heading", { name: "Link unavailable", exact: true }),
+  ).toBeVisible();
+  await expect(page.getByLabel("New password", { exact: true })).toHaveCount(0);
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth <= 360),
+  ).toBe(true);
+});
+
+test("invalid and wrong-mode email actions keep codes unconsumed and show branded errors", async ({
+  page,
+}) => {
+  const user = await seed("wrong-email-mode", false);
+  const generated = new URL(await auth.generatePasswordResetLink(user.email));
+  const code = generated.searchParams.get("oobCode");
+  generated.searchParams.set("mode", "verifyEmail");
+  await page.goto(`/auth-action?${generated.searchParams}`, {
+    waitUntil: "domcontentloaded",
+  });
+  await expect(
+    page.getByRole("heading", { name: "Link unavailable", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Verify email", exact: true }),
+  ).toHaveCount(0);
+  const stillValid = await fetch(
+    "http://localhost:9099/identitytoolkit.googleapis.com/v1/accounts:resetPassword?key=demo-only-key",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ oobCode: code }),
+    },
+  );
+  expect(stillValid.status).toBe(200);
+  await page.goto("/auth-action?mode=recoverEmail&oobCode=invalid-action", {
+    waitUntil: "domcontentloaded",
+  });
+  await expect(
+    page.getByRole("heading", { name: "Link unavailable", exact: true }),
+  ).toBeVisible();
+  await expect(page.getByRole("alert")).toContainText(
+    "invalid, expired or already used",
+  );
+});
+
+test("a temporary verification connection failure can be retried without consuming the email action", async ({
+  page,
+}) => {
+  const user = await seed("retry-email-link", false);
+  await auth.updateUser(user.uid, { emailVerified: false });
+  const generated = new URL(
+    await auth.generateEmailVerificationLink(user.email),
+  );
+  const block = (route) => route.abort();
+  await page.route(
+    "**/identitytoolkit.googleapis.com/v1/accounts:resetPassword**",
+    block,
+  );
+  await page.goto(`/auth-action?${generated.searchParams}`, {
+    waitUntil: "domcontentloaded",
+  });
+  await expect(
+    page.getByRole("heading", { name: "Check your connection", exact: true }),
+  ).toBeVisible();
+  expect((await auth.getUser(user.uid)).emailVerified).toBe(false);
+  await page.unroute(
+    "**/identitytoolkit.googleapis.com/v1/accounts:resetPassword**",
+    block,
+  );
+  await page
+    .getByRole("button", { name: "Check link again", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Verify email", exact: true }),
+  ).toBeVisible();
+  expect((await auth.getUser(user.uid)).emailVerified).toBe(false);
+});
+
+test("an account without any family can still save its name and reach personal deletion", async ({
+  page,
+}) => {
+  const user = await seed("personal-no-family", false);
+  await login(page, user, undefined, "Family setup");
+  await expect(page.getByText("Family setup", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Account", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Delete account", exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Edit your name", exact: true })
+    .click();
+  const dialog = page.getByRole("dialog", { name: "Your name", exact: true });
+  await dialog
+    .getByLabel("Your name", { exact: true })
+    .fill("Personal Account");
+  await dialog.getByRole("button", { name: "Save name", exact: true }).click();
+  await expect
+    .poll(
+      async () => (await db.doc(`users/${user.uid}`).get()).data()?.displayName,
+    )
+    .toBe("Personal Account");
+  await expect(
+    dialog.getByRole("button", { name: "Save name", exact: true }),
+  ).toHaveCount(0);
+  const profile = (await db.doc(`users/${user.uid}`).get()).data();
+  expect(profile.activeFamilyId).toBe(null);
+  expect(profile.role).toBe(null);
+  expect(profile.displayName).toBe("Personal Account");
 });

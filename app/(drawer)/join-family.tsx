@@ -23,6 +23,7 @@ import AppScreen from "../components/common/AppScreen";
 import AppTextInput from "../components/common/AppTextInput";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import PrimaryButton from "../components/common/PrimaryButton";
+import LeaveFamilySection from "../components/settings/LeaveFamilySection";
 
 export default function JoinFamilyScreen() {
   const router = useRouter();
@@ -170,6 +171,7 @@ export default function JoinFamilyScreen() {
 
   return (
     <AppScreen style={styles.screen}>
+      {context ? <LeaveFamilySection /> : null}
       <Text style={styles.title}>
         {isLastAdmin ? "Before You Leave" : "Switch family"}
       </Text>
