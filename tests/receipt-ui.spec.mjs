@@ -1137,6 +1137,18 @@ test("dashboard polish keeps earned allowance, whole-period spending and every e
     await expect(
       page.getByText("-$30.00 spent (-3%)", { exact: true }),
     ).toBeVisible();
+    // An exact cent-level pace match must not turn amber due to binary rounding.
+    await page.clock.setFixedTime(new Date("2026-11-07T12:00:00"));
+    await db.doc(`families/${familyId}`).update({ dailyBudget: 1.01 });
+    await db.doc(`entries/${uid}-expense`).update({ amount: 7.07 });
+    await db.doc(`entries/${uid}-refund`).delete();
+    await page.reload();
+    await expect(
+      page.getByText("On track, $0.00 under pace", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Spending ahead of pace", { exact: true }),
+    ).toHaveCount(0);
   } finally {
     await deleteApp(fixture);
   }

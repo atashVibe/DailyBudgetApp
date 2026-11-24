@@ -78,7 +78,8 @@ export default function BudgetSummaryCard({
   const used = yearly ? summary.yearlyUsedPercent : summary.usedPercent;
   const fill = yearly ? summary.yearlyProgressPercent : summary.progressPercent;
   const today = (elapsed / periodDays) * 100;
-  const pace = (budget * elapsed) / periodDays;
+  // Same budget × elapsed share, using the existing daily-budget cent precision.
+  const pace = (Math.round(dailyBudget * 100) * elapsed) / 100;
   const over = spending > budget;
   const ahead = spending > pace;
   const status = over
