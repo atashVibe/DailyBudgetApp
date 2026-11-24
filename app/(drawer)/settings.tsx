@@ -609,6 +609,17 @@ export default function SettingsScreen({
           {familyName || "Family"}
         </Text>
         <Text style={ui.pageTitle}>Family settings</Text>
+        {isAdmin && familyId ? (
+          <View
+            testID="family-invitation-action"
+            style={{ marginBottom: tokens.spacing.xl }}
+          >
+            <PrimaryButton
+              title="Invite family member"
+              onPress={() => router.push("/(drawer)/invite-family")}
+            />
+          </View>
+        ) : null}
         <FamilyBudgetSection
           dailyBudget={dailyBudget}
           budgetInput={budgetInput}
